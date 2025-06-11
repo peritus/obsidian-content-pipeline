@@ -1,0 +1,29 @@
+{
+  "name": "obsidian-audio-inbox",
+  "version": "1.0.0",
+  "description": "Obsidian plugin for audio inbox management",
+  "main": "main.js",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "build:watch": "node esbuild.config.js --watch",
+    "build:prod": "NODE_ENV=production node esbuild.config.js",
+    "build:debug": "LOGGING_ENABLED=true node esbuild.config.js",
+    "build:debug:watch": "LOGGING_ENABLED=true node esbuild.config.js --watch",
+    "dev": "npm run build:debug:watch"
+  },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "audio",
+    "inbox"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.19.0",
+    "obsidian": "latest",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {}
+}
