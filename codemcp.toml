@@ -32,5 +32,9 @@ type_check = ["npm", "run", "type-check"]
 # Install packages
 npm_install = ["npm", "install"]
 
+
+# Run tests
+npm_test = ["npm", "test"]
+
 # bump version
 bump_version_patch = ["bump-my-version", "bump", "patch", "-vv"]

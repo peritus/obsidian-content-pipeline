@@ -8,6 +8,10 @@ main.js.map
 
 node_modules/
 
+# Jest testing
+# ============
+coverage/
+
 # OS created files
 # ===============
 .DS_Store

@@ -11,7 +11,12 @@
     "build:error": "OBSIDIAN_AUDIO_INBOX_LOGLEVEL=error node esbuild.config.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
   },
   "keywords": [
     "obsidian",
@@ -51,18 +56,57 @@
     "README.md"
   ],
   "devDependencies": {
+    "@types/jest": "^29.5.12",
     "@types/node": "^24.0.0",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
     "builtin-modules": "^5.0.0",
     "esbuild": "^0.25.5",
     "eslint": "^9.28.0",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
     "obsidian": "^1.4.16",
+    "ts-jest": "^29.1.2",
     "tslib": "^2.6.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {},
   "peerDependencies": {
     "obsidian": "^1.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src",
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.ts",
+      "**/?(*.)+(spec|test).ts"
+    ],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/**/*.test.ts",
+      "!src/**/*.spec.ts"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.ts"
+    ],
+    "moduleNameMapping": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "testTimeout": 10000,
+    "verbose": true
   }
 }
