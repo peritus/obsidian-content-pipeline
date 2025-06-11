@@ -1,0 +1,35 @@
+/* Audio Inbox Plugin Styles */
+
+.audio-inbox-container {
+    padding: 10px;
+    border-radius: 5px;
+    background: var(--background-secondary);
+}
+
+.audio-inbox-button {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.audio-inbox-button:hover {
+    background: var(--interactive-accent-hover);
+}
+
+.audio-inbox-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.audio-inbox-item {
+    padding: 8px;
+    margin: 5px 0;
+    background: var(--background-primary);
+    border-radius: 3px;
+    border-left: 3px solid var(--interactive-accent);
+}
