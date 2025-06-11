@@ -58,6 +58,7 @@
     "main.js",
     "styles.css",
     "manifest.json",
+    "LICENSE",
     "README.md"
   ],
   "devDependencies": {
