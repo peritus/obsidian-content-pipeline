@@ -418,13 +418,13 @@ export interface NotificationAction {
 // =============================================================================
 
 /**
- * Log levels
+ * Log levels - enum values match string values for build-time configuration
  */
 export enum LogLevel {
-    ERROR = 0,
-    WARN = 1,
-    INFO = 2,
-    DEBUG = 3
+    ERROR = 'error',
+    WARN = 'warn', 
+    INFO = 'info',
+    DEBUG = 'debug'
 }
 
 /**
@@ -441,6 +441,20 @@ export interface LogEntry {
     context?: any;
     /** Timestamp */
     timestamp: Date;
+}
+
+/**
+ * Logger configuration (read from build-time environment)
+ */
+export interface LoggerConfig {
+    /** Current log level threshold */
+    level: LogLevel;
+    /** Whether to include timestamps */
+    includeTimestamp: boolean;
+    /** Whether to include component names */
+    includeComponent: boolean;
+    /** Whether to format output for readability */
+    prettyFormat: boolean;
 }
 
 // =============================================================================
@@ -536,21 +550,20 @@ export interface PathContext {
 }
 
 // =============================================================================
-// PLUGIN SETTINGS TYPES (Enhanced)
+// PLUGIN SETTINGS TYPES (Simplified - no log level)
 // =============================================================================
 
 /**
  * Complete plugin settings interface
+ * NOTE: Log level is now controlled at build-time via OBSIDIAN_AUDIO_INBOX_LOGLEVEL
  */
 export interface AudioInboxSettings {
     /** JSON string containing the complete pipeline configuration */
     pipelineConfig: string;
     /** Parsed pipeline configuration (computed from pipelineConfig) */
     parsedPipelineConfig?: PipelineConfiguration;
-    /** Enable debug mode for additional logging and diagnostics */
+    /** Enable debug mode for additional diagnostics in UI */
     debugMode: boolean;
-    /** Log level for the plugin operations */
-    logLevel: LogLevel;
     /** Default categories to create on setup */
     defaultCategories: string[];
     /** Plugin version (for migration purposes) */

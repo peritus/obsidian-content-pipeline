@@ -2,19 +2,18 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import AudioInboxPlugin from './main';
 import { 
     AudioInboxSettings, 
-    LogLevel, 
     DEFAULT_CATEGORIES,
-    isValidLogLevel,
     PipelineConfiguration 
 } from './types';
+import { getBuildLogLevel } from './logger';
 
 /**
  * Default settings for the plugin
+ * NOTE: Log level is now controlled at build-time via OBSIDIAN_AUDIO_INBOX_LOGLEVEL
  */
 export const DEFAULT_SETTINGS: AudioInboxSettings = {
     pipelineConfig: '{}', // Will be populated with default pipeline configuration later
     debugMode: false,
-    logLevel: LogLevel.INFO,
     defaultCategories: [...DEFAULT_CATEGORIES],
     version: '1.0.0',
     lastSaved: undefined
@@ -59,32 +58,6 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfiguration = {
 };
 
 /**
- * Convert LogLevel enum to string for display
- */
-function logLevelToString(level: LogLevel): string {
-    switch (level) {
-        case LogLevel.ERROR: return 'error';
-        case LogLevel.WARN: return 'warn';
-        case LogLevel.INFO: return 'info';
-        case LogLevel.DEBUG: return 'debug';
-        default: return 'info';
-    }
-}
-
-/**
- * Convert string to LogLevel enum
- */
-function stringToLogLevel(str: string): LogLevel {
-    switch (str.toLowerCase()) {
-        case 'error': return LogLevel.ERROR;
-        case 'warn': return LogLevel.WARN;
-        case 'info': return LogLevel.INFO;
-        case 'debug': return LogLevel.DEBUG;
-        default: return LogLevel.INFO;
-    }
-}
-
-/**
  * Settings tab for the Audio Inbox plugin
  */
 export class AudioInboxSettingTab extends PluginSettingTab {
@@ -107,35 +80,28 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         const descEl = containerEl.createEl('p');
         descEl.innerHTML = 'Configure your audio processing pipeline. This plugin processes audio files through a configurable linear pipeline, transforming recordings into organized knowledge documents.';
 
+        // Build-time configuration notice
+        const buildNoticeEl = containerEl.createEl('div');
+        buildNoticeEl.style.background = '#f0f8ff';
+        buildNoticeEl.style.border = '1px solid #b0d4f1';
+        buildNoticeEl.style.borderRadius = '4px';
+        buildNoticeEl.style.padding = '10px';
+        buildNoticeEl.style.marginBottom = '20px';
+        buildNoticeEl.innerHTML = `
+            <p><strong>📋 Build-Time Configuration</strong></p>
+            <p>Log level is set at build time: <code>${getBuildLogLevel().toUpperCase()}</code></p>
+            <p><small>To change log level, rebuild with <code>OBSIDIAN_AUDIO_INBOX_LOGLEVEL=debug npm run build</code></small></p>
+        `;
+
         // Debug Mode Setting
         new Setting(containerEl)
             .setName('Debug Mode')
-            .setDesc('Enable debug mode for additional logging and diagnostics')
+            .setDesc('Enable debug mode for additional UI diagnostics and information')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.debugMode)
                 .onChange(async (value) => {
                     this.plugin.settings.debugMode = value;
                     await this.plugin.saveSettings();
-                }));
-
-        // Log Level Setting
-        new Setting(containerEl)
-            .setName('Log Level')
-            .setDesc('Set the logging level for plugin operations')
-            .addDropdown(dropdown => dropdown
-                .addOption('error', 'Error')
-                .addOption('warn', 'Warning')
-                .addOption('info', 'Info')
-                .addOption('debug', 'Debug')
-                .setValue(logLevelToString(this.plugin.settings.logLevel))
-                .onChange(async (value: string) => {
-                    const logLevel = stringToLogLevel(value);
-                    if (isValidLogLevel(logLevel)) {
-                        this.plugin.settings.logLevel = logLevel;
-                        await this.plugin.saveSettings();
-                    } else {
-                        console.error('Invalid log level:', value);
-                    }
                 }));
 
         // Categories Setting
@@ -218,7 +184,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             <p><strong>Settings Version:</strong> ${this.plugin.settings.version}</p>
             <p><strong>Status:</strong> <span style="color: green;">Ready</span></p>
             <p><strong>Debug Mode:</strong> ${this.plugin.settings.debugMode ? '<span style="color: orange;">Enabled</span>' : '<span style="color: gray;">Disabled</span>'}</p>
-            <p><strong>Log Level:</strong> <code>${logLevelToString(this.plugin.settings.logLevel).toUpperCase()}</code></p>
+            <p><strong>Build Log Level:</strong> <code>${getBuildLogLevel().toUpperCase()}</code></p>
             <p><strong>Last Saved:</strong> ${lastSaved}</p>
         `;
 
@@ -228,7 +194,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             
             const debugEl = containerEl.createEl('details');
             const debugSummaryEl = debugEl.createEl('summary');
-            debugSummaryEl.textContent = 'Type System Information';
+            debugSummaryEl.textContent = 'Type System & Logging Information';
             
             const debugCodeEl = debugEl.createEl('pre');
             debugCodeEl.style.background = '#f0f0f0';
@@ -246,10 +212,49 @@ Type System Status:
 - Error handling types: ✓ Defined
 - API integration types: ✓ Defined
 
+Logging System Status:
+- Build-time log level: ${getBuildLogLevel().toUpperCase()}
+- Logging system: ✓ Implemented
+- Component-based logging: ✓ Available
+- Structured logging: ✓ Available
+
 Settings Structure:
 ${JSON.stringify(this.plugin.settings, null, 2)}
 `;
         }
+
+        // Build Information Section
+        containerEl.createEl('h3', { text: 'Build Information' });
+        
+        const buildInfoEl = containerEl.createEl('div');
+        buildInfoEl.innerHTML = `
+            <p><strong>Build Log Level:</strong> <code>${getBuildLogLevel().toUpperCase()}</code></p>
+            <p><strong>Available Log Levels:</strong> ERROR, WARN, INFO, DEBUG</p>
+            <p><strong>Change Log Level:</strong> Rebuild with different <code>OBSIDIAN_AUDIO_INBOX_LOGLEVEL</code></p>
+        `;
+
+        // Build scripts examples
+        const buildScriptsEl = containerEl.createEl('details');
+        const buildScriptsSummaryEl = buildScriptsEl.createEl('summary');
+        buildScriptsSummaryEl.textContent = 'Build Script Examples';
+        
+        const scriptsCodeEl = buildScriptsEl.createEl('pre');
+        scriptsCodeEl.style.background = '#f5f5f5';
+        scriptsCodeEl.style.padding = '10px';
+        scriptsCodeEl.style.borderRadius = '4px';
+        scriptsCodeEl.style.fontSize = '12px';
+        scriptsCodeEl.style.overflow = 'auto';
+        scriptsCodeEl.textContent = `# Production builds with different log levels
+npm run build              # Default (warn level)
+npm run build:error        # Error level only
+npm run build:warn         # Warn level and above
+npm run build:info         # Info level and above  
+npm run build:debug        # Debug level (all logs)
+
+# Development builds
+npm run dev                # Debug level with watch
+npm run dev:info           # Info level with watch
+npm run dev:warn           # Warn level with watch`;
 
         // Future Features Section
         containerEl.createEl('h3', { text: 'Coming Soon' });
@@ -257,7 +262,7 @@ ${JSON.stringify(this.plugin.settings, null, 2)}
         const futureEl = containerEl.createEl('ul');
         futureEl.innerHTML = `
             <li>✅ <strong>Type System</strong> - Complete TypeScript interfaces</li>
-            <li>🔄 <strong>Logging System</strong> - Structured logging with levels</li>
+            <li>✅ <strong>Logging System</strong> - Build-time structured logging</li>
             <li>🔄 <strong>Error Handling</strong> - Comprehensive error management</li>
             <li>🔄 <strong>Validation Framework</strong> - Input validation and type checking</li>
             <li>📅 <strong>JSON Pipeline Editor</strong> - Interactive configuration editing</li>

@@ -8,9 +8,18 @@ const { join } = require('path');
  */
 
 // Environment configuration
-const LOGGING_ENABLED = process.env.LOGGING_ENABLED === 'true';
+const OBSIDIAN_AUDIO_INBOX_LOGLEVEL = process.env.OBSIDIAN_AUDIO_INBOX_LOGLEVEL || 'warn';
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isProduction = NODE_ENV === 'production';
+
+// Validate log level
+const validLogLevels = ['error', 'warn', 'info', 'debug'];
+const logLevel = validLogLevels.includes(OBSIDIAN_AUDIO_INBOX_LOGLEVEL.toLowerCase()) 
+  ? OBSIDIAN_AUDIO_INBOX_LOGLEVEL.toLowerCase() 
+  : 'warn';
+
+// Determine if build logging is enabled (for esbuild itself)
+const buildLoggingEnabled = ['debug', 'info'].includes(logLevel);
 
 // External dependencies that should not be bundled
 const EXTERNAL_DEPS = [
@@ -49,15 +58,15 @@ const buildConfig = {
  * 
  * Project: Obsidian Audio Inbox Plugin
  * Build Mode: ${NODE_ENV}
+ * Log Level: ${logLevel}
  * Generated: ${new Date().toISOString()}
- * Logging: ${LOGGING_ENABLED ? 'Enabled' : 'Disabled'}
  */`
   },
   
   // Environment variable injection
   define: {
     'process.env.NODE_ENV': JSON.stringify(NODE_ENV),
-    'process.env.LOGGING_ENABLED': JSON.stringify(LOGGING_ENABLED),
+    'process.env.OBSIDIAN_AUDIO_INBOX_LOGLEVEL': JSON.stringify(logLevel),
     'global': 'globalThis'
   },
   
@@ -65,7 +74,7 @@ const buildConfig = {
   bundle: true,
   write: true,
   metafile: true,
-  logLevel: LOGGING_ENABLED ? 'info' : 'warning'
+  logLevel: buildLoggingEnabled ? 'info' : 'warning'
 };
 
 /**
@@ -84,12 +93,12 @@ async function copyAdditionalFiles() {
     try {
       if (existsSync(srcPath)) {
         copyFileSync(srcPath, destPath);
-        if (LOGGING_ENABLED) {
+        if (buildLoggingEnabled) {
           console.log(`✓ Copied ${file.src}`);
         }
       } else if (file.required) {
         throw new Error(`Required file ${file.src} not found`);
-      } else if (LOGGING_ENABLED) {
+      } else if (buildLoggingEnabled) {
         console.log(`⚠ Optional file ${file.src} not found, skipping`);
       }
     } catch (error) {
@@ -107,7 +116,7 @@ async function copyAdditionalFiles() {
 async function performBuild() {
   console.log(`🔨 Building Obsidian Audio Inbox Plugin (${NODE_ENV} mode)`);
   
-  if (LOGGING_ENABLED) {
+  if (buildLoggingEnabled) {
     console.log('📋 Build Configuration:');
     console.log(`   Entry: ${buildConfig.entryPoints[0]}`);
     console.log(`   Output: ${buildConfig.outfile}`);
@@ -116,6 +125,7 @@ async function performBuild() {
     console.log(`   Format: ${buildConfig.format}`);
     console.log(`   Minify: ${buildConfig.minify}`);
     console.log(`   Tree Shaking: ${buildConfig.treeShaking}`);
+    console.log(`   Log Level: ${logLevel}`);
     console.log(`   External Deps: ${EXTERNAL_DEPS.length} packages`);
   }
 
@@ -128,7 +138,7 @@ async function performBuild() {
     // Success logging
     console.log('✅ Build completed successfully!');
     
-    if (LOGGING_ENABLED && result.metafile) {
+    if (buildLoggingEnabled && result.metafile) {
       console.log('📊 Build Statistics:');
       const outputs = Object.keys(result.metafile.outputs);
       outputs.forEach(output => {
@@ -182,7 +192,7 @@ async function main() {
   console.log('🚀 Obsidian Audio Inbox Plugin Build System');
   console.log(`📅 Build started at: ${new Date().toLocaleString()}`);
   console.log(`🌍 Environment: ${NODE_ENV}`);
-  console.log(`🔍 Logging: ${LOGGING_ENABLED ? 'Enabled' : 'Disabled'}`);
+  console.log(`📊 Log Level: ${logLevel.toUpperCase()}`);
   console.log('─'.repeat(50));
   
   try {
@@ -194,7 +204,7 @@ async function main() {
   } catch (error) {
     console.error('\n💥 Build process failed:', error.message);
     
-    if (LOGGING_ENABLED) {
+    if (buildLoggingEnabled) {
       console.error('Stack trace:', error.stack);
     }
     

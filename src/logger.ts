@@ -1,0 +1,295 @@
+/**
+ * Logging system for Audio Inbox plugin
+ * 
+ * This logging system is controlled entirely at build-time via the
+ * OBSIDIAN_AUDIO_INBOX_LOGLEVEL environment variable. No runtime
+ * configuration is needed or used.
+ */
+
+import { LogLevel, LogEntry, LoggerConfig } from './types';
+
+/**
+ * Build-time log level configuration
+ * This is injected by esbuild and cannot be changed at runtime
+ */
+declare const process: {
+    env: {
+        OBSIDIAN_AUDIO_INBOX_LOGLEVEL: string;
+    };
+};
+
+/**
+ * Parse log level from build-time environment variable
+ */
+function getBuildTimeLogLevel(): LogLevel {
+    const envLevel = process.env.OBSIDIAN_AUDIO_INBOX_LOGLEVEL?.toLowerCase();
+    
+    switch (envLevel) {
+        case 'error': return LogLevel.ERROR;
+        case 'warn': return LogLevel.WARN;
+        case 'info': return LogLevel.INFO;
+        case 'debug': return LogLevel.DEBUG;
+        default: return LogLevel.WARN; // Safe default
+    }
+}
+
+/**
+ * Logger configuration determined at build time
+ */
+const LOGGER_CONFIG: LoggerConfig = {
+    level: getBuildTimeLogLevel(),
+    includeTimestamp: true,
+    includeComponent: true,
+    prettyFormat: true
+};
+
+/**
+ * Log level hierarchy for threshold checking
+ */
+const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
+    [LogLevel.ERROR]: 0,
+    [LogLevel.WARN]: 1,
+    [LogLevel.INFO]: 2,
+    [LogLevel.DEBUG]: 3
+};
+
+/**
+ * Logger class with build-time configuration
+ */
+export class Logger {
+    private readonly component: string;
+    private readonly config: LoggerConfig;
+
+    constructor(component: string) {
+        this.component = component;
+        this.config = LOGGER_CONFIG;
+    }
+
+    /**
+     * Check if a log level should be output based on build-time configuration
+     */
+    private shouldLog(level: LogLevel): boolean {
+        const currentLevelValue = LOG_LEVEL_HIERARCHY[this.config.level];
+        const messageLevelValue = LOG_LEVEL_HIERARCHY[level];
+        return messageLevelValue <= currentLevelValue;
+    }
+
+    /**
+     * Format log message for output
+     */
+    private formatMessage(level: LogLevel, message: string, context?: any): string {
+        const parts: string[] = [];
+
+        // Timestamp
+        if (this.config.includeTimestamp) {
+            parts.push(new Date().toISOString());
+        }
+
+        // Component
+        if (this.config.includeComponent) {
+            parts.push(`[${this.component}]`);
+        }
+
+        // Level
+        parts.push(level.toUpperCase());
+
+        // Message
+        parts.push(message);
+
+        let formattedMessage = parts.join(' ');
+
+        // Add context if provided
+        if (context !== undefined) {
+            if (this.config.prettyFormat && typeof context === 'object') {
+                formattedMessage += '\n' + JSON.stringify(context, null, 2);
+            } else {
+                formattedMessage += ' ' + String(context);
+            }
+        }
+
+        return formattedMessage;
+    }
+
+    /**
+     * Create a log entry
+     */
+    private createLogEntry(level: LogLevel, message: string, context?: any): LogEntry {
+        return {
+            level,
+            component: this.component,
+            message,
+            context,
+            timestamp: new Date()
+        };
+    }
+
+    /**
+     * Log an error message
+     */
+    public error(message: string, context?: any): void {
+        if (this.shouldLog(LogLevel.ERROR)) {
+            const formattedMessage = this.formatMessage(LogLevel.ERROR, message, context);
+            console.error(formattedMessage);
+        }
+    }
+
+    /**
+     * Log a warning message
+     */
+    public warn(message: string, context?: any): void {
+        if (this.shouldLog(LogLevel.WARN)) {
+            const formattedMessage = this.formatMessage(LogLevel.WARN, message, context);
+            console.warn(formattedMessage);
+        }
+    }
+
+    /**
+     * Log an info message
+     */
+    public info(message: string, context?: any): void {
+        if (this.shouldLog(LogLevel.INFO)) {
+            const formattedMessage = this.formatMessage(LogLevel.INFO, message, context);
+            console.log(formattedMessage);
+        }
+    }
+
+    /**
+     * Log a debug message
+     */
+    public debug(message: string, context?: any): void {
+        if (this.shouldLog(LogLevel.DEBUG)) {
+            const formattedMessage = this.formatMessage(LogLevel.DEBUG, message, context);
+            console.log(formattedMessage);
+        }
+    }
+
+    /**
+     * Log with explicit level
+     */
+    public log(level: LogLevel, message: string, context?: any): void {
+        switch (level) {
+            case LogLevel.ERROR:
+                this.error(message, context);
+                break;
+            case LogLevel.WARN:
+                this.warn(message, context);
+                break;
+            case LogLevel.INFO:
+                this.info(message, context);
+                break;
+            case LogLevel.DEBUG:
+                this.debug(message, context);
+                break;
+        }
+    }
+
+    /**
+     * Get current log level (read-only, set at build time)
+     */
+    public getLogLevel(): LogLevel {
+        return this.config.level;
+    }
+
+    /**
+     * Check if a specific log level is enabled
+     */
+    public isLevelEnabled(level: LogLevel): boolean {
+        return this.shouldLog(level);
+    }
+
+    /**
+     * Get logger configuration (read-only, set at build time)
+     */
+    public getConfig(): Readonly<LoggerConfig> {
+        return { ...this.config };
+    }
+
+    /**
+     * Create a log entry without outputting it (for testing/inspection)
+     */
+    public createEntry(level: LogLevel, message: string, context?: any): LogEntry | null {
+        if (this.shouldLog(level)) {
+            return this.createLogEntry(level, message, context);
+        }
+        return null;
+    }
+}
+
+/**
+ * Create a logger instance for a specific component
+ */
+export function createLogger(component: string): Logger {
+    return new Logger(component);
+}
+
+/**
+ * Get the current build-time log level
+ */
+export function getBuildLogLevel(): LogLevel {
+    return LOGGER_CONFIG.level;
+}
+
+/**
+ * Check if logging is enabled for a specific level
+ */
+export function isLogLevelEnabled(level: LogLevel): boolean {
+    const currentLevelValue = LOG_LEVEL_HIERARCHY[LOGGER_CONFIG.level];
+    const checkLevelValue = LOG_LEVEL_HIERARCHY[level];
+    return checkLevelValue <= currentLevelValue;
+}
+
+/**
+ * Utility function to conditionally execute code only when logging is enabled
+ * This helps with performance by avoiding expensive operations when they won't be logged
+ */
+export function ifLogging<T>(level: LogLevel, fn: () => T): T | undefined {
+    if (isLogLevelEnabled(level)) {
+        return fn();
+    }
+    return undefined;
+}
+
+/**
+ * Default logger instance for general plugin use
+ */
+export const logger = createLogger('AudioInbox');
+
+/**
+ * Log level utilities for external use
+ */
+export const LogLevelUtils = {
+    /**
+     * Convert log level to numeric value
+     */
+    toNumber(level: LogLevel): number {
+        return LOG_LEVEL_HIERARCHY[level];
+    },
+
+    /**
+     * Compare two log levels
+     */
+    compare(a: LogLevel, b: LogLevel): number {
+        return LOG_LEVEL_HIERARCHY[a] - LOG_LEVEL_HIERARCHY[b];
+    },
+
+    /**
+     * Check if level A includes level B (A >= B)
+     */
+    includes(a: LogLevel, b: LogLevel): boolean {
+        return LOG_LEVEL_HIERARCHY[a] >= LOG_LEVEL_HIERARCHY[b];
+    },
+
+    /**
+     * Get all log levels
+     */
+    getAllLevels(): LogLevel[] {
+        return Object.values(LogLevel);
+    },
+
+    /**
+     * Get build-time configured level
+     */
+    getBuildLevel(): LogLevel {
+        return LOGGER_CONFIG.level;
+    }
+};

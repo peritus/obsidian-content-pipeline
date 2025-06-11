@@ -1,52 +1,55 @@
 import { Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, AudioInboxSettingTab } from './settings';
-import { AudioInboxSettings, LogLevel, PipelineConfiguration } from './types';
+import { AudioInboxSettings, PipelineConfiguration } from './types';
+import { createLogger, getBuildLogLevel } from './logger';
 
 /**
  * Main plugin class for Audio Inbox
  */
 export default class AudioInboxPlugin extends Plugin {
     settings!: AudioInboxSettings; // Definite assignment assertion since we load in onload
+    private logger = createLogger('Main');
 
     /**
      * Called when the plugin is loaded
      */
     async onload() {
-        console.log('Audio Inbox Plugin loaded!');
+        this.logger.info('Audio Inbox Plugin loaded!');
         
         // Load settings
         await this.loadSettings();
         
-        // Log initialization info based on log level
-        this.logInfo('Plugin initialization started');
-        this.logDebug('Settings loaded:', this.settings);
+        // Log initialization info
+        this.logger.info('Plugin initialization started');
+        this.logger.debug('Settings loaded:', this.settings);
+        this.logger.debug('Build-time log level:', getBuildLogLevel());
         
         // Add ribbon icon
         this.addRibbonIcon('microphone', 'Audio Inbox', () => {
-            this.logInfo('Audio Inbox ribbon clicked');
-            this.logDebug('Current settings:', {
+            this.logger.info('Audio Inbox ribbon clicked');
+            this.logger.debug('Current settings:', {
                 debugMode: this.settings.debugMode,
-                logLevel: this.getLogLevelString(),
+                buildLogLevel: getBuildLogLevel(),
                 categories: this.settings.defaultCategories,
                 version: this.settings.version
             });
             
             // Show a quick status message
-            this.showNotice(`Audio Inbox: Debug=${this.settings.debugMode}, Level=${this.getLogLevelString()}`);
+            this.showNotice(`Audio Inbox: Debug=${this.settings.debugMode}, Log=${getBuildLogLevel().toUpperCase()}`);
         });
 
         // Register settings tab
         this.addSettingTab(new AudioInboxSettingTab(this.app, this));
 
-        this.logInfo('Audio Inbox Plugin initialization complete');
-        this.logDebug('Type system initialized with comprehensive interfaces');
+        this.logger.info('Audio Inbox Plugin initialization complete');
+        this.logger.debug('Type system and logging initialized');
     }
 
     /**
      * Called when the plugin is unloaded
      */
     onunload() {
-        this.logInfo('Audio Inbox Plugin unloaded');
+        this.logger.info('Audio Inbox Plugin unloaded');
     }
 
     /**
@@ -65,17 +68,17 @@ export default class AudioInboxPlugin extends Plugin {
             if (this.settings.pipelineConfig && this.settings.pipelineConfig !== '{}') {
                 try {
                     this.settings.parsedPipelineConfig = JSON.parse(this.settings.pipelineConfig) as PipelineConfiguration;
-                    this.logDebug('Pipeline configuration parsed successfully');
+                    this.logger.debug('Pipeline configuration parsed successfully');
                 } catch (error) {
-                    this.logError('Failed to parse pipeline configuration:', error);
+                    this.logger.error('Failed to parse pipeline configuration:', error);
                     this.settings.parsedPipelineConfig = undefined;
                 }
             }
             
-            this.logInfo('Settings loaded successfully');
-            this.logDebug('Loaded settings:', this.settings);
+            this.logger.info('Settings loaded successfully');
+            this.logger.debug('Loaded settings:', this.settings);
         } catch (error) {
-            this.logError('Failed to load settings, using defaults:', error);
+            this.logger.error('Failed to load settings, using defaults:', error);
             this.settings = Object.assign({}, DEFAULT_SETTINGS);
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
@@ -91,67 +94,11 @@ export default class AudioInboxPlugin extends Plugin {
             this.settings.lastSaved = new Date().toISOString();
             
             await this.saveData(this.settings);
-            this.logInfo('Settings saved successfully');
-            this.logDebug('Saved settings:', this.settings);
+            this.logger.info('Settings saved successfully');
+            this.logger.debug('Saved settings:', this.settings);
         } catch (error) {
-            this.logError('Failed to save settings:', error);
+            this.logger.error('Failed to save settings:', error);
             throw error;
-        }
-    }
-
-    /**
-     * Get current log level as string
-     */
-    private getLogLevelString(): string {
-        switch (this.settings.logLevel) {
-            case LogLevel.ERROR: return 'ERROR';
-            case LogLevel.WARN: return 'WARN';
-            case LogLevel.INFO: return 'INFO';
-            case LogLevel.DEBUG: return 'DEBUG';
-            default: return 'INFO';
-        }
-    }
-
-    /**
-     * Check if a log level should be output
-     */
-    private shouldLog(level: LogLevel): boolean {
-        return level <= this.settings.logLevel;
-    }
-
-    /**
-     * Log an error message
-     */
-    private logError(message: string, ...args: any[]): void {
-        if (this.shouldLog(LogLevel.ERROR)) {
-            console.error(`[Audio Inbox] ERROR: ${message}`, ...args);
-        }
-    }
-
-    /**
-     * Log a warning message
-     */
-    private logWarn(message: string, ...args: any[]): void {
-        if (this.shouldLog(LogLevel.WARN)) {
-            console.warn(`[Audio Inbox] WARN: ${message}`, ...args);
-        }
-    }
-
-    /**
-     * Log an info message
-     */
-    private logInfo(message: string, ...args: any[]): void {
-        if (this.shouldLog(LogLevel.INFO)) {
-            console.log(`[Audio Inbox] INFO: ${message}`, ...args);
-        }
-    }
-
-    /**
-     * Log a debug message
-     */
-    private logDebug(message: string, ...args: any[]): void {
-        if (this.shouldLog(LogLevel.DEBUG)) {
-            console.log(`[Audio Inbox] DEBUG: ${message}`, ...args);
         }
     }
 
@@ -185,9 +132,23 @@ export default class AudioInboxPlugin extends Plugin {
     }
 
     /**
-     * Get current log level
+     * Get build-time log level (read-only)
      */
-    public getLogLevel(): LogLevel {
-        return this.settings.logLevel;
+    public getBuildLogLevel(): string {
+        return getBuildLogLevel().toUpperCase();
+    }
+
+    /**
+     * Get logger instance for this plugin
+     */
+    public getLogger() {
+        return this.logger;
+    }
+
+    /**
+     * Create a logger for a specific component
+     */
+    public createComponentLogger(component: string) {
+        return createLogger(component);
     }
 }
