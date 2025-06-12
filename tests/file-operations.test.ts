@@ -8,6 +8,14 @@ import { FileOperations, FileUtils } from '../src/core/file-operations';
 import { PathContext, FileInfo } from '../src/types';
 import { createMockContext, cleanup } from './setup';
 
+// Mock normalizePath and use factory functions for TFile and TFolder
+jest.mock('obsidian', () => ({
+    ...jest.requireActual('obsidian'),
+    normalizePath: jest.fn((path: string) => path),
+    TFile: jest.fn(),
+    TFolder: jest.fn()
+}));
+
 // Extended mock for Obsidian file system
 const mockVault = {
     read: jest.fn(),
@@ -25,8 +33,13 @@ const mockApp = {
     vault: mockVault
 };
 
-// Mock TFile and TFolder
+// Mock TFile and TFolder with all required properties
 class MockTFile {
+    public basename: string;
+    public extension: string;
+    public vault: any;
+    public parent: any;
+
     constructor(
         public name: string,
         public path: string,
@@ -35,24 +48,34 @@ class MockTFile {
             mtime: Date.now(),
             ctime: Date.now()
         }
-    ) {}
+    ) {
+        // Extract basename (filename without extension)
+        this.basename = name.includes('.') ? name.substring(0, name.lastIndexOf('.')) : name;
+        
+        // Extract extension
+        this.extension = name.includes('.') ? name.substring(name.lastIndexOf('.')) : '';
+        
+        // Set vault reference
+        this.vault = mockVault;
+        
+        // Set parent (simplified - just null for now)
+        this.parent = null;
+    }
 }
 
 class MockTFolder {
+    public vault: any;
+    public parent: any;
+
     constructor(
         public name: string,
         public path: string,
         public children: (MockTFile | MockTFolder)[] = []
-    ) {}
+    ) {
+        this.vault = mockVault;
+        this.parent = null;
+    }
 }
-
-// Mock normalizePath
-jest.mock('obsidian', () => ({
-    ...jest.requireActual('obsidian'),
-    normalizePath: jest.fn((path: string) => path),
-    TFile: MockTFile,
-    TFolder: MockTFolder
-}));
 
 describe('FileOperations', () => {
     let fileOps: FileOperations;
