@@ -1,0 +1,82 @@
+/**
+ * Tests for FileUtils utility functions
+ */
+
+import { FileUtils } from '../../src/core/file-operations';
+import { FileInfo } from '../../src/types';
+import { cleanup } from '../setup';
+
+describe('FileUtils', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    describe('isVaultSafePath', () => {
+        it('should accept safe paths', () => {
+            expect(FileUtils.isVaultSafePath('inbox/audio/file.mp3')).toBe(true);
+            expect(FileUtils.isVaultSafePath('folder/subfolder/file.md')).toBe(true);
+            expect(FileUtils.isVaultSafePath('file.txt')).toBe(true);
+        });
+
+        it('should reject unsafe paths', () => {
+            expect(FileUtils.isVaultSafePath('../outside/vault')).toBe(false);
+            expect(FileUtils.isVaultSafePath('/absolute/path')).toBe(false);
+            expect(FileUtils.isVaultSafePath('')).toBe(false);
+            expect(FileUtils.isVaultSafePath('path/../traversal')).toBe(false);
+        });
+    });
+
+    describe('processable extensions', () => {
+        it('should identify processable extensions', () => {
+            const processable = ['.mp3', '.wav', '.m4a', '.mp4', '.md', '.txt'];
+            const nonProcessable = ['.jpg', '.png', '.pdf', '.doc'];
+
+            processable.forEach(ext => {
+                expect(FileUtils.isProcessableExtension(ext)).toBe(true);
+            });
+
+            nonProcessable.forEach(ext => {
+                expect(FileUtils.isProcessableExtension(ext)).toBe(false);
+            });
+        });
+
+        it('should return correct processable extensions list', () => {
+            const extensions = FileUtils.getProcessableExtensions();
+            expect(extensions).toContain('.mp3');
+            expect(extensions).toContain('.md');
+            expect(extensions).toContain('.txt');
+            expect(extensions).toHaveLength(6);
+        });
+    });
+
+    describe('generateTimestamp', () => {
+        it('should generate valid ISO timestamp', () => {
+            const timestamp = FileUtils.generateTimestamp();
+            expect(timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+            expect(new Date(timestamp).toISOString()).toBe(timestamp);
+        });
+    });
+
+    describe('createProcessingContext', () => {
+        it('should create valid processing context', () => {
+            const fileInfo: FileInfo = {
+                name: 'test.mp3',
+                path: 'inbox/audio/tasks/test.mp3',
+                size: 1000,
+                extension: '.mp3',
+                category: 'tasks',
+                isProcessable: true,
+                lastModified: new Date(),
+                mimeType: 'audio/mpeg'
+            };
+
+            const context = FileUtils.createProcessingContext(fileInfo, 'transcribe');
+
+            expect(context.category).toBe('tasks');
+            expect(context.filename).toBe('test');
+            expect(context.stepId).toBe('transcribe');
+            expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+            expect(context.date).toMatch(/\d{4}-\d{2}-\d{2}/);
+        });
+    });
+});
