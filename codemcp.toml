@@ -34,7 +34,7 @@ npm_install = ["npm", "install"]
 
 
 # Run tests
-npm_test = ["npm", "test"]
+npm_test = ["npm", "test", '--', '--json']
 
 # bump version
 bump_version_patch = ["bump-my-version", "bump", "patch", "-vv"]
