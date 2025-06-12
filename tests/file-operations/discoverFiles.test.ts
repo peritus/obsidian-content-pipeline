@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { cleanup } from '../setup';
 
 describe('FileOperations - discoverFiles', () => {
@@ -19,9 +19,9 @@ describe('FileOperations - discoverFiles', () => {
     });
 
     it('should discover files in single path', async () => {
-        const mockFile1 = new MockTFile('file1.md', 'inbox/tasks/file1.md');
-        const mockFile2 = new MockTFile('file2.md', 'inbox/tasks/file2.md');
-        const mockFolder = new MockTFolder('tasks', 'inbox/tasks', [mockFile1, mockFile2]);
+        const mockFile1 = createMockTFile('file1.md', 'inbox/tasks/file1.md');
+        const mockFile2 = createMockTFile('file2.md', 'inbox/tasks/file2.md');
+        const mockFolder = createMockTFolder('tasks', 'inbox/tasks', [mockFile1, mockFile2]);
 
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
         mockVault.getMarkdownFiles.mockReturnValue([mockFile1, mockFile2]);
@@ -46,10 +46,10 @@ describe('FileOperations - discoverFiles', () => {
     });
 
     it('should filter by extensions', async () => {
-        const mdFile = new MockTFile('file.md', 'folder/file.md');
-        const txtFile = new MockTFile('file.txt', 'folder/file.txt');
-        const mp3File = new MockTFile('file.mp3', 'folder/file.mp3');
-        const mockFolder = new MockTFolder('folder', 'folder', [mdFile, txtFile, mp3File]);
+        const mdFile = createMockTFile('file.md', 'folder/file.md');
+        const txtFile = createMockTFile('file.txt', 'folder/file.txt');
+        const mp3File = createMockTFile('file.mp3', 'folder/file.mp3');
+        const mockFolder = createMockTFolder('folder', 'folder', [mdFile, txtFile, mp3File]);
 
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
         mockVault.getMarkdownFiles.mockReturnValue([mdFile]);
@@ -64,9 +64,9 @@ describe('FileOperations - discoverFiles', () => {
     });
 
     it('should sort files correctly', async () => {
-        const file1 = new MockTFile('b.md', 'b.md', { size: 100, mtime: 1000, ctime: 1000 });
-        const file2 = new MockTFile('a.md', 'a.md', { size: 200, mtime: 2000, ctime: 2000 });
-        const mockFolder = new MockTFolder('folder', 'folder', [file1, file2]);
+        const file1 = createMockTFile('b.md', 'b.md', { size: 100, mtime: 1000, ctime: 1000 });
+        const file2 = createMockTFile('a.md', 'a.md', { size: 200, mtime: 2000, ctime: 2000 });
+        const mockFolder = createMockTFolder('folder', 'folder', [file1, file2]);
 
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
         mockVault.getMarkdownFiles.mockReturnValue([file1, file2]);
@@ -85,9 +85,9 @@ describe('FileOperations - discoverFiles', () => {
 
     it('should limit results', async () => {
         const files = Array.from({ length: 10 }, (_, i) => 
-            new MockTFile(`file${i}.md`, `file${i}.md`)
+            createMockTFile(`file${i}.md`, `file${i}.md`)
         );
-        const mockFolder = new MockTFolder('folder', 'folder', files);
+        const mockFolder = createMockTFolder('folder', 'folder', files);
 
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
         mockVault.getMarkdownFiles.mockReturnValue(files);

@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { cleanup } from '../setup';
 
 describe('FileOperations - readFile', () => {
@@ -19,7 +19,7 @@ describe('FileOperations - readFile', () => {
     });
 
     it('should read file content successfully', async () => {
-        const mockFile = new MockTFile('test.md', 'test.md');
+        const mockFile = createMockTFile('test.md', 'test.md');
         const mockContent = 'file content';
 
         mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
@@ -39,14 +39,14 @@ describe('FileOperations - readFile', () => {
     });
 
     it('should throw error if path is a directory', async () => {
-        const mockFolder = new MockTFolder('folder', 'folder');
+        const mockFolder = createMockTFolder('folder', 'folder');
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
 
         await expect(fileOps.readFile('folder')).rejects.toThrow('Path is not a file');
     });
 
     it('should handle vault read errors', async () => {
-        const mockFile = new MockTFile('test.md', 'test.md');
+        const mockFile = createMockTFile('test.md', 'test.md');
         mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
         mockVault.read.mockRejectedValue(new Error('Read failed'));
 

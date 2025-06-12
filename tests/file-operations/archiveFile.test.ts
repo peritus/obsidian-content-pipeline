@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { createMockContext, cleanup } from '../setup';
 
 describe('FileOperations - archiveFile', () => {
@@ -19,8 +19,8 @@ describe('FileOperations - archiveFile', () => {
     });
 
     it('should archive file successfully', async () => {
-        const sourceFile = new MockTFile('source.md', 'inbox/source.md');
-        const archivedFile = new MockTFile('source.md', 'archive/tasks/source.md');
+        const sourceFile = createMockTFile('source.md', 'inbox/source.md');
+        const archivedFile = createMockTFile('source.md', 'archive/tasks/source.md');
         const context = createMockContext({ category: 'tasks', stepId: 'transcribe' });
 
         mockVault.getAbstractFileByPath
@@ -29,7 +29,7 @@ describe('FileOperations - archiveFile', () => {
             .mockReturnValueOnce(null) // Archive file doesn't exist
             .mockReturnValueOnce(archivedFile); // Final archived file
 
-        const mockFolder = new MockTFolder('archive', 'archive/transcribe/tasks');
+        const mockFolder = createMockTFolder('archive', 'archive/transcribe/tasks');
         mockVault.createFolder.mockResolvedValue(mockFolder);
         mockVault.rename.mockResolvedValue(archivedFile);
 
@@ -59,7 +59,7 @@ describe('FileOperations - archiveFile', () => {
     });
 
     it('should handle incomplete archive path resolution', async () => {
-        const sourceFile = new MockTFile('source.md', 'source.md');
+        const sourceFile = createMockTFile('source.md', 'source.md');
         mockVault.getAbstractFileByPath.mockReturnValue(sourceFile);
 
         const incompleteContext = {}; // Missing required variables

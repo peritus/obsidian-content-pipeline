@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { cleanup } from '../setup';
 
 describe('FileOperations - ensureDirectory', () => {
@@ -19,7 +19,7 @@ describe('FileOperations - ensureDirectory', () => {
     });
 
     it('should return existing directory', async () => {
-        const mockFolder = new MockTFolder('existing', 'existing');
+        const mockFolder = createMockTFolder('existing', 'existing');
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
 
         const result = await fileOps.ensureDirectory('existing');
@@ -29,7 +29,7 @@ describe('FileOperations - ensureDirectory', () => {
     });
 
     it('should create new directory', async () => {
-        const mockFolder = new MockTFolder('new', 'new');
+        const mockFolder = createMockTFolder('new', 'new');
         mockVault.getAbstractFileByPath.mockReturnValue(null);
         mockVault.createFolder.mockResolvedValue(mockFolder);
 
@@ -40,7 +40,7 @@ describe('FileOperations - ensureDirectory', () => {
     });
 
     it('should throw error if path exists as file', async () => {
-        const mockFile = new MockTFile('file.md', 'file.md');
+        const mockFile = createMockTFile('file.md', 'file.md');
         mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 
         await expect(fileOps.ensureDirectory('file.md'))

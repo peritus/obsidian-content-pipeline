@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { cleanup } from '../setup';
 
 describe('FileOperations - File Existence and Deletion', () => {
@@ -20,7 +20,7 @@ describe('FileOperations - File Existence and Deletion', () => {
 
     describe('file existence checks', () => {
         it('should check file existence correctly', () => {
-            const mockFile = new MockTFile('exists.md', 'exists.md');
+            const mockFile = createMockTFile('exists.md', 'exists.md');
             mockVault.getAbstractFileByPath
                 .mockReturnValueOnce(mockFile)
                 .mockReturnValueOnce(null);
@@ -30,7 +30,7 @@ describe('FileOperations - File Existence and Deletion', () => {
         });
 
         it('should check directory existence correctly', () => {
-            const mockFolder = new MockTFolder('exists', 'exists');
+            const mockFolder = createMockTFolder('exists', 'exists');
             mockVault.getAbstractFileByPath
                 .mockReturnValueOnce(mockFolder)
                 .mockReturnValueOnce(null);
@@ -42,7 +42,7 @@ describe('FileOperations - File Existence and Deletion', () => {
 
     describe('deleteFile', () => {
         it('should delete file successfully', async () => {
-            const mockFile = new MockTFile('delete.md', 'delete.md');
+            const mockFile = createMockTFile('delete.md', 'delete.md');
             mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
             mockVault.delete.mockResolvedValue(undefined);
 
@@ -59,7 +59,7 @@ describe('FileOperations - File Existence and Deletion', () => {
         });
 
         it('should handle deletion errors', async () => {
-            const mockFile = new MockTFile('error.md', 'error.md');
+            const mockFile = createMockTFile('error.md', 'error.md');
             mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
             mockVault.delete.mockRejectedValue(new Error('Delete failed'));
 

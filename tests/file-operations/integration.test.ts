@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { cleanup } from '../setup';
 
 describe('FileOperations - getFileInfo and Integration', () => {
@@ -20,7 +20,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
 
     describe('getFileInfo', () => {
         it('should extract correct file information', () => {
-            const mockFile = new MockTFile(
+            const mockFile = createMockTFile(
                 'recording.mp3',
                 'inbox/audio/tasks/recording.mp3',
                 { size: 5000, mtime: 1640995200000, ctime: 1640995200000 }
@@ -48,14 +48,14 @@ describe('FileOperations - getFileInfo and Integration', () => {
             const expectedCategories = ['work-meetings', 'personal', 'thoughts', 'ideas'];
 
             paths.forEach((path, index) => {
-                const mockFile = new MockTFile('file', path);
+                const mockFile = createMockTFile('file', path);
                 const fileInfo = fileOps.getFileInfo(mockFile);
                 expect(fileInfo.category).toBe(expectedCategories[index]);
             });
         });
 
         it('should default to uncategorized for unknown paths', () => {
-            const mockFile = new MockTFile('file.md', 'random/path/file.md');
+            const mockFile = createMockTFile('file.md', 'random/path/file.md');
             const fileInfo = fileOps.getFileInfo(mockFile);
             expect(fileInfo.category).toBe('uncategorized');
         });
@@ -66,9 +66,9 @@ describe('FileOperations - getFileInfo and Integration', () => {
             // Mock a complete workflow: read -> process -> write -> archive
             const sourceContent = 'original content';
             const processedContent = 'processed content';
-            const sourceFile = new MockTFile('input.md', 'inbox/input.md');
-            const outputFile = new MockTFile('output.md', 'results/output.md');
-            const archivedFile = new MockTFile('input.md', 'archive/input.md');
+            const sourceFile = createMockTFile('input.md', 'inbox/input.md');
+            const outputFile = createMockTFile('output.md', 'results/output.md');
+            const archivedFile = createMockTFile('input.md', 'archive/input.md');
 
             // Setup mocks for read
             mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
@@ -80,7 +80,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
 
             mockVault.read.mockResolvedValue(sourceContent);
             mockVault.create.mockResolvedValue(outputFile);
-            mockVault.createFolder.mockResolvedValue(new MockTFolder('archive', 'archive'));
+            mockVault.createFolder.mockResolvedValue(createMockTFolder('archive', 'archive'));
             mockVault.rename.mockResolvedValue(archivedFile);
 
             // Step 1: Read source file
@@ -105,7 +105,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
             await expect(fileOps.readFile('nonexistent.md')).rejects.toThrow();
 
             // But writing should still work
-            mockVault.create.mockResolvedValue(new MockTFile('new.md', 'new.md'));
+            mockVault.create.mockResolvedValue(createMockTFile('new.md', 'new.md'));
             const writeResult = await fileOps.writeFile('new.md', 'content');
             expect(writeResult.success).toBe(true);
         });

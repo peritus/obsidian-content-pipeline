@@ -3,7 +3,7 @@
  */
 
 import { FileOperations } from '../../src/core/file-operations';
-import { mockApp, mockVault, MockTFile, MockTFolder, resetMocks } from './setup';
+import { mockApp, mockVault, createMockTFile, createMockTFolder, resetMocks } from './setup';
 import { cleanup } from '../setup';
 
 describe('FileOperations - writeFile', () => {
@@ -19,7 +19,7 @@ describe('FileOperations - writeFile', () => {
     });
 
     it('should create new file successfully', async () => {
-        const mockFile = new MockTFile('new.md', 'new.md');
+        const mockFile = createMockTFile('new.md', 'new.md');
         mockVault.getAbstractFileByPath.mockReturnValue(null);
         mockVault.create.mockResolvedValue(mockFile);
 
@@ -32,7 +32,7 @@ describe('FileOperations - writeFile', () => {
     });
 
     it('should modify existing file when overwrite is enabled', async () => {
-        const mockFile = new MockTFile('existing.md', 'existing.md');
+        const mockFile = createMockTFile('existing.md', 'existing.md');
         mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
         mockVault.modify.mockResolvedValue(undefined);
 
@@ -43,7 +43,7 @@ describe('FileOperations - writeFile', () => {
     });
 
     it('should fail if file exists and overwrite is disabled', async () => {
-        const mockFile = new MockTFile('existing.md', 'existing.md');
+        const mockFile = createMockTFile('existing.md', 'existing.md');
         mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
 
         await expect(fileOps.writeFile('existing.md', 'content', { overwrite: false }))
@@ -55,8 +55,8 @@ describe('FileOperations - writeFile', () => {
             .mockReturnValueOnce(null) // Directory doesn't exist
             .mockReturnValueOnce(null); // File doesn't exist
         
-        const mockFolder = new MockTFolder('parent', 'parent');
-        const mockFile = new MockTFile('file.md', 'parent/file.md');
+        const mockFolder = createMockTFolder('parent', 'parent');
+        const mockFile = createMockTFile('file.md', 'parent/file.md');
         
         mockVault.createFolder.mockResolvedValue(mockFolder);
         mockVault.create.mockResolvedValue(mockFile);
