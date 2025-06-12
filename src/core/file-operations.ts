@@ -78,6 +78,20 @@ export interface ArchiveResult {
 }
 
 /**
+ * Folder structure creation result
+ */
+export interface FolderStructureResult {
+    /** Whether the operation was successful */
+    success: boolean;
+    /** Number of folders created */
+    foldersCreated: number;
+    /** List of created folder paths */
+    createdPaths: string[];
+    /** Any errors that occurred */
+    errors: string[];
+}
+
+/**
  * File operations class for vault-aware file management
  */
 export class FileOperations {
@@ -88,6 +102,255 @@ export class FileOperations {
         this.app = app;
         this.vault = app.vault;
         logger.debug('FileOperations initialized');
+    }
+
+    /**
+     * Create the complete inbox folder structure with categories
+     */
+    async createInboxStructure(categories: string[] = ['tasks', 'thoughts', 'uncategorized']): Promise<FolderStructureResult> {
+        const result: FolderStructureResult = {
+            success: true,
+            foldersCreated: 0,
+            createdPaths: [],
+            errors: []
+        };
+
+        try {
+            logger.info('Creating inbox folder structure', { categories });
+
+            // Define the base folder structure
+            const baseFolders = [
+                'inbox/audio',
+                'inbox/transcripts', 
+                'inbox/results',
+                'inbox/summary',
+                'inbox/templates',
+                'inbox/archive/transcribe',
+                'inbox/archive/process',
+                'inbox/archive/summarize'
+            ];
+
+            // Create base folders
+            for (const folder of baseFolders) {
+                try {
+                    await this.ensureDirectory(folder);
+                    result.foldersCreated++;
+                    result.createdPaths.push(folder);
+                    logger.debug(`Created base folder: ${folder}`);
+                } catch (error) {
+                    const errorMsg = `Failed to create ${folder}: ${error instanceof Error ? error.message : String(error)}`;
+                    result.errors.push(errorMsg);
+                    logger.warn(errorMsg);
+                }
+            }
+
+            // Create category subfolders (except for templates which doesn't need them)
+            const categorizedFolders = [
+                'inbox/audio',
+                'inbox/transcripts',
+                'inbox/results', 
+                'inbox/summary',
+                'inbox/archive/transcribe',
+                'inbox/archive/process',
+                'inbox/archive/summarize'
+            ];
+
+            for (const baseFolder of categorizedFolders) {
+                for (const category of categories) {
+                    const categoryPath = `${baseFolder}/${category}`;
+                    try {
+                        await this.ensureDirectory(categoryPath);
+                        result.foldersCreated++;
+                        result.createdPaths.push(categoryPath);
+                        logger.debug(`Created category folder: ${categoryPath}`);
+                    } catch (error) {
+                        const errorMsg = `Failed to create ${categoryPath}: ${error instanceof Error ? error.message : String(error)}`;
+                        result.errors.push(errorMsg);
+                        logger.warn(errorMsg);
+                    }
+                }
+            }
+
+            // If there were errors but some folders were created, mark as partial success
+            if (result.errors.length > 0) {
+                result.success = result.foldersCreated > 0;
+            }
+
+            logger.info(`Inbox structure creation complete: ${result.foldersCreated} folders created, ${result.errors.length} errors`);
+            return result;
+
+        } catch (error) {
+            const errorMsg = `Failed to create inbox structure: ${error instanceof Error ? error.message : String(error)}`;
+            result.errors.push(errorMsg);
+            result.success = false;
+            logger.error(errorMsg, error);
+            return result;
+        }
+    }
+
+    /**
+     * Create folders for a specific category across all pipeline stages
+     */
+    async createCategoryFolders(category: string): Promise<FolderStructureResult> {
+        const result: FolderStructureResult = {
+            success: true,
+            foldersCreated: 0,
+            createdPaths: [],
+            errors: []
+        };
+
+        try {
+            logger.info(`Creating category folders for: ${category}`);
+
+            // Define category folder paths
+            const categoryFolders = [
+                `inbox/audio/${category}`,
+                `inbox/transcripts/${category}`,
+                `inbox/results/${category}`,
+                `inbox/summary/${category}`,
+                `inbox/archive/transcribe/${category}`,
+                `inbox/archive/process/${category}`,
+                `inbox/archive/summarize/${category}`
+            ];
+
+            // Create each category folder
+            for (const folder of categoryFolders) {
+                try {
+                    await this.ensureDirectory(folder);
+                    result.foldersCreated++;
+                    result.createdPaths.push(folder);
+                    logger.debug(`Created category folder: ${folder}`);
+                } catch (error) {
+                    const errorMsg = `Failed to create ${folder}: ${error instanceof Error ? error.message : String(error)}`;
+                    result.errors.push(errorMsg);
+                    logger.warn(errorMsg);
+                }
+            }
+
+            result.success = result.errors.length === 0;
+            logger.info(`Category folder creation complete: ${result.foldersCreated} folders created, ${result.errors.length} errors`);
+            return result;
+
+        } catch (error) {
+            const errorMsg = `Failed to create category folders: ${error instanceof Error ? error.message : String(error)}`;
+            result.errors.push(errorMsg);
+            result.success = false;
+            logger.error(errorMsg, error);
+            return result;
+        }
+    }
+
+    /**
+     * Create folders for entry point steps only (minimal setup)
+     */
+    async createEntryPointFolders(categories: string[] = ['tasks', 'thoughts', 'uncategorized']): Promise<FolderStructureResult> {
+        const result: FolderStructureResult = {
+            success: true,
+            foldersCreated: 0,
+            createdPaths: [],
+            errors: []
+        };
+
+        try {
+            logger.info('Creating entry point folders', { categories });
+
+            // Create the main inbox directory first
+            await this.ensureDirectory('inbox');
+            result.foldersCreated++;
+            result.createdPaths.push('inbox');
+
+            // Create audio folders for each category (entry point for audio pipeline)
+            for (const category of categories) {
+                const audioFolder = `inbox/audio/${category}`;
+                try {
+                    await this.ensureDirectory(audioFolder);
+                    result.foldersCreated++;
+                    result.createdPaths.push(audioFolder);
+                    logger.debug(`Created entry point folder: ${audioFolder}`);
+                } catch (error) {
+                    const errorMsg = `Failed to create ${audioFolder}: ${error instanceof Error ? error.message : String(error)}`;
+                    result.errors.push(errorMsg);
+                    logger.warn(errorMsg);
+                }
+            }
+
+            result.success = result.errors.length === 0;
+            logger.info(`Entry point folder creation complete: ${result.foldersCreated} folders created, ${result.errors.length} errors`);
+            return result;
+
+        } catch (error) {
+            const errorMsg = `Failed to create entry point folders: ${error instanceof Error ? error.message : String(error)}`;
+            result.errors.push(errorMsg);
+            result.success = false;
+            logger.error(errorMsg, error);
+            return result;
+        }
+    }
+
+    /**
+     * Ensure directory for a resolved path pattern
+     */
+    async ensureDirectoryForPattern(
+        pathPattern: string, 
+        context: PathContext
+    ): Promise<TFolder> {
+        // Resolve the path pattern
+        const pathResult = PathResolver.resolvePath(pathPattern, context);
+        
+        if (!pathResult.isComplete) {
+            throw ErrorFactory.fileSystem(
+                `Cannot resolve path pattern: missing variables ${pathResult.missingVariables.join(', ')}`,
+                'Cannot create directory for incomplete path',
+                { pathPattern, context, missingVariables: pathResult.missingVariables },
+                ['Provide all required variables', 'Check path pattern configuration']
+            );
+        }
+
+        const resolvedPath = pathResult.resolvedPath;
+        
+        // If it's a file path, get the directory part
+        const directoryPath = PathUtils.isDirectory(resolvedPath) 
+            ? resolvedPath 
+            : PathUtils.getDirectory(resolvedPath);
+
+        if (!directoryPath) {
+            throw ErrorFactory.fileSystem(
+                'Cannot determine directory from path pattern',
+                'Path pattern does not resolve to a valid directory',
+                { pathPattern, resolvedPath },
+                ['Check path pattern format', 'Ensure pattern includes directory structure']
+            );
+        }
+
+        return await this.ensureDirectory(directoryPath);
+    }
+
+    /**
+     * Check if the inbox structure exists
+     */
+    checkInboxStructure(): { exists: boolean; missingFolders: string[] } {
+        const requiredFolders = [
+            'inbox',
+            'inbox/audio',
+            'inbox/transcripts',
+            'inbox/results',
+            'inbox/summary',
+            'inbox/templates',
+            'inbox/archive'
+        ];
+
+        const missingFolders: string[] = [];
+
+        for (const folder of requiredFolders) {
+            if (!this.directoryExists(folder)) {
+                missingFolders.push(folder);
+            }
+        }
+
+        return {
+            exists: missingFolders.length === 0,
+            missingFolders
+        };
     }
 
     /**
