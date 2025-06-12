@@ -18,7 +18,7 @@ export function validatePath(path: string, context: string): true {
     // Check if path is empty or only whitespace
     if (!path || path.trim().length === 0) {
         throw ErrorFactory.validation(
-            `Empty path provided for ${context}`,
+            `Empty path provided for ${context} - ${context} cannot be empty`,
             `${context} cannot be empty`,
             { path, context },
             ['Provide a valid file path', 'Check your configuration']
@@ -30,7 +30,7 @@ export function validatePath(path: string, context: string): true {
     // Check for absolute paths (security concern)
     if (trimmedPath.startsWith('/') || /^[A-Z]:\\/.test(trimmedPath)) {
         throw ErrorFactory.validation(
-            `Absolute path not allowed: ${trimmedPath}`,
+            `Absolute path not allowed: ${trimmedPath} - ${context} must be relative to vault root`,
             `${context} must be relative to vault root`,
             { path: trimmedPath, context },
             ['Use relative paths only', 'Remove leading / or drive letter', 'Paths should be relative to vault root']
@@ -40,7 +40,7 @@ export function validatePath(path: string, context: string): true {
     // Check for dangerous path traversal
     if (trimmedPath.includes('../') || trimmedPath.includes('..\\')) {
         throw ErrorFactory.validation(
-            `Path traversal detected in ${context}: ${trimmedPath}`,
+            `Path traversal detected in ${context}: ${trimmedPath} - path traversal not allowed`,
             `${context} cannot contain parent directory references (..)`,
             { path: trimmedPath, context },
             ['Remove .. references', 'Use vault-relative paths only', 'Avoid path traversal for security']
@@ -53,7 +53,7 @@ export function validatePath(path: string, context: string): true {
     
     if (foundInvalidChars.length > 0) {
         throw ErrorFactory.validation(
-            `Invalid characters in ${context}: ${foundInvalidChars.join(', ')}`,
+            `Invalid characters in ${context}: ${foundInvalidChars.join(', ')} - invalid characters not allowed`,
             `${context} contains invalid characters: ${foundInvalidChars.join(', ')}`,
             { path: trimmedPath, context, invalidChars: foundInvalidChars },
             ['Remove invalid characters', 'Use only letters, numbers, hyphens, underscores, and forward slashes']
@@ -63,7 +63,7 @@ export function validatePath(path: string, context: string): true {
     // Check for null bytes (security)
     if (trimmedPath.includes('\0')) {
         throw ErrorFactory.validation(
-            `Null byte detected in ${context}`,
+            `Null byte detected in ${context} - null character not allowed`,
             `${context} contains invalid null character`,
             { path: trimmedPath, context },
             ['Remove null characters', 'Check for binary data in path']
@@ -73,7 +73,7 @@ export function validatePath(path: string, context: string): true {
     // Check path length (reasonable limit)
     if (trimmedPath.length > 260) {
         throw ErrorFactory.validation(
-            `Path too long for ${context}: ${trimmedPath.length} characters`,
+            `Path too long for ${context}: ${trimmedPath.length} characters - path is too long`,
             `${context} is too long (${trimmedPath.length} characters, max 260)`,
             { path: trimmedPath, context, length: trimmedPath.length },
             ['Shorten the path', 'Use shorter folder and file names', 'Reorganize folder structure']
@@ -83,7 +83,7 @@ export function validatePath(path: string, context: string): true {
     // Check for double slashes (can cause issues)
     if (trimmedPath.includes('//')) {
         throw ErrorFactory.validation(
-            `Double slashes found in ${context}: ${trimmedPath}`,
+            `Double slashes found in ${context}: ${trimmedPath} - double slashes not allowed`,
             `${context} contains double slashes (//)`,
             { path: trimmedPath, context },
             ['Remove double slashes', 'Use single forward slashes as separators']

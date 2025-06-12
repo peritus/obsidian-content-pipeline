@@ -15,13 +15,13 @@ const logger = createLogger('PathResolver');
 /**
  * Supported variables for path resolution
  */
-export const SUPPORTED_PATH_VARIABLES = [
+export const SUPPORTED_PATH_VARIABLES = Object.freeze([
     'category',
     'filename', 
     'timestamp',
     'date',
     'stepId'
-] as const;
+] as const);
 
 export type PathVariable = typeof SUPPORTED_PATH_VARIABLES[number];
 
@@ -49,6 +49,14 @@ export interface PathResolutionOptions {
     validateResult?: boolean;
     /** Fallback values for missing variables */
     fallbacks?: Partial<Record<PathVariable, string>>;
+}
+
+/**
+ * Generate a file-safe timestamp
+ */
+function generateFileSafeTimestamp(): string {
+    const now = new Date();
+    return now.toISOString().replace(/:/g, '-').replace(/\./g, '-');
 }
 
 /**
@@ -89,7 +97,7 @@ export class PathResolver {
         const now = new Date();
         const contextWithDefaults = {
             ...context,
-            timestamp: context.timestamp || now.toISOString(),
+            timestamp: context.timestamp || generateFileSafeTimestamp(),
             date: context.date || now.toISOString().split('T')[0]
         };
 
@@ -234,7 +242,7 @@ export class PathResolver {
         
         return {
             category: 'uncategorized',
-            timestamp: now.toISOString(),
+            timestamp: generateFileSafeTimestamp(),
             date: now.toISOString().split('T')[0],
             ...overrides
         };
@@ -271,14 +279,14 @@ export class PathResolver {
             .filter(segment => segment && segment.length > 0)
             .map(segment => segment.replace(/^\/+|\/+$/g, '')); // Remove leading/trailing slashes
 
-        return this.normalizePath(cleanSegments.join('/'));
+        return PathResolver.normalizePath(cleanSegments.join('/'));
     }
 
     /**
      * Get the directory part of a path
      */
     static getDirectory(path: string): string {
-        const normalized = this.normalizePath(path);
+        const normalized = PathResolver.normalizePath(path);
         const lastSlash = normalized.lastIndexOf('/');
         
         if (lastSlash === -1) {
@@ -292,9 +300,14 @@ export class PathResolver {
      * Get the filename part of a path
      */
     static getFilename(path: string): string {
-        const normalized = this.normalizePath(path);
-        const lastSlash = normalized.lastIndexOf('/');
+        const normalized = PathResolver.normalizePath(path);
         
+        // If the path ends with a slash, it's a directory
+        if (path.endsWith('/')) {
+            return '';
+        }
+        
+        const lastSlash = normalized.lastIndexOf('/');
         return lastSlash === -1 ? normalized : normalized.substring(lastSlash + 1);
     }
 
@@ -302,7 +315,7 @@ export class PathResolver {
      * Get filename without extension
      */
     static getBasename(path: string): string {
-        const filename = this.getFilename(path);
+        const filename = PathResolver.getFilename(path);
         const lastDot = filename.lastIndexOf('.');
         
         return lastDot === -1 ? filename : filename.substring(0, lastDot);
@@ -312,7 +325,7 @@ export class PathResolver {
      * Get file extension (including the dot)
      */
     static getExtension(path: string): string {
-        const filename = this.getFilename(path);
+        const filename = PathResolver.getFilename(path);
         const lastDot = filename.lastIndexOf('.');
         
         return lastDot === -1 ? '' : filename.substring(lastDot);
@@ -322,15 +335,15 @@ export class PathResolver {
      * Check if a path represents a directory (ends with slash or has no extension)
      */
     static isDirectory(path: string): boolean {
-        const normalized = this.normalizePath(path);
-        return normalized.endsWith('/') || !this.getExtension(normalized);
+        const normalized = PathResolver.normalizePath(path);
+        return normalized.endsWith('/') || !PathResolver.getExtension(normalized);
     }
 
     /**
      * Ensure a path represents a directory by adding trailing slash if needed
      */
     static ensureDirectory(path: string): string {
-        const normalized = this.normalizePath(path);
+        const normalized = PathResolver.normalizePath(path);
         return normalized.endsWith('/') ? normalized : normalized + '/';
     }
 
@@ -349,6 +362,25 @@ export class PathResolver {
             return null;
         }
 
+        // Check if non-variable parts match
+        for (let i = 0; i < patternParts.length; i++) {
+            const patternPart = patternParts[i];
+            const pathPart = pathParts[i];
+            
+            // If it's not a variable, it must match exactly
+            if (!patternPart.startsWith('{') || !patternPart.endsWith('}')) {
+                if (patternPart !== pathPart) {
+                    logger.debug('Pattern part does not match path part', {
+                        patternPart,
+                        pathPart,
+                        index: i
+                    });
+                    return null;
+                }
+            }
+        }
+
+        // Now extract the category if the pattern matches
         for (let i = 0; i < patternParts.length; i++) {
             if (patternParts[i] === '{category}') {
                 const category = pathParts[i];
@@ -357,7 +389,7 @@ export class PathResolver {
             }
         }
 
-        logger.debug('No category found in path');
+        logger.debug('No category found in pattern');
         return null;
     }
 }
@@ -400,7 +432,7 @@ export const PathUtils = {
         const required = PathResolver.getRequiredVariables(pattern);
         const contextWithDefaults = {
             ...context,
-            timestamp: context.timestamp || new Date().toISOString(),
+            timestamp: context.timestamp || generateFileSafeTimestamp(),
             date: context.date || new Date().toISOString().split('T')[0]
         };
         
@@ -416,7 +448,7 @@ export const PathUtils = {
         const required = PathResolver.getRequiredVariables(pattern);
         const contextWithDefaults = {
             ...context,
-            timestamp: context.timestamp || new Date().toISOString(),
+            timestamp: context.timestamp || generateFileSafeTimestamp(),
             date: context.date || new Date().toISOString().split('T')[0]
         };
         
@@ -425,16 +457,16 @@ export const PathUtils = {
         );
     },
 
-    // Re-export common path utilities
-    normalize: PathResolver.normalizePath,
-    join: PathResolver.joinPaths,
-    getDirectory: PathResolver.getDirectory,
-    getFilename: PathResolver.getFilename,
-    getBasename: PathResolver.getBasename,
-    getExtension: PathResolver.getExtension,
-    isDirectory: PathResolver.isDirectory,
-    ensureDirectory: PathResolver.ensureDirectory,
-    extractCategory: PathResolver.extractCategoryFromPath
+    // Re-export common path utilities with proper static method calls
+    normalize: (path: string) => PathResolver.normalizePath(path),
+    join: (...segments: string[]) => PathResolver.joinPaths(...segments),
+    getDirectory: (path: string) => PathResolver.getDirectory(path),
+    getFilename: (path: string) => PathResolver.getFilename(path),
+    getBasename: (path: string) => PathResolver.getBasename(path),
+    getExtension: (path: string) => PathResolver.getExtension(path),
+    isDirectory: (path: string) => PathResolver.isDirectory(path),
+    ensureDirectory: (path: string) => PathResolver.ensureDirectory(path),
+    extractCategory: (path: string, pattern: string) => PathResolver.extractCategoryFromPath(path, pattern)
 };
 
 /**

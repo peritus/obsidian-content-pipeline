@@ -55,8 +55,8 @@ describe('PathResolver', () => {
             const result = PathResolver.resolvePath(pattern, context);
             
             expect(result.isComplete).toBe(true);
-            expect(result.resolvedPath).toMatch(/logs\/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\/debug\.log/);
-            expect(result.substitutions.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+            expect(result.resolvedPath).toMatch(/logs\/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\/debug\.log/);
+            expect(result.substitutions.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z/);
         });
 
         it('should handle missing variables gracefully', () => {
@@ -77,7 +77,7 @@ describe('PathResolver', () => {
             
             expect(() => {
                 PathResolver.resolvePath(pattern, context, { throwOnMissing: true });
-            }).toThrow('missing required variable');
+            }).toThrow('Missing required variable for path resolution: {category}');
         });
 
         it('should use fallback values for missing variables', () => {
@@ -98,7 +98,7 @@ describe('PathResolver', () => {
             
             expect(() => {
                 PathResolver.resolvePath(pattern, context);
-            }).toThrow('invalid resolved path');
+            }).toThrow('Path traversal detected in resolved path: inbox/../../../etc - path traversal not allowed');
         });
 
         it('should skip validation when validateResult is false', () => {
@@ -117,7 +117,7 @@ describe('PathResolver', () => {
             
             expect(() => {
                 PathResolver.resolvePath(pattern, context);
-            }).toThrow('unsupported variable');
+            }).toThrow('Unsupported variable in path pattern: {invalidVariable}');
         });
     });
 
@@ -189,7 +189,7 @@ describe('PathResolver', () => {
             const context = PathResolver.createDefaultContext();
             
             expect(context.category).toBe('uncategorized');
-            expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
+            expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z/);
             expect(context.date).toMatch(/\d{4}-\d{2}-\d{2}/);
         });
 
@@ -218,7 +218,7 @@ describe('PathResolver', () => {
             expect(results).toHaveLength(2);
             expect(results[0].resolvedPath).toBe('inbox/tasks');
             expect(results[1].resolvedPath).toBe('output/tasks/test.md');
-            expect(results.every(r => r.isComplete)).toBe(true);
+            expect(results.every((r: any) => r.isComplete)).toBe(true);
         });
     });
 
@@ -418,9 +418,17 @@ describe('SUPPORTED_PATH_VARIABLES', () => {
     });
 
     it('should be readonly', () => {
-        expect(() => {
-            // @ts-expect-error - testing that the array is readonly
-            SUPPORTED_PATH_VARIABLES.push('invalid');
-        }).toThrow();
+        // The array is now properly frozen, so attempting to modify it should fail silently
+        // or throw in strict mode. Let's test that it's frozen.
+        expect(Object.isFrozen(SUPPORTED_PATH_VARIABLES)).toBe(true);
+        
+        // Attempting to push should fail silently (or throw in strict mode)
+        const originalLength = SUPPORTED_PATH_VARIABLES.length;
+        try {
+            (SUPPORTED_PATH_VARIABLES as any).push('invalid');
+        } catch (error) {
+            // This might throw in strict mode, which is fine
+        }
+        expect(SUPPORTED_PATH_VARIABLES.length).toBe(originalLength);
     });
 });

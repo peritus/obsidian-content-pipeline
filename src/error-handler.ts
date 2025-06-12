@@ -7,6 +7,7 @@
 
 import { ErrorType, ErrorInfo, NotificationType, NotificationOptions } from './types';
 import { createLogger } from './logger';
+import { Notice } from 'obsidian';
 
 /**
  * Logger for error handling system
@@ -103,7 +104,6 @@ export class NotificationManager {
         const timeout = options?.timeout ?? this.getDefaultTimeout(type);
         
         try {
-            // @ts-ignore - Notice is available but not in types
             new Notice(message, timeout);
             
             errorLogger.debug('Notification shown', {

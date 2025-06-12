@@ -44,7 +44,7 @@ const URL_PATTERN = /^https?:\/\/[^\s/$.?#].[^\s]*$/;
 export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     if (!step || typeof step !== 'object') {
         throw ErrorFactory.validation(
-            `Invalid step configuration for ${stepId}`,
+            `Invalid step configuration for ${stepId} - step configuration missing or invalid`,
             `Pipeline step "${stepId}" configuration is missing or invalid`,
             { stepId, step },
             ['Provide a valid step configuration object', 'Check the JSON syntax']
@@ -57,7 +57,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     
     if (missingFields.length > 0) {
         throw ErrorFactory.validation(
-            `Missing required fields in step ${stepId}: ${missingFields.join(', ')}`,
+            `Missing required fields in step ${stepId}: ${missingFields.join(', ')} - missing required fields`,
             `Pipeline step "${stepId}" is missing required fields: ${missingFields.join(', ')}`,
             { stepId, missingFields, requiredFields },
             ['Add missing fields to step configuration', 'Check the step configuration format']
@@ -65,9 +65,9 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     }
 
     // Validate model
-    if (!step.model || typeof step.model !== 'string') {
+    if (!step.model || typeof step.model !== 'string' || step.model.trim().length === 0) {
         throw ErrorFactory.validation(
-            `Invalid model in step ${stepId}`,
+            `Invalid model in step ${stepId} - model must be a non-empty string`,
             `Pipeline step "${stepId}" model must be a non-empty string`,
             { stepId, model: step.model },
             ['Specify a valid model name', 'Check supported models list']
@@ -77,7 +77,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     const trimmedModel = step.model.trim();
     if (!SUPPORTED_MODELS.includes(trimmedModel)) {
         throw ErrorFactory.validation(
-            `Unsupported model in step ${stepId}: ${trimmedModel}`,
+            `Unsupported model in step ${stepId}: ${trimmedModel} - unsupported model`,
             `Pipeline step "${stepId}" uses unsupported model: ${trimmedModel}`,
             { stepId, model: trimmedModel, supportedModels: SUPPORTED_MODELS },
             [
@@ -94,7 +94,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         throw ErrorFactory.validation(
-            `Invalid input pattern in step ${stepId}: ${errorMessage}`,
+            `Invalid input pattern in step ${stepId}: ${errorMessage} - input pattern is invalid`,
             `Pipeline step "${stepId}" input pattern is invalid`,
             { stepId, inputPattern: step.input, originalError: error },
             ['Fix the input pattern', 'Check pattern syntax and variables']
@@ -143,7 +143,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     // Validate include array
     if (!Array.isArray(step.include)) {
         throw ErrorFactory.validation(
-            `Invalid include field in step ${stepId}`,
+            `Invalid include field in step ${stepId} - include field must be an array`,
             `Pipeline step "${stepId}" include field must be an array`,
             { stepId, include: step.include },
             ['Change include to an array', 'Use [] for empty includes', 'Example: ["prompt.md"]']
@@ -154,7 +154,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     step.include.forEach((includePath, index) => {
         if (typeof includePath !== 'string') {
             throw ErrorFactory.validation(
-                `Invalid include path in step ${stepId} at index ${index}`,
+                `Invalid include path in step ${stepId} at index ${index} - include paths must be strings`,
                 `Pipeline step "${stepId}" include paths must be strings`,
                 { stepId, includePath, index },
                 ['Use string paths in include array', 'Remove non-string entries']
@@ -174,14 +174,14 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         }
     });
 
-    // Validate API key (only check format if provided)
-    if (step.apiKey && step.apiKey.trim().length > 0) {
+    // Validate API key (always validate if provided, even if empty)
+    if (step.apiKey !== undefined) {
         try {
             validateApiKey(step.apiKey);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             throw ErrorFactory.validation(
-                `Invalid API key in step ${stepId}: ${errorMessage}`,
+                `Invalid API key in step ${stepId}: ${errorMessage} - invalid API key format`,
                 `Pipeline step "${stepId}" has invalid API key format`,
                 { stepId, originalError: error },
                 ['Check API key format', 'Get a valid API key from your provider']
@@ -203,7 +203,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         const trimmedUrl = step.baseUrl.trim();
         if (!URL_PATTERN.test(trimmedUrl)) {
             throw ErrorFactory.validation(
-                `Invalid baseUrl format in step ${stepId}: ${trimmedUrl}`,
+                `Invalid baseUrl format in step ${stepId}: ${trimmedUrl} - not a valid URL`,
                 `Pipeline step "${stepId}" baseUrl is not a valid URL`,
                 { stepId, baseUrl: trimmedUrl },
                 ['Use a valid HTTP/HTTPS URL', 'Example: https://api.openai.com/v1', 'Remove if using default endpoint']
@@ -222,7 +222,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     }
 
     // Validate optional next step reference
-    if (step.next) {
+    if (step.next !== undefined) {
         if (typeof step.next !== 'string') {
             throw ErrorFactory.validation(
                 `Invalid next step reference in step ${stepId}`,
@@ -235,7 +235,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         const trimmedNext = step.next.trim();
         if (trimmedNext.length === 0) {
             throw ErrorFactory.validation(
-                `Empty next step reference in step ${stepId}`,
+                `Empty next step reference in step ${stepId} - next field cannot be empty`,
                 `Pipeline step "${stepId}" next field cannot be empty`,
                 { stepId, next: step.next },
                 ['Provide a valid step ID', 'Remove next field if not needed']

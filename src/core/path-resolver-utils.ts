@@ -1,7 +1,7 @@
 /**
- * Test file for PathResolver functionality
+ * Test utilities for PathResolver functionality
  * 
- * This file contains tests and examples for the path resolution system.
+ * This file contains test utilities and examples for the path resolution system.
  * It can be imported and run from the main plugin for testing purposes.
  */
 

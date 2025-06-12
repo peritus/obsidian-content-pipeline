@@ -4,41 +4,8 @@
  * This file runs before each test suite and sets up mocks and global test configuration.
  */
 
-// Mock Obsidian dependencies
-const mockNotice = jest.fn();
-const mockPlugin = jest.fn();
-const mockApp = jest.fn();
-
-// Mock Obsidian module
-jest.mock('obsidian', () => ({
-    Plugin: jest.fn().mockImplementation(() => ({
-        app: mockApp,
-        manifest: {
-            id: 'obsidian-audio-inbox',
-            name: 'Audio Inbox',
-            version: '1.0.0'
-        },
-        loadData: jest.fn().mockResolvedValue({}),
-        saveData: jest.fn().mockResolvedValue(undefined),
-        addRibbonIcon: jest.fn(),
-        addSettingTab: jest.fn()
-    })),
-    Notice: mockNotice,
-    Setting: jest.fn().mockImplementation(() => ({
-        setName: jest.fn().mockReturnThis(),
-        setDesc: jest.fn().mockReturnThis(),
-        addToggle: jest.fn().mockReturnThis(),
-        addText: jest.fn().mockReturnThis(),
-        addTextArea: jest.fn().mockReturnThis(),
-        addButton: jest.fn().mockReturnThis(),
-        onChange: jest.fn().mockReturnThis(),
-        onClick: jest.fn().mockReturnThis()
-    })),
-    PluginSettingTab: jest.fn().mockImplementation(() => ({
-        display: jest.fn(),
-        hide: jest.fn()
-    }))
-}));
+// Import the mocked obsidian module directly
+import { mockApp, Notice } from './__mocks__/obsidian';
 
 // Mock console.log for tests (Jest captures these automatically, but we can control them)
 global.console = {
@@ -104,13 +71,13 @@ export const createMockContext = (overrides: any = {}) => ({
 });
 
 export const createMockPipelineStep = (overrides: any = {}) => ({
-    model: 'gpt-4',
-    input: 'inbox/{category}',
+    model: 'whisper-1',  // Use whisper-1 as default to pass audio input validation
+    input: 'inbox/audio/{category}',  // Audio input pattern
     output: 'inbox/results/{category}/{filename}.md',
     archive: 'inbox/archive/{stepId}/{category}',
     template: 'templates/default.md',
     include: ['prompt.md'],
-    apiKey: 'sk-test-key',
+    apiKey: 'sk-test-key-1234567890123456789012',  // Make it longer to pass validation
     baseUrl: 'https://api.openai.com/v1',
     ...overrides
 });
@@ -128,4 +95,8 @@ export const cleanup = () => {
 // Test timeout configuration
 jest.setTimeout(10000);
 
-export { mockNotice, mockPlugin, mockApp };
+// Export the mocked functions that tests expect
+export const mockNotice = Notice;
+export const mockPlugin = jest.fn();
+
+export { mockApp };

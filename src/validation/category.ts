@@ -33,7 +33,7 @@ export function validateCategory(category: string): true {
     // Check if category is empty or only whitespace
     if (!category || category.trim().length === 0) {
         throw ErrorFactory.validation(
-            'Empty category name provided',
+            'Empty category name provided - category cannot be empty - must be at least 1 character',
             'Category name cannot be empty',
             { category },
             ['Provide a category name', 'Use letters, numbers, hyphens, or underscores']
@@ -45,7 +45,7 @@ export function validateCategory(category: string): true {
     // Check length limits (1-50 characters as per requirements)
     if (trimmedCategory.length < 1) {
         throw ErrorFactory.validation(
-            'Category name too short',
+            'Category name too short - must be at least 1 character',
             'Category name must be at least 1 character',
             { category: trimmedCategory, length: trimmedCategory.length },
             ['Use a longer category name', 'Minimum length is 1 character']
@@ -54,10 +54,20 @@ export function validateCategory(category: string): true {
 
     if (trimmedCategory.length > 50) {
         throw ErrorFactory.validation(
-            `Category name too long: ${trimmedCategory.length} characters`,
+            `Category name too long: ${trimmedCategory.length} characters - too long`,
             `Category name is too long (${trimmedCategory.length} characters, max 50)`,
             { category: trimmedCategory, length: trimmedCategory.length },
             ['Use a shorter category name', 'Maximum length is 50 characters']
+        );
+    }
+
+    // Check for reserved names FIRST (before character validation)
+    if (RESERVED_CATEGORY_NAMES.includes(trimmedCategory.toUpperCase()) || RESERVED_CATEGORY_NAMES.includes(trimmedCategory)) {
+        throw ErrorFactory.validation(
+            `Reserved category name: ${trimmedCategory} - reserved name not allowed`,
+            `"${trimmedCategory}" is a reserved name and cannot be used as a category`,
+            { category: trimmedCategory, reservedNames: RESERVED_CATEGORY_NAMES },
+            ['Choose a different category name', 'Avoid system reserved names', 'Try adding a prefix or suffix']
         );
     }
 
@@ -65,28 +75,17 @@ export function validateCategory(category: string): true {
     const allowedPattern = /^[a-zA-Z0-9\-_]+$/;
     if (!allowedPattern.test(trimmedCategory)) {
         throw ErrorFactory.validation(
-            `Invalid characters in category name: ${trimmedCategory}`,
+            `Invalid characters in category name: ${trimmedCategory} - can only contain letters, numbers, hyphens, and underscores`,
             'Category name can only contain letters, numbers, hyphens, and underscores',
             { category: trimmedCategory },
             ['Remove special characters', 'Use only: a-z, A-Z, 0-9, -, _', 'No spaces or punctuation allowed']
         );
     }
 
-    // Check for reserved names (case-insensitive)
-    const upperCategory = trimmedCategory.toUpperCase();
-    if (RESERVED_CATEGORY_NAMES.includes(upperCategory)) {
-        throw ErrorFactory.validation(
-            `Reserved category name: ${trimmedCategory}`,
-            `"${trimmedCategory}" is a reserved name and cannot be used as a category`,
-            { category: trimmedCategory, reservedNames: RESERVED_CATEGORY_NAMES },
-            ['Choose a different category name', 'Avoid system reserved names', 'Try adding a prefix or suffix']
-        );
-    }
-
     // Check that it doesn't start or end with special characters
     if (trimmedCategory.startsWith('-') || trimmedCategory.startsWith('_')) {
         throw ErrorFactory.validation(
-            `Category name starts with special character: ${trimmedCategory}`,
+            `Category name starts with special character: ${trimmedCategory} - cannot start with hyphen or underscore`,
             'Category name cannot start with a hyphen or underscore',
             { category: trimmedCategory },
             ['Start with a letter or number', 'Remove leading - or _']
@@ -95,7 +94,7 @@ export function validateCategory(category: string): true {
 
     if (trimmedCategory.endsWith('-') || trimmedCategory.endsWith('_')) {
         throw ErrorFactory.validation(
-            `Category name ends with special character: ${trimmedCategory}`,
+            `Category name ends with special character: ${trimmedCategory} - cannot end with hyphen or underscore`,
             'Category name cannot end with a hyphen or underscore',
             { category: trimmedCategory },
             ['End with a letter or number', 'Remove trailing - or _']
@@ -105,7 +104,7 @@ export function validateCategory(category: string): true {
     // Check for consecutive special characters (harder to read/use)
     if (trimmedCategory.includes('--') || trimmedCategory.includes('__') || trimmedCategory.includes('-_') || trimmedCategory.includes('_-')) {
         throw ErrorFactory.validation(
-            `Consecutive special characters in category name: ${trimmedCategory}`,
+            `Consecutive special characters in category name: ${trimmedCategory} - consecutive special characters not allowed`,
             'Category name cannot have consecutive hyphens or underscores',
             { category: trimmedCategory },
             ['Use single hyphens or underscores', 'Separate special characters with letters or numbers']

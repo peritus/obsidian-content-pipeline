@@ -48,16 +48,16 @@ describe('Logger', () => {
         it('should respect log level hierarchy', () => {
             const logger = createLogger('Test');
             
-            // Test that shouldLog respects hierarchy
-            expect(logger.shouldLog(LogLevel.ERROR)).toBe(true); // ERROR always logs
+            // Test that isLevelEnabled respects hierarchy
+            expect(logger.isLevelEnabled(LogLevel.ERROR)).toBe(true); // ERROR always logs
             
             // The exact behavior depends on build-time log level
             const buildLevel = getBuildLogLevel();
             if (buildLevel === LogLevel.DEBUG) {
-                expect(logger.shouldLog(LogLevel.DEBUG)).toBe(true);
-                expect(logger.shouldLog(LogLevel.INFO)).toBe(true);
-                expect(logger.shouldLog(LogLevel.WARN)).toBe(true);
-                expect(logger.shouldLog(LogLevel.ERROR)).toBe(true);
+                expect(logger.isLevelEnabled(LogLevel.DEBUG)).toBe(true);
+                expect(logger.isLevelEnabled(LogLevel.INFO)).toBe(true);
+                expect(logger.isLevelEnabled(LogLevel.WARN)).toBe(true);
+                expect(logger.isLevelEnabled(LogLevel.ERROR)).toBe(true);
             }
         });
     });
@@ -72,7 +72,7 @@ describe('Logger', () => {
         it('should log error messages', () => {
             logger.error('Test error message');
             
-            if (logger.shouldLog(LogLevel.ERROR)) {
+            if (logger.isLevelEnabled(LogLevel.ERROR)) {
                 expect(mockConsole.error).toHaveBeenCalledWith(
                     expect.stringContaining('ERROR')
                 );
@@ -85,7 +85,7 @@ describe('Logger', () => {
         it('should log warning messages', () => {
             logger.warn('Test warning message');
             
-            if (logger.shouldLog(LogLevel.WARN)) {
+            if (logger.isLevelEnabled(LogLevel.WARN)) {
                 expect(mockConsole.warn).toHaveBeenCalledWith(
                     expect.stringContaining('WARN')
                 );
@@ -95,7 +95,7 @@ describe('Logger', () => {
         it('should log info messages', () => {
             logger.info('Test info message');
             
-            if (logger.shouldLog(LogLevel.INFO)) {
+            if (logger.isLevelEnabled(LogLevel.INFO)) {
                 expect(mockConsole.log).toHaveBeenCalledWith(
                     expect.stringContaining('INFO')
                 );
@@ -105,7 +105,7 @@ describe('Logger', () => {
         it('should log debug messages', () => {
             logger.debug('Test debug message');
             
-            if (logger.shouldLog(LogLevel.DEBUG)) {
+            if (logger.isLevelEnabled(LogLevel.DEBUG)) {
                 expect(mockConsole.log).toHaveBeenCalledWith(
                     expect.stringContaining('DEBUG')
                 );
@@ -115,7 +115,7 @@ describe('Logger', () => {
         it('should include component name in logs', () => {
             logger.info('Test message');
             
-            if (logger.shouldLog(LogLevel.INFO)) {
+            if (logger.isLevelEnabled(LogLevel.INFO)) {
                 expect(mockConsole.log).toHaveBeenCalledWith(
                     expect.stringContaining('[TestComponent]')
                 );
@@ -125,7 +125,7 @@ describe('Logger', () => {
         it('should include timestamp in logs', () => {
             logger.info('Test message');
             
-            if (logger.shouldLog(LogLevel.INFO)) {
+            if (logger.isLevelEnabled(LogLevel.INFO)) {
                 expect(mockConsole.log).toHaveBeenCalledWith(
                     expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/)
                 );
@@ -136,7 +136,7 @@ describe('Logger', () => {
             const context = { key: 'value', number: 42 };
             logger.info('Test message', context);
             
-            if (logger.shouldLog(LogLevel.INFO)) {
+            if (logger.isLevelEnabled(LogLevel.INFO)) {
                 const calls = mockConsole.log.mock.calls;
                 const lastCall = calls[calls.length - 1];
                 expect(lastCall[0]).toContain('Test message');
@@ -148,7 +148,7 @@ describe('Logger', () => {
         it('should handle primitive context values', () => {
             logger.info('Test message', 'string context');
             
-            if (logger.shouldLog(LogLevel.INFO)) {
+            if (logger.isLevelEnabled(LogLevel.INFO)) {
                 expect(mockConsole.log).toHaveBeenCalledWith(
                     expect.stringContaining('string context')
                 );
@@ -162,7 +162,7 @@ describe('Logger', () => {
             
             logger.log(LogLevel.ERROR, 'Explicit error');
             
-            if (logger.shouldLog(LogLevel.ERROR)) {
+            if (logger.isLevelEnabled(LogLevel.ERROR)) {
                 expect(mockConsole.error).toHaveBeenCalledWith(
                     expect.stringContaining('ERROR')
                 );
@@ -211,7 +211,7 @@ describe('Logger', () => {
             
             const entry = logger.createEntry(LogLevel.ERROR, 'Test message', { test: true });
             
-            if (logger.shouldLog(LogLevel.ERROR)) {
+            if (logger.isLevelEnabled(LogLevel.ERROR)) {
                 expect(entry).toEqual({
                     level: LogLevel.ERROR,
                     component: 'Test',

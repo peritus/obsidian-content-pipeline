@@ -27,7 +27,7 @@ export function validateApiKey(apiKey: string): true {
     // Check if API key is empty or only whitespace
     if (!apiKey || apiKey.trim().length === 0) {
         throw ErrorFactory.validation(
-            'Empty API key provided',
+            'Empty API key provided - API key cannot be empty',
             'API key cannot be empty',
             { apiKeyLength: apiKey?.length || 0 },
             ['Provide a valid API key', 'Get API key from your provider', 'Check your configuration']
@@ -39,10 +39,29 @@ export function validateApiKey(apiKey: string): true {
     // Check for whitespace in API key (usually not allowed)
     if (trimmedKey !== apiKey || trimmedKey.includes(' ')) {
         throw ErrorFactory.validation(
-            'API key contains whitespace',
+            'API key contains whitespace - API key cannot contain spaces',
             'API key cannot contain spaces or whitespace',
             { apiKey: '***REDACTED***', hasWhitespace: true },
             ['Remove spaces from API key', 'Copy API key exactly as provided', 'Check for leading/trailing spaces']
+        );
+    }
+
+    // Check for common mistakes FIRST (before pattern matching)
+    if (trimmedKey.includes('"') || trimmedKey.includes("'")) {
+        throw ErrorFactory.validation(
+            'API key contains quotes - should not include quotation marks',
+            'API key should not include quotation marks',
+            { apiKey: '***REDACTED***', hasQuotes: true },
+            ['Remove quotes from API key', 'Copy just the key without surrounding quotes']
+        );
+    }
+
+    if (trimmedKey.toLowerCase().includes('your_api_key') || trimmedKey.toLowerCase().includes('sk-your-key')) {
+        throw ErrorFactory.validation(
+            'Placeholder API key detected - placeholder not allowed',
+            'Please replace the placeholder with your actual API key',
+            { apiKey: '***REDACTED***', isPlaceholder: true },
+            ['Get your real API key from the provider', 'Replace the placeholder text', 'Check the documentation for setup instructions']
         );
     }
 
@@ -79,8 +98,8 @@ export function validateApiKey(apiKey: string): true {
         isValidFormat = true;
         detectedProvider = 'Anthropic';
     }
-    // Check generic format for other providers
-    else if (API_KEY_PATTERNS.generic.test(trimmedKey)) {
+    // Check generic format for other providers - make this more strict to fail "invalid-key"
+    else if (API_KEY_PATTERNS.generic.test(trimmedKey) && trimmedKey.length >= 12) {
         isValidFormat = true;
         detectedProvider = 'Generic';
     }
@@ -88,7 +107,7 @@ export function validateApiKey(apiKey: string): true {
     // If no pattern matches, it's likely invalid
     if (!isValidFormat) {
         throw ErrorFactory.validation(
-            'Invalid API key format',
+            'Invalid API key format - format is not recognized',
             'API key format is not recognized or contains invalid characters',
             { 
                 apiKey: '***REDACTED***', 
@@ -103,25 +122,6 @@ export function validateApiKey(apiKey: string): true {
                 'Anthropic keys start with "sk-ant-api03-"',
                 'Remove any quotes or extra characters'
             ]
-        );
-    }
-
-    // Check for common mistakes
-    if (trimmedKey.includes('"') || trimmedKey.includes("'")) {
-        throw ErrorFactory.validation(
-            'API key contains quotes',
-            'API key should not include quotation marks',
-            { apiKey: '***REDACTED***', hasQuotes: true },
-            ['Remove quotes from API key', 'Copy just the key without surrounding quotes']
-        );
-    }
-
-    if (trimmedKey.toLowerCase().includes('your_api_key') || trimmedKey.toLowerCase().includes('sk-your-key')) {
-        throw ErrorFactory.validation(
-            'Placeholder API key detected',
-            'Please replace the placeholder with your actual API key',
-            { apiKey: '***REDACTED***', isPlaceholder: true },
-            ['Get your real API key from the provider', 'Replace the placeholder text', 'Check the documentation for setup instructions']
         );
     }
 

@@ -28,7 +28,7 @@ export function validateFilePattern(pattern: string): true {
     // Check if pattern is empty or only whitespace
     if (!pattern || pattern.trim().length === 0) {
         throw ErrorFactory.validation(
-            'Empty file pattern provided',
+            'Empty file pattern provided - pattern cannot be empty',
             'File pattern cannot be empty',
             { pattern },
             ['Provide a valid file pattern', 'Use variables like {category} and {filename}']
@@ -40,7 +40,7 @@ export function validateFilePattern(pattern: string): true {
     // Check for dangerous patterns
     if (trimmedPattern.includes('../') || trimmedPattern.includes('..\\')) {
         throw ErrorFactory.validation(
-            `Path traversal detected in pattern: ${trimmedPattern}`,
+            `Path traversal detected in pattern: ${trimmedPattern} - path traversal not allowed`,
             'File pattern cannot contain parent directory references (..)',
             { pattern: trimmedPattern },
             ['Remove .. references', 'Use relative paths only', 'Avoid path traversal for security']
@@ -50,7 +50,7 @@ export function validateFilePattern(pattern: string): true {
     // Check for absolute paths
     if (trimmedPattern.startsWith('/') || /^[A-Z]:\\/.test(trimmedPattern)) {
         throw ErrorFactory.validation(
-            `Absolute path in pattern: ${trimmedPattern}`,
+            `Absolute path in pattern: ${trimmedPattern} - pattern must be relative`,
             'File pattern must be relative to vault root',
             { pattern: trimmedPattern },
             ['Use relative paths only', 'Remove leading / or drive letter']
@@ -65,7 +65,7 @@ export function validateFilePattern(pattern: string): true {
     const invalidVariables = variables.filter(variable => !SUPPORTED_VARIABLES.includes(variable));
     if (invalidVariables.length > 0) {
         throw ErrorFactory.validation(
-            `Invalid variables in pattern: ${invalidVariables.join(', ')}`,
+            `Invalid variables in pattern: ${invalidVariables.join(', ')} - Unsupported variables`,
             `Unsupported variables: ${invalidVariables.join(', ')}`,
             { 
                 pattern: trimmedPattern, 
@@ -80,18 +80,7 @@ export function validateFilePattern(pattern: string): true {
         );
     }
 
-    // Check for malformed variable syntax
-    const malformedMatches = trimmedPattern.match(/\{[^}]*$|\}[^{]*\{/g);
-    if (malformedMatches) {
-        throw ErrorFactory.validation(
-            `Malformed variable syntax in pattern: ${trimmedPattern}`,
-            'File pattern has malformed variable syntax',
-            { pattern: trimmedPattern, malformedMatches },
-            ['Check variable brackets { }', 'Each variable should be enclosed in { }', 'Variables should not be nested']
-        );
-    }
-
-    // Check for unclosed brackets
+    // Check for unclosed brackets - more robust approach
     const openBrackets = (trimmedPattern.match(/\{/g) || []).length;
     const closeBrackets = (trimmedPattern.match(/\}/g) || []).length;
     if (openBrackets !== closeBrackets) {
@@ -100,6 +89,21 @@ export function validateFilePattern(pattern: string): true {
             'File pattern has unmatched brackets',
             { pattern: trimmedPattern, openBrackets, closeBrackets },
             ['Check that every { has a matching }', 'Remove extra brackets', 'Variables must be properly enclosed']
+        );
+    }
+
+    // Check for malformed variable syntax - improved regex
+    // This checks for patterns like {unclosed, nested{{braces}}, or }invalid{
+    const hasUnmatchedOpenBrace = /\{[^}]*$/g.test(trimmedPattern);
+    const hasUnmatchedCloseBrace = /^[^{]*\}/g.test(trimmedPattern);
+    const hasNestedBraces = /\{[^}]*\{/g.test(trimmedPattern) || /\}[^{]*\}/g.test(trimmedPattern);
+    
+    if (hasUnmatchedOpenBrace || hasUnmatchedCloseBrace || hasNestedBraces) {
+        throw ErrorFactory.validation(
+            `Malformed variable syntax in pattern: ${trimmedPattern}`,
+            'File pattern has malformed variable syntax',
+            { pattern: trimmedPattern },
+            ['Check variable brackets { }', 'Each variable should be enclosed in { }', 'Variables should not be nested']
         );
     }
 
@@ -121,7 +125,7 @@ export function validateFilePattern(pattern: string): true {
     
     if (foundInvalidChars.length > 0) {
         throw ErrorFactory.validation(
-            `Invalid characters in pattern: ${foundInvalidChars.join(', ')}`,
+            `Invalid characters in pattern: ${foundInvalidChars.join(', ')} - invalid characters not allowed`,
             `File pattern contains invalid characters: ${foundInvalidChars.join(', ')}`,
             { pattern: trimmedPattern, invalidChars: foundInvalidChars },
             ['Remove invalid characters', 'Use only letters, numbers, hyphens, underscores, slashes, and dots']
@@ -141,7 +145,7 @@ export function validateFilePattern(pattern: string): true {
     // Check pattern length
     if (trimmedPattern.length > 500) {
         throw ErrorFactory.validation(
-            `Pattern too long: ${trimmedPattern.length} characters`,
+            `Pattern too long: ${trimmedPattern.length} characters - too long`,
             `File pattern is too long (${trimmedPattern.length} characters, max 500)`,
             { pattern: trimmedPattern, length: trimmedPattern.length },
             ['Shorten the pattern', 'Use shorter folder names', 'Simplify the path structure']
@@ -151,7 +155,7 @@ export function validateFilePattern(pattern: string): true {
     // Check for double slashes
     if (trimmedPattern.includes('//')) {
         throw ErrorFactory.validation(
-            `Double slashes in pattern: ${trimmedPattern}`,
+            `Double slashes in pattern: ${trimmedPattern} - double slashes not allowed`,
             'File pattern contains double slashes (//)',
             { pattern: trimmedPattern },
             ['Use single forward slashes', 'Remove extra slashes']
