@@ -1,5 +1,5 @@
 import { Plugin, Notice } from 'obsidian';
-import { DEFAULT_SETTINGS, AudioInboxSettingTab } from './settings';
+import { DEFAULT_SETTINGS, AudioInboxSettingTab, DEFAULT_PIPELINE_CONFIG } from './settings';
 import { AudioInboxSettings, PipelineConfiguration, ProcessingStatus } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
 import { PipelineExecutor } from './core/pipeline-executor';
@@ -28,15 +28,7 @@ export default class AudioInboxPlugin extends Plugin {
         // Add ribbon icon
         this.addRibbonIcon('microphone', 'Audio Inbox', () => {
             this.logger.info('Audio Inbox ribbon clicked');
-            this.logger.debug('Current settings:', {
-                debugMode: this.settings.debugMode,
-                buildLogLevel: getBuildLogLevel(),
-                categories: this.settings.defaultCategories,
-                version: this.settings.version
-            });
-            
-            // Show a quick status message
-            this.showNotice(`Audio Inbox: Debug=${this.settings.debugMode}, Log=${getBuildLogLevel().toUpperCase()}`);
+            this.showNotice(`Audio Inbox ready! Pipeline: ${this.settings.parsedPipelineConfig ? 'Configured' : 'Not configured'}`);
         });
 
         // Register commands
@@ -50,7 +42,6 @@ export default class AudioInboxPlugin extends Plugin {
         this.addSettingTab(new AudioInboxSettingTab(this.app, this));
 
         this.logger.info('Audio Inbox Plugin initialization complete');
-        this.logger.debug('Type system and logging initialized');
     }
 
     /**
@@ -69,7 +60,7 @@ export default class AudioInboxPlugin extends Plugin {
             
             // Check if pipeline configuration is available
             if (!this.settings.parsedPipelineConfig) {
-                this.showNotice('❌ No pipeline configuration found. Please configure pipeline in settings.', 8000);
+                this.showNotice('❌ No pipeline configuration found. Please open settings and initialize the default pipeline.', 8000);
                 this.logger.error('No pipeline configuration available');
                 return;
             }
@@ -91,13 +82,12 @@ export default class AudioInboxPlugin extends Plugin {
                     );
                     this.logger.info(`File processed successfully: ${result.inputFile.path}`, {
                         outputFiles: result.outputFiles,
-                        stepId: result.stepId,
-                        duration: result.endTime ? result.endTime.getTime() - result.startTime.getTime() : 0
+                        stepId: result.stepId
                     });
                     break;
                     
                 case ProcessingStatus.SKIPPED:
-                    this.showNotice('ℹ️ No files found to process', 4000);
+                    this.showNotice('ℹ️ No files found to process. Place audio files in inbox/audio/{category}/ folders.', 6000);
                     this.logger.info('No files available for processing');
                     break;
                     
@@ -125,11 +115,7 @@ export default class AudioInboxPlugin extends Plugin {
             // Log detailed error information
             this.logger.error('Command execution error details:', {
                 error: errorMessage,
-                stack: error instanceof Error ? error.stack : undefined,
-                settings: {
-                    hasConfig: !!this.settings.parsedPipelineConfig,
-                    debugMode: this.settings.debugMode
-                }
+                stack: error instanceof Error ? error.stack : undefined
             });
         }
     }
@@ -146,24 +132,33 @@ export default class AudioInboxPlugin extends Plugin {
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
             
-            // Parse pipeline configuration if it's valid JSON
-            if (this.settings.pipelineConfig && this.settings.pipelineConfig !== '{}') {
+            // Ensure we have a pipeline configuration
+            if (!this.settings.pipelineConfig || this.settings.pipelineConfig === '{}') {
+                this.settings.pipelineConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
+                this.settings.parsedPipelineConfig = DEFAULT_PIPELINE_CONFIG;
+                this.logger.info('Initialized with default pipeline configuration');
+                await this.saveSettings(); // Save the default config
+            } else {
+                // Parse existing configuration
                 try {
                     this.settings.parsedPipelineConfig = JSON.parse(this.settings.pipelineConfig) as PipelineConfiguration;
                     this.logger.debug('Pipeline configuration parsed successfully');
                 } catch (error) {
-                    this.logger.error('Failed to parse pipeline configuration:', error);
-                    this.settings.parsedPipelineConfig = undefined;
+                    this.logger.error('Failed to parse pipeline configuration, resetting to default:', error);
+                    this.settings.pipelineConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
+                    this.settings.parsedPipelineConfig = DEFAULT_PIPELINE_CONFIG;
+                    await this.saveSettings();
                 }
             }
             
             this.logger.info('Settings loaded successfully');
-            this.logger.debug('Loaded settings:', this.settings);
         } catch (error) {
             this.logger.error('Failed to load settings, using defaults:', error);
             this.settings = Object.assign({}, DEFAULT_SETTINGS);
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
+            this.settings.pipelineConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
+            this.settings.parsedPipelineConfig = DEFAULT_PIPELINE_CONFIG;
         }
     }
 
@@ -177,7 +172,6 @@ export default class AudioInboxPlugin extends Plugin {
             
             await this.saveData(this.settings);
             this.logger.info('Settings saved successfully');
-            this.logger.debug('Saved settings:', this.settings);
         } catch (error) {
             this.logger.error('Failed to save settings:', error);
             throw error;

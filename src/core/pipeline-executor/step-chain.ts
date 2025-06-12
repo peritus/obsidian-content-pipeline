@@ -1,17 +1,15 @@
 /**
- * Step Chain Execution
+ * Step Chain Execution with API Integration
  */
 
 import { App } from 'obsidian';
-import { PathUtils } from '../path-resolver';
-import { YamlProcessor } from '../yaml-processor';
+import { WhisperStepProcessor } from './whisper-step';
 import { 
     AudioInboxSettings,
     PipelineConfiguration, 
     FileInfo, 
     ProcessingResult, 
-    ProcessingStatus,
-    ProcessingContext
+    ProcessingStatus
 } from '../../types';
 import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
@@ -21,62 +19,13 @@ const logger = createLogger('StepChain');
 export class StepChain {
     private app: App;
     private settings: AudioInboxSettings;
-    private yamlProcessor: YamlProcessor;
+    private whisperProcessor: WhisperStepProcessor;
 
     constructor(app: App, settings: AudioInboxSettings) {
         this.app = app;
         this.settings = settings;
-        this.yamlProcessor = new YamlProcessor(app);
-        logger.debug('StepChain initialized with YAML processor');
-    }
-
-    async executeChain(
-        startStepId: string,
-        inputFile: FileInfo,
-        config: PipelineConfiguration
-    ): Promise<ProcessingResult> {
-        let currentStepId = startStepId;
-        let currentFiles = [inputFile];
-        const allOutputFiles: string[] = [];
-        const startTime = new Date();
-
-        while (currentStepId && currentFiles.length > 0) {
-            const step = config[currentStepId];
-            if (!step) {
-                throw ErrorFactory.pipeline(
-                    `Step not found in chain: ${currentStepId}`,
-                    `Cannot continue pipeline chain`,
-                    { stepId: currentStepId, availableSteps: Object.keys(config) }
-                );
-            }
-
-            logger.debug(`Executing step: ${currentStepId} with ${currentFiles.length} files`);
-
-            const stepResults = await Promise.all(
-                currentFiles.map(file => this.executeStep(currentStepId, file, config))
-            );
-
-            stepResults.forEach(result => {
-                allOutputFiles.push(...result.outputFiles);
-            });
-
-            currentStepId = step.next || '';
-            
-            if (currentStepId) {
-                // TODO: Convert output files to FileInfo for next step
-                currentFiles = [];
-                logger.debug(`Prepared for next step: ${currentStepId}`);
-            }
-        }
-
-        return {
-            inputFile,
-            status: ProcessingStatus.COMPLETED,
-            outputFiles: allOutputFiles,
-            startTime,
-            endTime: new Date(),
-            stepId: startStepId
-        };
+        this.whisperProcessor = new WhisperStepProcessor(app);
+        logger.debug('StepChain initialized');
     }
 
     async executeStep(
@@ -90,8 +39,7 @@ export class StepChain {
             throw ErrorFactory.pipeline(
                 `Step not found: ${stepId}`,
                 `Pipeline step "${stepId}" is not configured`,
-                { stepId, availableSteps: Object.keys(config) },
-                ['Check step ID spelling', 'Verify pipeline configuration']
+                { stepId }
             );
         }
 
@@ -100,72 +48,70 @@ export class StepChain {
         try {
             logger.info(`Executing step: ${stepId} for file: ${fileInfo.path}`);
 
-            const context = this.createProcessingContext(fileInfo, stepId, step);
-            
-            // Format YAML request for LLM
-            const yamlRequest = await this.yamlProcessor.formatRequest(
-                fileInfo,
-                step.include,
-                context,
-                { includeCategory: true, strictValidation: false }
-            );
+            // Check API key
+            if (!step.apiKey || step.apiKey.trim() === '') {
+                throw ErrorFactory.configuration(
+                    'No API key configured for step',
+                    `Step "${stepId}" requires an API key`,
+                    { stepId, model: step.model },
+                    ['Configure API key in pipeline settings', 'Add valid OpenAI API key']
+                );
+            }
 
-            logger.debug(`YAML request formatted for ${stepId}:`, {
-                requestLength: yamlRequest.length,
-                includeFiles: step.include.length,
-                category: context.resolvedCategory
-            });
+            // Route to appropriate processor based on model
+            if (step.model === 'whisper-1' && WhisperStepProcessor.isAudioFile(fileInfo)) {
+                return await this.whisperProcessor.executeWhisperStep(stepId, fileInfo, step);
+            }
 
-            // TODO: Implement actual API calls with formatted request:
-            // - Send yamlRequest to appropriate API (Whisper/ChatGPT)
-            // - Parse response using yamlProcessor.parseResponse()
-            // - Apply template processing
-            // - Generate output files and archive input
-            
-            const result: ProcessingResult = {
+            // For non-Whisper steps, return pending status for now
+            logger.info(`Step ${stepId} not yet implemented for model: ${step.model}`);
+            return {
                 inputFile: fileInfo,
                 status: ProcessingStatus.PENDING,
                 outputFiles: [],
                 startTime,
+                endTime: new Date(),
                 stepId,
-                nextStep: step.next
+                nextStep: step.next,
+                error: `Model ${step.model} not yet implemented`
             };
-
-            logger.debug(`Step ${stepId} YAML formatted, ready for API call`);
-            return result;
 
         } catch (error) {
             logger.error(`Step execution failed: ${stepId}`, error);
-            throw ErrorFactory.pipeline(
-                `Step execution failed: ${error instanceof Error ? error.message : String(error)}`,
-                `Failed to execute step "${stepId}"`,
-                { stepId, fileInfo, originalError: error },
-                ['Check step configuration', 'Verify file accessibility']
-            );
+            
+            // Return failed result instead of throwing
+            return {
+                inputFile: fileInfo,
+                status: ProcessingStatus.FAILED,
+                outputFiles: [],
+                startTime,
+                endTime: new Date(),
+                stepId,
+                error: error instanceof Error ? error.message : String(error)
+            };
         }
     }
 
-    private createProcessingContext(fileInfo: FileInfo, stepId: string, step: any): ProcessingContext {
-        const basename = PathUtils.getBasename(fileInfo.path);
-        const timestamp = new Date().toISOString();
-        const date = timestamp.split('T')[0];
+    async executeChain(
+        startStepId: string, 
+        inputFile: FileInfo, 
+        config: PipelineConfiguration
+    ): Promise<ProcessingResult> {
+        let currentStepId = startStepId;
+        let lastResult: ProcessingResult;
 
-        // TODO: Resolve actual output path using step.output pattern
-        const outputPath = `${step.output}/${basename}-output.md`;
-        
-        // TODO: Resolve actual archive path using step.archive pattern  
-        const archivePath = `${step.archive}/${fileInfo.name}`;
+        try {
+            // Execute first step
+            lastResult = await this.executeStep(currentStepId, inputFile, config);
+            
+            // For now, just execute the first step
+            // TODO: Implement full chain execution when we have multiple step types
+            
+            return lastResult;
 
-        return {
-            originalCategory: fileInfo.category,
-            resolvedCategory: fileInfo.category, // No routing yet
-            filename: basename,
-            timestamp,
-            date,
-            archivePath,
-            stepId,
-            inputPath: fileInfo.path,
-            outputPath
-        };
+        } catch (error) {
+            logger.error('Chain execution failed:', error);
+            throw error;
+        }
     }
 }
