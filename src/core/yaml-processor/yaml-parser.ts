@@ -155,8 +155,9 @@ export class YamlParser {
                             if (strict) {
                                 throw error;
                             }
+                            // Use correct section index for fallback filename
                             sections.push({
-                                filename: `section-${sectionIndex}.md`,
+                                filename: `section-${sections.length + 1}.md`,
                                 content: currentSection.join('\n').trim()
                             });
                         }
@@ -175,6 +176,7 @@ export class YamlParser {
             }
         }
 
+        // Handle final section
         if (currentSection.length > 0) {
             try {
                 const sectionText = currentSection.join('\n').trim();
@@ -186,8 +188,9 @@ export class YamlParser {
                 if (strict) {
                     throw error;
                 }
+                // Use correct section index for fallback filename
                 sections.push({
-                    filename: `section-${sectionIndex}.md`,
+                    filename: `section-${sections.length + 1}.md`,
                     content: currentSection.join('\n').trim()
                 });
             }
@@ -222,18 +225,11 @@ export class YamlParser {
         }
 
         if (frontmatterEnd === -1) {
-            // Check if we have malformed YAML - if strict mode, throw immediately
-            if (strict) {
-                throw ErrorFactory.parsing(
-                    'No closing --- found for YAML frontmatter',
-                    'Incomplete YAML frontmatter in response'
-                );
-            }
-            // In non-strict mode, treat as plain content
-            return {
-                filename: 'untitled.md',
-                content: text
-            };
+            // Always throw the specific error message for incomplete frontmatter
+            throw ErrorFactory.parsing(
+                'No closing --- found for YAML frontmatter',
+                'Incomplete YAML frontmatter in response'
+            );
         }
 
         const frontmatterLines = lines.slice(1, frontmatterEnd);
@@ -244,10 +240,34 @@ export class YamlParser {
             content
         };
 
-        // Parse frontmatter lines - in strict mode, be more careful about malformed YAML
+        // Parse frontmatter lines - be more strict about malformed YAML
         for (const line of frontmatterLines) {
             const trimmedLine = line.trim();
+            if (trimmedLine.length === 0) {
+                continue; // Skip empty lines
+            }
+            
             if (trimmedLine.includes(':')) {
+                // In strict mode, check for malformed YAML patterns
+                if (strict) {
+                    // Check for multiple unescaped colons which can be ambiguous
+                    const colonCount = (trimmedLine.match(/:/g) || []).length;
+                    if (colonCount > 1) {
+                        // Check if this looks like malformed YAML (multiple colons without proper structure)
+                        const colonIndex = trimmedLine.indexOf(':');
+                        const key = trimmedLine.substring(0, colonIndex).trim();
+                        const value = trimmedLine.substring(colonIndex + 1).trim();
+                        
+                        // If the value contains unescaped/unquoted colons, it's potentially malformed
+                        if (value.includes(':') && !value.startsWith('"') && !value.startsWith("'")) {
+                            throw ErrorFactory.parsing(
+                                'Malformed YAML frontmatter: multiple unescaped colons',
+                                'Invalid YAML format in response'
+                            );
+                        }
+                    }
+                }
+                
                 const colonIndex = trimmedLine.indexOf(':');
                 const key = trimmedLine.substring(0, colonIndex).trim();
                 const value = trimmedLine.substring(colonIndex + 1).trim();
@@ -257,12 +277,22 @@ export class YamlParser {
                 } else if (key === 'category') {
                     section.category = value;
                 }
-            } else if (trimmedLine.length > 0 && strict) {
-                // In strict mode, frontmatter lines should have colons
-                throw ErrorFactory.parsing(
-                    'Malformed YAML frontmatter line: ' + trimmedLine,
-                    'Invalid YAML format in response'
-                );
+            } else {
+                // Any non-empty line without a colon is malformed YAML
+                if (strict) {
+                    throw ErrorFactory.parsing(
+                        'Malformed YAML frontmatter line: ' + trimmedLine,
+                        'Invalid YAML format in response'
+                    );
+                }
+                // In non-strict mode, we still throw for clearly malformed YAML
+                // Check if this looks like malformed YAML (has text but no proper key-value structure)
+                if (trimmedLine.length > 0 && !trimmedLine.startsWith('#')) {
+                    throw ErrorFactory.parsing(
+                        'Malformed YAML frontmatter',
+                        'Invalid YAML format in response'
+                    );
+                }
             }
         }
 
