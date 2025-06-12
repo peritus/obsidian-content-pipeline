@@ -93,7 +93,10 @@ export interface TemplateVariables {
     timestamp: string;
     date: string;
     originalCategory: string;
+    resolvedCategory: string;
     stepId: string;
+    inputPath: string;
+    outputPath: string;
 }
 
 /**
@@ -231,7 +234,7 @@ export interface TemplateFile {
     /** Template content (after frontmatter) */
     content: string;
     /** Path to template file */
-    path: string;
+    filePath: string;
 }
 
 /**
@@ -254,10 +257,12 @@ export interface TemplateMetadata {
 export interface TemplateResult {
     /** Final rendered content */
     content: string;
-    /** Variables that were substituted */
-    substitutions: Record<string, string>;
-    /** Variables that were missing */
-    missingVariables: string[];
+    /** Variables that were used in substitution */
+    variables: TemplateVariables;
+    /** Path to template file used */
+    templatePath: string;
+    /** Processing timestamp */
+    processedAt: string;
 }
 
 // =============================================================================

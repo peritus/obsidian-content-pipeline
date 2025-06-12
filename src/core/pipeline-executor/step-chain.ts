@@ -8,6 +8,7 @@ import { YamlProcessor } from '../yaml-processor';
 import { ChatClient } from '../../api/chat-client';
 import { FileOperations, FileUtils } from '../file-operations';
 import { PathResolver, PathUtils } from '../path-resolver';
+import { TemplateEngine } from '../template-engine';
 import { 
     AudioInboxSettings,
     PipelineConfiguration, 
@@ -15,7 +16,8 @@ import {
     FileInfo, 
     ProcessingResult, 
     ProcessingStatus,
-    ProcessingContext
+    ProcessingContext,
+    TemplateVariables
 } from '../../types';
 import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
@@ -28,6 +30,7 @@ export class StepChain {
     private whisperProcessor: WhisperStepProcessor;
     private yamlProcessor: YamlProcessor;
     private fileOps: FileOperations;
+    private templateEngine: TemplateEngine;
 
     constructor(app: App, settings: AudioInboxSettings) {
         this.app = app;
@@ -35,6 +38,7 @@ export class StepChain {
         this.whisperProcessor = new WhisperStepProcessor(app);
         this.yamlProcessor = new YamlProcessor(app);
         this.fileOps = new FileOperations(app);
+        this.templateEngine = new TemplateEngine(app);
         logger.debug('StepChain initialized with full API support');
     }
 
@@ -204,7 +208,7 @@ export class StepChain {
             const archivePath = await this.archiveInputFile(fileInfo, step, stepId);
             context.archivePath = archivePath;
 
-            // Save output files
+            // Save output files using template engine
             const outputFiles: string[] = [];
             for (const section of parsedResponse.sections) {
                 const outputPath = await this.saveOutputFile(section, step, context);
@@ -244,8 +248,42 @@ export class StepChain {
         const outputResult = PathResolver.resolvePath(step.output, pathContext);
         const outputPath = outputResult.resolvedPath;
 
-        // Create simple content with metadata (since we're skipping template engine)
-        const content = `---
+        try {
+            // Create template variables from context and section
+            const templateVariables: TemplateVariables = {
+                category: section.category || context.resolvedCategory,
+                filename: section.filename || PathUtils.getBasename(outputPath),
+                timestamp: context.timestamp,
+                date: context.date,
+                archivePath: context.archivePath,
+                inputPath: context.inputPath,
+                outputPath: outputPath,
+                stepId: context.stepId,
+                originalCategory: context.originalCategory,
+                resolvedCategory: context.resolvedCategory
+            };
+
+            // Process template with variables and content
+            const templateResult = await this.templateEngine.processTemplate(
+                step.template,
+                templateVariables,
+                section.content
+            );
+
+            // Write processed content to file
+            await this.fileOps.writeFile(outputPath, templateResult.content, {
+                createDirectories: true,
+                overwrite: true
+            });
+
+            logger.debug(`Output file saved with template: ${outputPath}`);
+            return outputPath;
+
+        } catch (error) {
+            logger.warn(`Template processing failed for ${outputPath}, using fallback`, error);
+            
+            // Fallback to simple content creation if template fails
+            const content = `---
 source: "${context.archivePath}"
 processed: "${context.timestamp}"
 step: "${context.stepId}"
@@ -255,14 +293,14 @@ filename: "${section.filename || 'output.md'}"
 
 ${section.content}`;
 
-        // Write file
-        await this.fileOps.writeFile(outputPath, content, {
-            createDirectories: true,
-            overwrite: true
-        });
+            await this.fileOps.writeFile(outputPath, content, {
+                createDirectories: true,
+                overwrite: true
+            });
 
-        logger.debug(`Output file saved: ${outputPath}`);
-        return outputPath;
+            logger.debug(`Output file saved with fallback: ${outputPath}`);
+            return outputPath;
+        }
     }
 
     private async archiveInputFile(
