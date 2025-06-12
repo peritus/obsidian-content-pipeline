@@ -7,4 +7,4 @@
 export { PipelineExecutor, ExecutionOptions } from './pipeline-executor';
 export { ExecutionState } from './execution-state';
 export { FileDiscovery, FileDiscoveryResult } from './file-discovery';
-export { StepChain } from './step-chain';
+export { StepChain } from './StepChain';

@@ -5,7 +5,7 @@
 import { App } from 'obsidian';
 import { ExecutionState } from './execution-state';
 import { FileDiscovery } from './file-discovery';
-import { StepChain } from './step-chain';
+import { StepChain } from './StepChain';
 import { 
     AudioInboxSettings, 
     PipelineConfiguration, 
