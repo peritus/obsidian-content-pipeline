@@ -1,8 +1,9 @@
-import { Setting, Notice, TextAreaComponent } from 'obsidian';
+import { Setting, TextAreaComponent } from 'obsidian';
 import AudioInboxPlugin from '../main';
-import { DEFAULT_PIPELINE_CONFIG } from './default-config';
 import { ConfigurationHelp } from './configuration-help';
 import { ConfigurationValidator } from './configuration-validator';
+import { ConfigurationButtons } from './configuration-buttons';
+import { TextareaStyler } from './textarea-styler';
 
 /**
  * Pipeline configuration section for settings
@@ -30,73 +31,34 @@ export class PipelineConfigSection {
         // Editable JSON Configuration
         const configSetting = new Setting(containerEl)
             .setName('Pipeline Configuration (JSON)')
-            .setDesc('Edit the complete pipeline configuration. Add your OpenAI API keys to the "apiKey" fields.')
-            .addTextArea(text => {
-                this.configTextarea = text;
-                text.inputEl.style.width = '100%';
-                text.inputEl.style.height = '400px';
-                text.inputEl.style.fontFamily = 'monospace';
-                text.inputEl.style.fontSize = '12px';
-                text.inputEl.style.lineHeight = '1.4';
-                text.inputEl.style.resize = 'vertical';
-                
-                // Set current value
-                text.setValue(this.plugin.settings.pipelineConfig);
-                
-                // Handle changes
-                text.onChange(async (value) => {
-                    await this.handleConfigChange(value);
-                });
-                
-                return text;
-            });
+            .setDesc('Edit the complete pipeline configuration. Add your OpenAI API keys to the "apiKey" fields.');
 
-        // Add control buttons
-        this.addControlButtons(configSetting);
+        // Style the setting for full width
+        TextareaStyler.styleSettingElement(configSetting.settingEl);
+        
+        configSetting.addTextArea(text => {
+            this.configTextarea = text;
+            
+            // Apply full width styling
+            TextareaStyler.styleTextarea(text);
+            
+            // Set current value
+            text.setValue(this.plugin.settings.pipelineConfig);
+            
+            // Handle changes
+            text.onChange(async (value) => {
+                await this.handleConfigChange(value);
+            });
+            
+            return text;
+        });
+
+        // Create button container and add control buttons
+        const controlContainer = ConfigurationButtons.createButtonContainer(containerEl);
+        ConfigurationButtons.addButtons(controlContainer, this.configTextarea, this.handleConfigChange.bind(this));
 
         // Configuration help
         ConfigurationHelp.render(containerEl);
-    }
-
-    /**
-     * Add control buttons to the setting
-     */
-    private addControlButtons(configSetting: Setting): void {
-        configSetting
-            .addButton(button => button
-                .setButtonText('Load Default')
-                .setTooltip('Reset to default configuration')
-                .onClick(async () => {
-                    const defaultConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
-                    if (this.configTextarea) {
-                        this.configTextarea.setValue(defaultConfig);
-                        await this.handleConfigChange(defaultConfig);
-                    }
-                }))
-            .addButton(button => button
-                .setButtonText('Format JSON')
-                .setTooltip('Auto-format the JSON configuration')
-                .onClick(async () => {
-                    if (this.configTextarea) {
-                        try {
-                            const current = this.configTextarea.getValue();
-                            const parsed = JSON.parse(current);
-                            const formatted = JSON.stringify(parsed, null, 2);
-                            this.configTextarea.setValue(formatted);
-                            await this.handleConfigChange(formatted);
-                        } catch (error) {
-                            new Notice('❌ Cannot format: Invalid JSON syntax', 4000);
-                        }
-                    }
-                }))
-            .addButton(button => button
-                .setButtonText('Validate')
-                .setTooltip('Check configuration for errors')
-                .onClick(() => {
-                    if (this.configTextarea) {
-                        ConfigurationValidator.validate(this.configTextarea.getValue(), true);
-                    }
-                }));
     }
 
     /**
