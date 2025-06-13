@@ -8,13 +8,15 @@
 // Re-export all components for backwards compatibility
 export { AudioInboxError } from './AudioInboxError';
 export { NotificationManager } from './NotificationManager';
-export { ErrorHandler } from './error-handler';
+export { ErrorHandler } from './ErrorHandler';
 export { ErrorFactory } from './ErrorFactory';
 export { RecoveryStrategies } from './RecoveryStrategies';
 export { handleAsync, isAudioInboxError } from './utils';
+export { createUserFriendlyMessage } from './error-message-formatter';
+export { wrapAsync, wrapSync } from './function-wrappers';
 
 // Import classes to create singleton instances
-import { ErrorHandler } from './error-handler';
+import { ErrorHandler } from './ErrorHandler';
 import { NotificationManager } from './NotificationManager';
 
 // Create singleton instances for easy access

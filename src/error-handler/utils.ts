@@ -4,7 +4,7 @@
 
 import { AudioInboxError } from './AudioInboxError';
 import { ErrorFactory } from './ErrorFactory';
-import { ErrorHandler } from './error-handler';
+import { ErrorHandler } from './ErrorHandler';
 
 /**
  * Utility function to handle promises with error handling

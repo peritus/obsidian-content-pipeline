@@ -2,7 +2,6 @@
  * Central error handler for the plugin
  */
 
-import { ErrorInfo } from '../types';
 import { createLogger } from '../logger';
 import { AudioInboxError } from './AudioInboxError';
 import { NotificationManager } from './NotificationManager';
@@ -35,8 +34,6 @@ export class ErrorHandler {
      * Handle an AudioInboxError
      */
     handleError(error: AudioInboxError): void {
-        const errorInfo = error.toErrorInfo();
-        
         // Log technical details
         errorLogger.error('AudioInbox error occurred', {
             type: error.type,
@@ -84,65 +81,5 @@ export class ErrorHandler {
         }
 
         this.handleError(audioInboxError);
-    }
-
-    /**
-     * Create user-friendly error message based on error type
-     */
-    createUserFriendlyMessage(errorInfo: ErrorInfo): string {
-        const baseMessage = errorInfo.userMessage;
-        
-        switch (errorInfo.type) {
-            case ErrorType.CONFIGURATION:
-                return `Configuration Error: ${baseMessage}`;
-            case ErrorType.FILE_SYSTEM:
-                return `File System Error: ${baseMessage}`;
-            case ErrorType.API:
-                return `API Error: ${baseMessage}`;
-            case ErrorType.PIPELINE:
-                return `Pipeline Error: ${baseMessage}`;
-            case ErrorType.VALIDATION:
-                return `Validation Error: ${baseMessage}`;
-            case ErrorType.TEMPLATE:
-                return `Template Error: ${baseMessage}`;
-            case ErrorType.PARSING:
-                return `Parsing Error: ${baseMessage}`;
-            default:
-                return baseMessage;
-        }
-    }
-
-    /**
-     * Wrap a function with error handling
-     */
-    wrapAsync<T extends (...args: any[]) => Promise<any>>(
-        fn: T, 
-        context?: string
-    ): T {
-        return (async (...args: Parameters<T>) => {
-            try {
-                return await fn(...args);
-            } catch (error) {
-                this.handleUnknownError(error, { context, args });
-                throw error; // Re-throw for caller to handle if needed
-            }
-        }) as T;
-    }
-
-    /**
-     * Wrap a synchronous function with error handling
-     */
-    wrapSync<T extends (...args: any[]) => any>(
-        fn: T, 
-        context?: string
-    ): T {
-        return ((...args: Parameters<T>) => {
-            try {
-                return fn(...args);
-            } catch (error) {
-                this.handleUnknownError(error, { context, args });
-                throw error; // Re-throw for caller to handle if needed
-            }
-        }) as T;
     }
 }

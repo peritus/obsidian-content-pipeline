@@ -10,7 +10,10 @@ import {
     ErrorHandler, 
     NotificationManager,
     errorHandler,
-    notificationManager
+    notificationManager,
+    createUserFriendlyMessage,
+    wrapAsync,
+    wrapSync
 } from '../src/error-handler';
 import { ErrorType, NotificationType } from '../src/types';
 import { mockNotice, cleanup } from './setup';
@@ -254,7 +257,7 @@ describe('ErrorHandler', () => {
             context: {}
         };
 
-        const friendlyMessage = errorHandler.createUserFriendlyMessage(errorInfo);
+        const friendlyMessage = createUserFriendlyMessage(errorInfo);
         
         expect(friendlyMessage).toContain('Configuration Error');
         expect(friendlyMessage).toContain('User message');
@@ -262,7 +265,7 @@ describe('ErrorHandler', () => {
 
     it('should wrap async functions with error handling', () => {
         const asyncFn = jest.fn().mockResolvedValue('success');
-        const wrappedFn = errorHandler.wrapAsync(asyncFn, 'test context');
+        const wrappedFn = wrapAsync(asyncFn, 'test context');
 
         expect(typeof wrappedFn).toBe('function');
         
@@ -273,7 +276,7 @@ describe('ErrorHandler', () => {
 
     it('should wrap sync functions with error handling', () => {
         const syncFn = jest.fn().mockReturnValue('success');
-        const wrappedFn = errorHandler.wrapSync(syncFn, 'test context');
+        const wrappedFn = wrapSync(syncFn, 'test context');
 
         expect(typeof wrappedFn).toBe('function');
         
@@ -284,7 +287,7 @@ describe('ErrorHandler', () => {
 
     it('should handle errors in wrapped async functions', async () => {
         const asyncFn = jest.fn().mockRejectedValue(new Error('Async error'));
-        const wrappedFn = errorHandler.wrapAsync(asyncFn, 'test context');
+        const wrappedFn = wrapAsync(asyncFn, 'test context');
 
         await expect(wrappedFn()).rejects.toThrow('Async error');
         expect(mockNotice).toHaveBeenCalled();
@@ -294,7 +297,7 @@ describe('ErrorHandler', () => {
         const syncFn = jest.fn().mockImplementation(() => {
             throw new Error('Sync error');
         });
-        const wrappedFn = errorHandler.wrapSync(syncFn, 'test context');
+        const wrappedFn = wrapSync(syncFn, 'test context');
 
         expect(() => wrappedFn()).toThrow('Sync error');
         expect(mockNotice).toHaveBeenCalled();
