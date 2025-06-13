@@ -16,6 +16,7 @@ import {
     ProcessingStatus,
     ProcessingContext
 } from '../../../types';
+import { ErrorFactory } from '../../../error-handler';
 import { createLogger } from '../../../logger';
 
 const logger = createLogger('ChatStepExecutor');
@@ -43,6 +44,9 @@ export class ChatStepExecutor {
         const startTime = new Date();
 
         try {
+            // Validate input parameters
+            this.validateInput(stepId, fileInfo, step);
+
             logger.info(`Starting chat processing: ${fileInfo.name} with ${step.model}`);
 
             // Create processing context
@@ -103,8 +107,73 @@ export class ChatStepExecutor {
             };
 
         } catch (error) {
-            logger.error(`Chat processing failed: ${fileInfo.name}`, error);
+            logger.error(`Chat processing failed: ${fileInfo?.name || 'unknown file'}`, error);
             throw error;
         }
+    }
+
+    /**
+     * Validate input parameters for chat execution
+     */
+    private validateInput(stepId: string, fileInfo: FileInfo, step: PipelineStep): void {
+        // Validate stepId
+        if (!stepId || typeof stepId !== 'string') {
+            throw ErrorFactory.validation(
+                'Invalid stepId provided to ChatStepExecutor',
+                'Step ID must be a non-empty string',
+                { stepId },
+                ['Provide a valid step ID string']
+            );
+        }
+
+        // Validate step configuration
+        if (!step) {
+            throw ErrorFactory.validation(
+                'No step configuration provided to ChatStepExecutor',
+                'Pipeline step configuration is required',
+                { stepId },
+                ['Ensure step configuration is properly defined in pipeline']
+            );
+        }
+
+        // Validate fileInfo
+        if (!fileInfo) {
+            throw ErrorFactory.validation(
+                'No fileInfo provided to ChatStepExecutor',
+                'File information is required for processing',
+                { stepId },
+                ['Ensure file discovery is working correctly', 'Check file exists and is accessible']
+            );
+        }
+
+        // Validate fileInfo properties
+        if (!fileInfo.path || typeof fileInfo.path !== 'string') {
+            throw ErrorFactory.validation(
+                'Invalid or missing file path in FileInfo',
+                'File path is required and must be a valid string',
+                { stepId, fileInfo: { ...fileInfo, path: fileInfo?.path } },
+                [
+                    'Check file discovery process', 
+                    'Ensure FileInfo objects are created correctly',
+                    'Verify file exists in vault'
+                ]
+            );
+        }
+
+        if (!fileInfo.name || typeof fileInfo.name !== 'string') {
+            throw ErrorFactory.validation(
+                'Invalid or missing file name in FileInfo',
+                'File name is required and must be a valid string',
+                { stepId, fileInfo },
+                ['Check FileInfo creation process']
+            );
+        }
+
+        // Log validation success
+        logger.debug('Input validation passed', { 
+            stepId, 
+            fileName: fileInfo.name, 
+            filePath: fileInfo.path 
+        });
     }
 }

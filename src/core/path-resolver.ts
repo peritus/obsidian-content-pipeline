@@ -286,6 +286,12 @@ export class PathResolver {
      * Get the directory part of a path
      */
     static getDirectory(path: string): string {
+        // Input validation: handle null, undefined, or empty paths
+        if (!path || typeof path !== 'string') {
+            logger.warn('getDirectory received invalid path', { path });
+            return '';
+        }
+        
         const normalized = PathResolver.normalizePath(path);
         const lastSlash = normalized.lastIndexOf('/');
         
@@ -300,6 +306,12 @@ export class PathResolver {
      * Get the filename part of a path
      */
     static getFilename(path: string): string {
+        // Input validation: handle null, undefined, or empty paths
+        if (!path || typeof path !== 'string') {
+            logger.warn('getFilename received invalid path', { path });
+            return '';
+        }
+        
         const normalized = PathResolver.normalizePath(path);
         
         // If the path ends with a slash, it's a directory
@@ -315,6 +327,12 @@ export class PathResolver {
      * Get filename without extension
      */
     static getBasename(path: string): string {
+        // Input validation: handle null, undefined, or empty paths
+        if (!path || typeof path !== 'string') {
+            logger.warn('getBasename received invalid path', { path });
+            return '';
+        }
+        
         const filename = PathResolver.getFilename(path);
         const lastDot = filename.lastIndexOf('.');
         
@@ -325,6 +343,12 @@ export class PathResolver {
      * Get file extension (including the dot)
      */
     static getExtension(path: string): string {
+        // Input validation: handle null, undefined, or empty paths
+        if (!path || typeof path !== 'string') {
+            logger.warn('getExtension received invalid path', { path });
+            return '';
+        }
+        
         const filename = PathResolver.getFilename(path);
         const lastDot = filename.lastIndexOf('.');
         
@@ -335,6 +359,11 @@ export class PathResolver {
      * Check if a path represents a directory (ends with slash or has no extension)
      */
     static isDirectory(path: string): boolean {
+        // Input validation: handle null, undefined, or empty paths
+        if (!path || typeof path !== 'string') {
+            return false;
+        }
+        
         const normalized = PathResolver.normalizePath(path);
         return normalized.endsWith('/') || !PathResolver.getExtension(normalized);
     }
@@ -343,6 +372,12 @@ export class PathResolver {
      * Ensure a path represents a directory by adding trailing slash if needed
      */
     static ensureDirectory(path: string): string {
+        // Input validation: handle null, undefined, or empty paths
+        if (!path || typeof path !== 'string') {
+            logger.warn('ensureDirectory received invalid path', { path });
+            return '/';
+        }
+        
         const normalized = PathResolver.normalizePath(path);
         return normalized.endsWith('/') ? normalized : normalized + '/';
     }
@@ -351,6 +386,12 @@ export class PathResolver {
      * Extract category from a categorized path pattern
      */
     static extractCategoryFromPath(path: string, pattern: string): string | null {
+        // Input validation
+        if (!path || !pattern || typeof path !== 'string' || typeof pattern !== 'string') {
+            logger.warn('extractCategoryFromPath received invalid parameters', { path, pattern });
+            return null;
+        }
+        
         logger.debug('Extracting category from path', { path, pattern });
 
         // Simple approach: if pattern has {category}, find that segment in the path
