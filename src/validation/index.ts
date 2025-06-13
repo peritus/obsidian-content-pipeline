@@ -7,7 +7,7 @@
 // Core validation functions
 export { validatePath } from './path';
 export { validateCategory } from './category';
-export { validateApiKey } from './api-key';
+export { validateApiKey } from './api-key/validateApiKey';
 export { validateFilePattern } from './file-pattern';
 export { validatePipelineStep } from './pipeline-step';
 export { validatePipelineConfig } from './pipeline-config';
@@ -15,7 +15,7 @@ export { validatePipelineConfig } from './pipeline-config';
 // Import functions for use in object and convenience function
 import { validatePath } from './path';
 import { validateCategory } from './category';
-import { validateApiKey } from './api-key';
+import { validateApiKey } from './api-key/validateApiKey';
 import { validateFilePattern } from './file-pattern';
 import { validatePipelineStep } from './pipeline-step';
 import { validatePipelineConfig } from './pipeline-config';

@@ -7,7 +7,7 @@
 import { ErrorFactory } from '../error-handler';
 import { PipelineStep } from '../types';
 import { validatePath } from './path';
-import { validateApiKey } from './api-key';
+import { validateApiKey } from './api-key/validateApiKey';
 import { validateFilePattern } from './file-pattern';
 
 /**
