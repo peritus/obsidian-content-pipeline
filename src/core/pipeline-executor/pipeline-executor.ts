@@ -66,7 +66,7 @@ export class PipelineExecutor {
             logger.info(`Processing: ${fileToProcess.file.path} (${fileToProcess.stepId})`);
             
             this.executionState.addActiveFile(fileToProcess.file.path);
-            const result = await this.stepChain.executeChain(
+            const result = await this.stepChain.executeStep(
                 fileToProcess.stepId, 
                 fileToProcess.file, 
                 config
