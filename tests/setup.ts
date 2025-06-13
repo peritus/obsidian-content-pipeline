@@ -77,7 +77,7 @@ export const createMockPipelineStep = (overrides: any = {}) => ({
     archive: 'inbox/archive/{stepId}/{category}',
     template: 'templates/default.md',
     include: ['prompt.md'],
-    apiKey: 'sk-test-key-1234567890123456789012',  // Make it longer to pass validation
+    apiKey: 'sk-proj-test1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',  // Valid project key format
     baseUrl: 'https://api.openai.com/v1',
     ...overrides
 });

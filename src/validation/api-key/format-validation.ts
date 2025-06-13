@@ -14,6 +14,26 @@ export function validateFormat(apiKey: string): void {
     let isValidFormat = false;
     let detectedProvider = 'unknown';
 
+    // Explicitly reject legacy OpenAI format (sk- followed by exactly 48 alphanumeric characters)
+    const legacyOpenAIPattern = /^sk-[a-zA-Z0-9]{48}$/;
+    if (legacyOpenAIPattern.test(trimmedKey)) {
+        throw ErrorFactory.validation(
+            'Legacy OpenAI API key format not supported',
+            'This appears to be a legacy OpenAI API key format. Please use a project API key instead.',
+            { 
+                apiKey: '***REDACTED***', 
+                length: trimmedKey.length,
+                startsWithSk: trimmedKey.startsWith('sk-'),
+                detectedProvider: 'OpenAI (legacy)'
+            },
+            [
+                'Create a new project API key from the OpenAI dashboard',
+                'Project keys start with "sk-proj-"',
+                'Legacy keys starting with "sk-" followed by 48 characters are no longer supported'
+            ]
+        );
+    }
+
     // Check OpenAI format
     if (API_KEY_PATTERNS.openai.test(trimmedKey)) {
         isValidFormat = true;
@@ -44,7 +64,7 @@ export function validateFormat(apiKey: string): void {
             [
                 'Verify the API key was copied correctly',
                 'Check if the API key is from a supported provider',
-                'OpenAI keys start with "sk-"',
+                'OpenAI keys start with "sk-proj-"',
                 'Anthropic keys start with "sk-ant-api03-"',
                 'Remove any quotes or extra characters'
             ]

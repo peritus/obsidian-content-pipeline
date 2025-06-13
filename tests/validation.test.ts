@@ -126,9 +126,9 @@ describe('API Key Validation', () => {
     });
 
     describe('validateApiKey', () => {
-        it('should accept valid OpenAI API keys', () => {
+        it('should accept valid OpenAI project API keys', () => {
             expect(() => validateApiKey('sk-proj-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef')).not.toThrow();
-            expect(() => validateApiKey('sk-123456789012345678901234567890123456789012345678')).not.toThrow();
+            expect(() => validateApiKey('sk-proj-EtmK85nkAcIvMoYjOu1234SoPVBWnYOjHGUQx--HUh4OW3syW_zfYcCRbrbtxeX4ZJCDJY8tb88f_MDovZwA')).not.toThrow();
         });
 
         it('should accept valid Anthropic API keys', () => {
@@ -172,6 +172,10 @@ describe('API Key Validation', () => {
 
         it('should reject invalid format', () => {
             expect(() => validateApiKey('invalid@#$%^&*()')).toThrow('format is not recognized');
+        });
+
+        it('should reject legacy OpenAI API key format', () => {
+            expect(() => validateApiKey('sk-123456789012345678901234567890123456789012345678')).toThrow('Legacy OpenAI API key format not supported');
         });
     });
 });
