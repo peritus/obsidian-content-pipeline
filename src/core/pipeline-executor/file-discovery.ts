@@ -1,7 +1,7 @@
 /**
  * File Discovery System
  * 
- * Handles finding the next available file for processing across pipeline entry points.
+ * Handles finding the next available file for processing across all pipeline steps.
  */
 
 import { App } from 'obsidian';
@@ -32,26 +32,31 @@ export class FileDiscovery {
     }
 
     /**
-     * Find the next available file for processing across all entry points
+     * Find the next available file for processing across all pipeline steps
      */
     async findNextAvailableFile(
         config: PipelineConfiguration,
         excludeFiles: Set<string>
     ): Promise<FileDiscoveryResult | null> {
-        const entryPoints = this.findEntryPoints(config);
+        const allSteps = Object.keys(config);
         
-        if (entryPoints.length === 0) {
+        if (allSteps.length === 0) {
             throw ErrorFactory.pipeline(
-                'No entry points found in pipeline configuration',
-                'Pipeline has no starting points',
-                { configSteps: Object.keys(config) },
-                ['Add a step that is not referenced by others', 'Check pipeline configuration']
+                'No steps found in pipeline configuration',
+                'Pipeline configuration is empty',
+                { configSteps: allSteps },
+                ['Add steps to pipeline configuration', 'Check pipeline configuration']
             );
         }
 
-        logger.debug(`Searching for files in ${entryPoints.length} entry points: ${entryPoints.join(', ')}`);
+        logger.debug(`Searching for files in ${allSteps.length} steps: ${allSteps.join(', ')}`);
 
-        for (const stepId of entryPoints) {
+        // Sort steps to prioritize entry points first, then other steps
+        const entryPoints = this.findEntryPoints(config);
+        const nonEntryPoints = allSteps.filter(stepId => !entryPoints.includes(stepId));
+        const stepsToCheck = [...entryPoints, ...nonEntryPoints];
+
+        for (const stepId of stepsToCheck) {
             const step = config[stepId];
             
             try {
@@ -77,6 +82,7 @@ export class FileDiscovery {
             }
         }
 
+        logger.debug('No files found for processing across all steps');
         return null;
     }
 

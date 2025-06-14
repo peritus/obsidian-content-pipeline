@@ -267,7 +267,7 @@ describe('File Discovery', () => {
         const excludeFiles = new Set<string>();
         
         await expect(discovery.findNextAvailableFile(emptyConfig, excludeFiles))
-            .rejects.toThrow('No entry points found');
+            .rejects.toThrow('No steps found in pipeline configuration');
     });
 
     it('should find files in entry point steps', async () => {
@@ -280,7 +280,7 @@ describe('File Discovery', () => {
             await discovery.findNextAvailableFile(complexConfig, excludeFiles);
         } catch (error: any) {
             // Expected to fail due to no actual files, but should not fail on configuration
-            expect(error.message).not.toContain('No entry points found');
+            expect(error.message).not.toContain('No steps found in pipeline configuration');
         }
     });
 
