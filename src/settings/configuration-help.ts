@@ -27,15 +27,25 @@ export class ConfigurationHelp {
                 <li><strong>model:</strong> AI model to use (whisper-1, gpt-4, etc.)</li>
                 <li><strong>input:</strong> Where to find files to process</li>
                 <li><strong>output:</strong> Where to save processed files</li>
-                <li><strong>template:</strong> Template file for formatting output</li>
+                <li><strong>include:</strong> Array of files to include (prompts and context)</li>
                 <li><strong>apiKey:</strong> Your OpenAI API key for this step</li>
-                <li><strong>next:</strong> Next step in the pipeline (optional)</li>
+                <li><strong>next:</strong> Object mapping step IDs to routing prompts for intelligent routing</li>
+                <li><strong>description:</strong> Description of what this step does (optional)</li>
+            </ul>
+            
+            <h4>Intelligent Step Routing:</h4>
+            <ul>
+                <li>The LLM analyzes content and chooses the best next step automatically</li>
+                <li>Configure routing with descriptive prompts that explain when to use each step</li>
+                <li>Example: <code>"process-thoughts": "If the document contains personal reflections..."</code></li>
             </ul>
             
             <h4>Variables Available:</h4>
             <ul>
-                <li><code>{category}</code> - File category (tasks, thoughts, etc.)</li>
                 <li><code>{filename}</code> - Original filename without extension</li>
+                <li><code>{timestamp}</code> - Current timestamp</li>
+                <li><code>{date}</code> - Current date</li>
+                <li><code>{stepId}</code> - Current processing step ID</li>
             </ul>
         `;
     }

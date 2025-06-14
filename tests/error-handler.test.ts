@@ -127,16 +127,6 @@ describe('ErrorFactory', () => {
         expect(error.suggestions).toContain('Check your input data');
     });
 
-    it('should create template errors', () => {
-        const error = ErrorFactory.template(
-            'Template failed',
-            'Template error'
-        );
-
-        expect(error.type).toBe(ErrorType.TEMPLATE);
-        expect(error.suggestions).toContain('Check your template syntax');
-    });
-
     it('should create parsing errors', () => {
         const error = ErrorFactory.parsing(
             'Parse failed',
@@ -366,7 +356,6 @@ describe('Error Types', () => {
         expect(ErrorType.API).toBe('api');
         expect(ErrorType.PIPELINE).toBe('pipeline');
         expect(ErrorType.VALIDATION).toBe('validation');
-        expect(ErrorType.TEMPLATE).toBe('template');
         expect(ErrorType.PARSING).toBe('parsing');
     });
 });

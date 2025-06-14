@@ -7,10 +7,9 @@
 import { ErrorFactory } from '../error-handler';
 
 /**
- * Supported variables in file patterns
+ * Supported variables in file patterns (v1.1)
  */
 const SUPPORTED_VARIABLES = [
-    'category',
     'filename', 
     'timestamp',
     'date',
@@ -20,7 +19,7 @@ const SUPPORTED_VARIABLES = [
 /**
  * Validate a file pattern with variable substitution support
  * 
- * @param pattern - The file pattern to validate (e.g., "inbox/audio/{category}/{filename}.md")
+ * @param pattern - The file pattern to validate (e.g., "inbox/audio/{stepId}/{filename}.md")
  * @returns true if valid
  * @throws AudioInboxError if invalid
  */
@@ -31,7 +30,7 @@ export function validateFilePattern(pattern: string): true {
             'Empty file pattern provided - pattern cannot be empty',
             'File pattern cannot be empty',
             { pattern },
-            ['Provide a valid file pattern', 'Use variables like {category} and {filename}']
+            ['Provide a valid file pattern', 'Use variables like {stepId} and {filename}']
         );
     }
 
