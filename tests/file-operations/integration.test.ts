@@ -171,17 +171,41 @@ describe('FileOperations - getFileInfo and Integration', () => {
         });
 
         it('should handle multi-file output from single step', async () => {
+            // Reset mocks to ensure clean state for this test
+            resetMocks();
+            
             // Test scenario where one step produces multiple output files
             const inputFile = createMockTFile('mixed-content.md', 'inbox/transcripts/mixed-content.md');
             const personalFile = createMockTFile('personal-notes.md', 'inbox/process-thoughts/personal-notes.md');
             const workFile = createMockTFile('work-tasks.md', 'inbox/process-tasks/work-tasks.md');
 
-            mockVault.getAbstractFileByPath.mockReturnValue(inputFile);
+            // Setup mocks with clean isolated state for this specific test
+            mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+                if (path === 'inbox/transcripts/mixed-content.md') return inputFile;
+                // For directories that need to be created, return null so they can be created
+                if (path === 'inbox/process-thoughts') return null; // Ensure directory can be created
+                if (path === 'inbox/process-tasks') return null; // Ensure directory can be created
+                if (path.includes('personal-notes.md')) return null; // File doesn't exist yet
+                if (path.includes('work-tasks.md')) return null; // File doesn't exist yet
+                return null;
+            });
+            
             mockVault.read.mockResolvedValue('Mixed content with both personal and work items');
             mockVault.create.mockImplementation((path: string) => {
                 if (path.includes('personal-notes.md')) return Promise.resolve(personalFile);
                 if (path.includes('work-tasks.md')) return Promise.resolve(workFile);
                 return Promise.resolve(createMockTFile('default', path));
+            });
+
+            // Mock createFolder to succeed for the directories we need
+            mockVault.createFolder.mockImplementation((path: string) => {
+                if (path.includes('process-thoughts')) {
+                    return Promise.resolve(createMockTFolder('process-thoughts', 'inbox/process-thoughts'));
+                }
+                if (path.includes('process-tasks')) {
+                    return Promise.resolve(createMockTFolder('process-tasks', 'inbox/process-tasks'));
+                }
+                return Promise.resolve(createMockTFolder('default', path));
             });
 
             // Read input
@@ -197,6 +221,9 @@ describe('FileOperations - getFileInfo and Integration', () => {
         });
 
         it('should handle directory-only outputs for summary steps', async () => {
+            // Reset mocks to ensure clean state
+            resetMocks();
+            
             // Test summary steps that output to directories rather than specific files
             const summaryContent = '# Weekly Personal Summary\n\nThis week\'s personal insights...';
             
@@ -215,6 +242,9 @@ describe('FileOperations - getFileInfo and Integration', () => {
         });
 
         it('should handle include file resolution for step contexts', async () => {
+            // Reset mocks to ensure clean state
+            resetMocks();
+            
             // Test that include files are properly resolved for different steps
             const includeFiles = [
                 'transcriptionprompt.md',
@@ -251,6 +281,9 @@ describe('FileOperations - getFileInfo and Integration', () => {
         });
 
         it('should handle error recovery in step-based workflow', async () => {
+            // Reset mocks to ensure clean state
+            resetMocks();
+            
             // Test that errors in one step don't break the entire pipeline
             mockVault.getAbstractFileByPath.mockReturnValue(null);
 

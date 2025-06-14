@@ -44,7 +44,13 @@ export class FileInfoProvider {
             '.m4a': 'audio/mp4',
             '.mp4': 'video/mp4',
             '.md': 'text/markdown',
-            '.txt': 'text/plain'
+            '.txt': 'text/plain',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.bmp': 'image/bmp',
+            '.webp': 'image/webp'
         };
 
         return mimeTypes[extension.toLowerCase()];
