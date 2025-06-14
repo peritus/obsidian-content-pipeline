@@ -71,7 +71,7 @@ export class OutputHandler {
 
             // Create frontmatter
             const frontmatterLines = ['---'];
-            frontmatterLines.push(`source: "${metadata.source}"`);
+            frontmatterLines.push(`source: [[${metadata.source}]]`);
             frontmatterLines.push(`processed: "${metadata.processed}"`);
             frontmatterLines.push(`step: "${metadata.step}"`);
             if (metadata.nextStep) {
@@ -200,7 +200,7 @@ export class OutputHandler {
 
                 // Create frontmatter
                 const frontmatterLines = ['---'];
-                frontmatterLines.push(`source: "${metadata.source}"`);
+                frontmatterLines.push(`source: [[${metadata.source}]]`);
                 frontmatterLines.push(`processed: "${metadata.processed}"`);
                 frontmatterLines.push(`step: "${metadata.step}"`);
                 if (metadata.nextStep) {

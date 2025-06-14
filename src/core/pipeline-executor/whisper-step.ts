@@ -112,7 +112,7 @@ export class WhisperStepProcessor {
         const timestamp = new Date().toISOString();
         
         return `---
-source: "${archivePath}"
+source: [[${archivePath}]]
 processed: "${timestamp}"
 step: "${stepId}"
 pipeline: "audio-processing"
