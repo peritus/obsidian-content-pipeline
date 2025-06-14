@@ -59,83 +59,20 @@ export function validateYamlRequest(yamlRequest: string, model: string): void {
 }
 
 /**
- * Convert YAML request sections to OpenAI chat messages
+ * Convert YAML request to OpenAI chat messages
+ * 
+ * This function sends the entire YAML-formatted request as a single user message,
+ * allowing the LLM to process the structured frontmatter format as intended.
  */
 export function yamlToMessages(yamlRequest: string): Array<{ role: 'system' | 'user'; content: string }> {
-    const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
-    
-    // Check if this is a structured YAML request with sections
-    if (!yamlRequest.includes('---')) {
-        // Plain text request - treat as user message
-        messages.push({
+    // Always send the complete YAML request as a single user message
+    // This preserves the YAML frontmatter structure that the LLM needs to understand
+    return [
+        {
             role: 'user',
             content: yamlRequest.trim()
-        });
-        return messages;
-    }
-    
-    // Split by YAML frontmatter sections
-    const lines = yamlRequest.split('\n');
-    let currentSection: string[] = [];
-    let inFrontmatter = false;
-    let frontmatterData: Record<string, string> = {};
-    let sectionContent = '';
-    
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        
-        if (line.trim() === '---') {
-            if (inFrontmatter) {
-                // End of frontmatter - start collecting content
-                inFrontmatter = false;
-                sectionContent = '';
-            } else {
-                // Start of new section - process previous section if it exists
-                if (sectionContent.trim() || Object.keys(frontmatterData).length > 0) {
-                    const role = frontmatterData.role === 'prompt' ? 'system' : 'user';
-                    messages.push({
-                        role,
-                        content: sectionContent.trim()
-                    });
-                }
-                
-                // Reset for new section
-                frontmatterData = {};
-                sectionContent = '';
-                inFrontmatter = true;
-            }
-        } else if (inFrontmatter) {
-            // Parse frontmatter line
-            const colonIndex = line.indexOf(':');
-            if (colonIndex > 0) {
-                const key = line.substring(0, colonIndex).trim();
-                const value = line.substring(colonIndex + 1).trim();
-                frontmatterData[key] = value;
-            }
-        } else {
-            // Collect content
-            sectionContent += (sectionContent ? '\n' : '') + line;
         }
-    }
-    
-    // Handle final section
-    if (sectionContent.trim() || Object.keys(frontmatterData).length > 0) {
-        const role = frontmatterData.role === 'prompt' ? 'system' : 'user';
-        messages.push({
-            role,
-            content: sectionContent.trim()
-        });
-    }
-    
-    // If no messages were parsed, treat the entire request as user content
-    if (messages.length === 0) {
-        messages.push({
-            role: 'user',
-            content: yamlRequest.trim()
-        });
-    }
-    
-    return messages;
+    ];
 }
 
 /**

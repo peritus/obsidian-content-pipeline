@@ -133,9 +133,34 @@ export class YamlFormatter {
     }
 
     private formatRoutingInfo(routingInfo: StepRoutingInfo): string {
-        const lines = ['Based on the content above, please choose the most appropriate next processing step from the available options. Include your choice in the response frontmatter using the \'nextStep\' field.', ''];
+        const lines = [
+            'You can return single or multiple files using YAML frontmatter format:',
+            '',
+            'For single file:',
+            '---',
+            'filename: output.md',
+            'nextStep: chosen_step_id',
+            '---',
+            'Your content here...',
+            '',
+            'For multiple files:',
+            '---',
+            'filename: doc1.md',
+            'nextStep: step_id_1',
+            '---',
+            'First document content...',
+            '',
+            '---',
+            'filename: doc2.md',
+            'nextStep: step_id_2',
+            '---',
+            'Second document content...',
+            '',
+            'Use the \'nextStep\' field to route content to the most appropriate next processing step based on the available options provided.',
+            '',
+            'Available next steps:'
+        ];
         
-        lines.push('Available next steps:');
         for (const [stepId, description] of Object.entries(routingInfo.available_next_steps)) {
             lines.push(`- ${stepId}: ${description}`);
         }
@@ -153,10 +178,12 @@ export class YamlFormatter {
             if (section.role === FileRole.ROUTING) {
                 const routingContent = section.content;
                 const lines = routingContent.split('\n');
-                if (lines.length > 2 && lines[2] === 'Available next steps:') {
-                    // Parse the available next steps from content
+                
+                // Find the "Available next steps:" line and extract steps
+                const availableStepsIndex = lines.findIndex(line => line.trim() === 'Available next steps:');
+                if (availableStepsIndex !== -1) {
                     const availableSteps: { [stepId: string]: string } = {};
-                    for (let i = 3; i < lines.length; i++) {
+                    for (let i = availableStepsIndex + 1; i < lines.length; i++) {
                         const line = lines[i].trim();
                         if (line.startsWith('- ')) {
                             const match = line.match(/^- ([^:]+): (.+)$/);

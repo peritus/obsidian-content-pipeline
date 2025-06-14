@@ -70,21 +70,19 @@ available_next_steps:
 Based on the content above, please choose the most appropriate next processing step: process-thoughts for personal content, process-tasks for work content, or process-ideas for innovative content. Include your choice in the response frontmatter using the 'nextStep' field.`;
 
             const messages = yamlToMessages(yamlRequestWithRouting);
-            expect(messages).toHaveLength(3);
             
-            // Input becomes user message
+            // Should send entire YAML as single user message
+            expect(messages).toHaveLength(1);
             expect(messages[0].role).toBe('user');
-            expect(messages[0].content).toContain('personal reflection');
+            expect(messages[0].content).toBe(yamlRequestWithRouting.trim());
             
-            // Prompt becomes system message
-            expect(messages[1].role).toBe('system');
-            expect(messages[1].content).toContain('Process this content appropriately');
-            
-            // Routing becomes user instruction - check for the actual instruction content
-            expect(messages[2].role).toBe('user');
-            expect(messages[2].content).toContain('choose the most appropriate next processing step');
-            expect(messages[2].content).toContain('process-thoughts');
-            expect(messages[2].content).toContain('nextStep');
+            // Verify YAML structure is preserved
+            expect(messages[0].content).toContain('role: input');
+            expect(messages[0].content).toContain('role: prompt');
+            expect(messages[0].content).toContain('role: routing');
+            expect(messages[0].content).toContain('available_next_steps:');
+            expect(messages[0].content).toContain('process-thoughts');
+            expect(messages[0].content).toContain('nextStep');
         });
 
         test('should handle YAML requests without routing', () => {
@@ -103,12 +101,17 @@ filename: final-prompt.md
 Create a final summary of this content.`;
 
             const messages = yamlToMessages(yamlRequestWithoutRouting);
-            expect(messages).toHaveLength(2);
-            expect(messages[0].role).toBe('user');
-            expect(messages[1].role).toBe('system');
             
-            // Should not contain routing information
-            expect(messages.some(m => m.content.includes('available_next_steps'))).toBe(false);
+            // Should send entire YAML as single user message
+            expect(messages).toHaveLength(1);
+            expect(messages[0].role).toBe('user');
+            expect(messages[0].content).toBe(yamlRequestWithoutRouting.trim());
+            
+            // Should preserve YAML structure but not contain routing
+            expect(messages[0].content).toContain('role: input');
+            expect(messages[0].content).toContain('role: prompt');
+            expect(messages[0].content).not.toContain('role: routing');
+            expect(messages[0].content).not.toContain('available_next_steps');
         });
 
         test('should handle context files in YAML requests', () => {
@@ -134,12 +137,17 @@ filename: previous-summary.md
 Previous summary for context: This provides background information.`;
 
             const messages = yamlToMessages(yamlRequestWithContext);
-            expect(messages).toHaveLength(3);
             
+            // Should send entire YAML as single user message
+            expect(messages).toHaveLength(1);
             expect(messages[0].role).toBe('user');
-            expect(messages[1].role).toBe('system');
-            expect(messages[2].role).toBe('user'); // Context as user message
-            expect(messages[2].content).toContain('Previous summary for context');
+            expect(messages[0].content).toBe(yamlRequestWithContext.trim());
+            
+            // Should preserve all sections including context
+            expect(messages[0].content).toContain('role: input');
+            expect(messages[0].content).toContain('role: prompt');
+            expect(messages[0].content).toContain('role: context');
+            expect(messages[0].content).toContain('Previous summary for context');
         });
 
         test('should handle plain text requests', () => {
@@ -183,12 +191,17 @@ available_next_steps:
 Choose the most appropriate processing step. Use process-thoughts for personal thoughts and reflections, process-tasks for work content, or process-ideas for innovative concepts.`;
 
             const messages = yamlToMessages(yamlWithComplexRouting);
-            expect(messages).toHaveLength(3);
             
-            const routingMessage = messages.find(m => m.content.includes('Choose the most appropriate'));
-            expect(routingMessage).toBeDefined();
-            expect(routingMessage!.content).toContain('processing step');
-            expect(routingMessage!.content).toContain('process-thoughts');
+            // Should send entire YAML as single user message
+            expect(messages).toHaveLength(1);
+            expect(messages[0].role).toBe('user');
+            expect(messages[0].content).toBe(yamlWithComplexRouting.trim());
+            
+            // Should preserve complex routing structure
+            expect(messages[0].content).toContain('Choose the most appropriate');
+            expect(messages[0].content).toContain('processing step');
+            expect(messages[0].content).toContain('process-thoughts');
+            expect(messages[0].content).toContain('available_next_steps:');
         });
     });
 

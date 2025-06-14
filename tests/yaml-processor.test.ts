@@ -601,9 +601,11 @@ describe('YAML Communication Protocol', () => {
             expect(request).toMatch(/---\s*role:\s*routing/);
             expect(request).toContain('available_next_steps:');
             
-            // Verify routing instructions are included
-            expect(request).toContain('Based on the content above, please choose the most appropriate next processing step');
-            expect(request).toContain('Include your choice in the response frontmatter using the \'nextStep\' field');
+            // Verify comprehensive response format instructions are included
+            expect(request).toContain('You can return single or multiple files using YAML frontmatter format:');
+            expect(request).toContain('For single file:');
+            expect(request).toContain('For multiple files:');
+            expect(request).toContain('Use the \'nextStep\' field to route content to the most appropriate next processing step');
         });
 
         it('should handle requests without routing for final steps', async () => {
