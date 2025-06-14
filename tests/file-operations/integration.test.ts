@@ -118,6 +118,11 @@ describe('FileOperations - getFileInfo and Integration', () => {
     });
 
     describe('Integration Tests for v1.1 Schema', () => {
+        beforeEach(() => {
+            // Reset mocks before each integration test for better isolation
+            resetMocks();
+        });
+
         it('should handle complete step-based processing workflow', async () => {
             // Mock a complete workflow: audio -> transcribe -> process -> summarize -> archive
             const originalAudio = 'binary audio data';
@@ -261,23 +266,36 @@ describe('FileOperations - getFileInfo and Integration', () => {
         it('should handle step-based archive paths correctly', async () => {
             // Test that files are archived to the correct step-specific directories
             const testFiles = [
-                { input: 'inbox/audio/test.mp3', step: 'transcribe', expectedArchive: 'inbox/archive/transcribe' },
-                { input: 'inbox/transcripts/test.md', step: 'process-thoughts', expectedArchive: 'inbox/archive/process-thoughts' },
-                { input: 'inbox/process-thoughts/test.md', step: 'summary-personal', expectedArchive: 'inbox/archive/summary-personal' }
+                { input: 'inbox/audio/test1.mp3', step: 'transcribe', expectedArchive: 'inbox/archive/transcribe' },
+                { input: 'inbox/transcripts/test2.md', step: 'process-thoughts', expectedArchive: 'inbox/archive/process-thoughts' },
+                { input: 'inbox/process-thoughts/test3.md', step: 'summary-personal', expectedArchive: 'inbox/archive/summary-personal' }
             ];
 
-            testFiles.forEach(async ({ input, step, expectedArchive }) => {
-                const mockFile = createMockTFile('test-file', input);
-                const archivedFile = createMockTFile('test-file', `${expectedArchive}/test-file`);
+            // Use for...of loop instead of forEach to properly handle async operations
+            for (const { input, step, expectedArchive } of testFiles) {
+                // Reset mocks for each iteration to avoid cross-contamination
+                resetMocks();
+                
+                // Use unique file names to avoid conflicts
+                const fileName = input.split('/').pop() || 'test-file';
+                const mockFile = createMockTFile(fileName, input);
+                const archivedFile = createMockTFile(fileName, `${expectedArchive}/${fileName}`);
 
-                mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+                // Setup mocks for this specific test case
+                mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+                    if (path === input) return mockFile;
+                    if (path === expectedArchive) return null; // Directory doesn't exist yet
+                    return null;
+                });
+                
                 mockVault.createFolder.mockResolvedValue(createMockTFolder(step, expectedArchive));
                 mockVault.rename.mockResolvedValue(archivedFile);
 
                 const context = { stepId: step };
                 const archiveResult = await fileOps.archiveFile(input, expectedArchive, context);
+                
                 expect(archiveResult.success).toBe(true);
-            });
+            }
         });
     });
 });
