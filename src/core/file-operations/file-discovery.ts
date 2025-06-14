@@ -39,49 +39,25 @@ export class FileDiscovery {
         } = options;
 
         try {
-            // If pattern contains variables, we need to expand across categories
-            const variables = PathResolver.extractVariables(inputPattern);
-            const needsCategoryExpansion = variables.includes('category');
+            // Resolve the search pattern
+            const result = PathResolver.resolvePath(inputPattern, context, { 
+                throwOnMissing: false,
+                validateResult: false 
+            });
+            const searchPath = result.resolvedPath;
 
-            let searchPaths: string[] = [];
-
-            if (needsCategoryExpansion && !context.category) {
-                // Expand pattern for common categories
-                const defaultCategories = ['tasks', 'thoughts', 'uncategorized'];
-                searchPaths = defaultCategories.map(category => {
-                    const expandedContext = { ...context, category };
-                    const result = PathResolver.resolvePath(inputPattern, expandedContext, { 
-                        throwOnMissing: false,
-                        validateResult: false 
-                    });
-                    return result.resolvedPath;
-                });
-            } else {
-                // Resolve single pattern
-                const result = PathResolver.resolvePath(inputPattern, context, { 
-                    throwOnMissing: false,
-                    validateResult: false 
-                });
-                searchPaths = [result.resolvedPath];
-            }
-
-            const allFiles: FileInfo[] = [];
-
-            // Search in each path
-            for (const searchPath of searchPaths) {
-                const files = await this.searchFilesInPath(searchPath, {
-                    extensions,
-                    recursive,
-                    includeHidden
-                });
-                allFiles.push(...files);
-            }
+            // Search for files in the resolved path
+            const files = await this.searchFilesInPath(searchPath, {
+                extensions,
+                recursive,
+                includeHidden
+            });
 
             // Sort files
-            this.fileInfoProvider.sortFiles(allFiles, sortBy, sortOrder);
+            this.fileInfoProvider.sortFiles(files, sortBy, sortOrder);
 
             // Apply limit
-            const limitedFiles = limit > 0 ? allFiles.slice(0, limit) : allFiles;
+            const limitedFiles = limit > 0 ? files.slice(0, limit) : files;
 
             logger.debug(`Discovered ${limitedFiles.length} files matching pattern: ${inputPattern}`);
             return limitedFiles;
@@ -94,6 +70,37 @@ export class FileDiscovery {
                 ['Check search pattern', 'Verify directory exists', 'Check permissions']
             );
         }
+    }
+
+    /**
+     * Discover files in multiple input patterns (for multiple entry points)
+     */
+    async discoverFilesMultiple(
+        inputPatterns: string[],
+        context: Partial<PathContext> = {},
+        options: FileDiscoveryOptions = {}
+    ): Promise<FileInfo[]> {
+        const allFiles: FileInfo[] = [];
+
+        for (const pattern of inputPatterns) {
+            try {
+                const files = await this.discoverFiles(pattern, context, options);
+                allFiles.push(...files);
+            } catch (error) {
+                logger.warn(`Failed to discover files for pattern: ${pattern}`, error);
+                // Continue with other patterns even if one fails
+            }
+        }
+
+        // Sort combined results
+        this.fileInfoProvider.sortFiles(allFiles, options.sortBy || 'name', options.sortOrder || 'asc');
+
+        // Apply limit to combined results
+        const limit = options.limit || 100;
+        const limitedFiles = limit > 0 ? allFiles.slice(0, limit) : allFiles;
+
+        logger.debug(`Discovered ${limitedFiles.length} files total from ${inputPatterns.length} patterns`);
+        return limitedFiles;
     }
 
     /**

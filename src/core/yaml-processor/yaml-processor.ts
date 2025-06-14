@@ -20,8 +20,6 @@ const logger = createLogger('YamlProcessor');
  * YAML processing options
  */
 export interface YamlProcessingOptions {
-    /** Whether to include category context automatically */
-    includeCategory?: boolean;
     /** Whether to validate YAML syntax strictly */
     strictValidation?: boolean;
     /** Maximum response size to process */
@@ -48,10 +46,11 @@ export class YamlProcessor {
         fileInfo: FileInfo,
         includeFiles: string[],
         context: ProcessingContext,
+        nextSteps?: { [stepId: string]: string },
         options: YamlProcessingOptions = {}
     ): Promise<string> {
         logger.debug(`Formatting YAML request for: ${fileInfo.path}`);
-        return await this.formatter.formatRequest(fileInfo, includeFiles, context, options);
+        return await this.formatter.formatRequest(fileInfo, includeFiles, context, nextSteps, options);
     }
 
     /**

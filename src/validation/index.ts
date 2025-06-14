@@ -6,7 +6,6 @@
 
 // Core validation functions
 export { validatePath } from './path';
-export { validateCategory } from './category/validateCategory';
 export { validateApiKey } from './api-key/validateApiKey';
 export { validateFilePattern } from './file-pattern';
 export { validatePipelineStep } from './pipeline-step';
@@ -14,7 +13,6 @@ export { validatePipelineConfig } from './pipeline-config';
 
 // Import functions for use in object and convenience function
 import { validatePath } from './path';
-import { validateCategory } from './category/validateCategory';
 import { validateApiKey } from './api-key/validateApiKey';
 import { validateFilePattern } from './file-pattern';
 import { validatePipelineStep } from './pipeline-step';
@@ -23,7 +21,6 @@ import { validatePipelineConfig } from './pipeline-config';
 // Convenience object for grouped imports
 export const Validators = {
     path: validatePath,
-    category: validateCategory,
     apiKey: validateApiKey,
     filePattern: validateFilePattern,
     pipelineStep: validatePipelineStep,
@@ -39,16 +36,11 @@ export const Validators = {
  */
 export function validateCommon(data: {
     path?: string;
-    category?: string;
     apiKey?: string;
     filePattern?: string;
 }): true {
     if (data.path) {
         validatePath(data.path, 'provided path');
-    }
-    
-    if (data.category) {
-        validateCategory(data.category);
     }
     
     if (data.apiKey) {

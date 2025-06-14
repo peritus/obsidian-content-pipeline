@@ -274,8 +274,8 @@ export class YamlParser {
                 
                 if (key === 'filename') {
                     section.filename = value;
-                } else if (key === 'category') {
-                    section.category = value;
+                } else if (key === 'nextStep') {
+                    section.nextStep = value;
                 }
             } else {
                 // Any non-empty line without a colon is malformed YAML

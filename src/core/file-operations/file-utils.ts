@@ -48,7 +48,6 @@ export const FileUtils = {
      * Create processing context from file info
      */
     createProcessingContext: (fileInfo: FileInfo, stepId?: string): PathContext => ({
-        category: fileInfo.category,
         filename: PathUtils.getBasename(fileInfo.path),
         stepId,
         timestamp: FileUtils.generateTimestamp(),

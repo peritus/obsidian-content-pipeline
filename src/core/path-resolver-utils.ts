@@ -26,7 +26,6 @@ export class PathResolverTests {
             this.testVariableSubstitution,
             this.testMissingVariables,
             this.testPathUtilities,
-            this.testCategoryExtraction,
             this.testErrorHandling,
             this.testRealWorldScenarios
         ];
@@ -55,21 +54,21 @@ export class PathResolverTests {
      * Test basic path resolution
      */
     static testBasicResolution(): void {
-        const pattern = 'inbox/audio/{category}';
-        const context: PathContext = { category: 'tasks' };
+        const pattern = 'inbox/audio/{stepId}';
+        const context: PathContext = { stepId: 'transcribe' };
         
         const result = PathResolver.resolvePath(pattern, context);
         
-        if (result.resolvedPath !== 'inbox/audio/tasks') {
-            throw new Error(`Expected 'inbox/audio/tasks', got '${result.resolvedPath}'`);
+        if (result.resolvedPath !== 'inbox/audio/transcribe') {
+            throw new Error(`Expected 'inbox/audio/transcribe', got '${result.resolvedPath}'`);
         }
         
         if (!result.isComplete) {
             throw new Error('Expected complete resolution');
         }
         
-        if (result.substitutions.category !== 'tasks') {
-            throw new Error('Expected category substitution');
+        if (result.substitutions.stepId !== 'transcribe') {
+            throw new Error('Expected stepId substitution');
         }
     }
 
@@ -77,16 +76,15 @@ export class PathResolverTests {
      * Test all variable types
      */
     static testVariableSubstitution(): void {
-        const pattern = 'inbox/{stepId}/{category}/{filename}-{date}.md';
+        const pattern = 'inbox/{stepId}/{filename}-{date}.md';
         const context: PathContext = {
-            stepId: 'transcribe',
-            category: 'thoughts',
+            stepId: 'process-thoughts',
             filename: 'recording-001',
             date: '2024-01-15'
         };
         
         const result = PathResolver.resolvePath(pattern, context);
-        const expected = 'inbox/transcribe/thoughts/recording-001-2024-01-15.md';
+        const expected = 'inbox/process-thoughts/recording-001-2024-01-15.md';
         
         if (result.resolvedPath !== expected) {
             throw new Error(`Expected '${expected}', got '${result.resolvedPath}'`);
@@ -101,8 +99,8 @@ export class PathResolverTests {
      * Test handling of missing variables
      */
     static testMissingVariables(): void {
-        const pattern = 'inbox/{category}/{filename}.md';
-        const context: PathContext = { category: 'tasks' }; // missing filename
+        const pattern = 'inbox/{stepId}/{filename}.md';
+        const context: PathContext = { stepId: 'transcribe' }; // missing filename
         
         const result = PathResolver.resolvePath(pattern, context);
         
@@ -115,7 +113,7 @@ export class PathResolverTests {
         }
         
         // Should still substitute available variables
-        if (!result.resolvedPath.includes('inbox/tasks/')) {
+        if (!result.resolvedPath.includes('inbox/transcribe/')) {
             throw new Error('Should substitute available variables');
         }
     }
@@ -125,14 +123,14 @@ export class PathResolverTests {
      */
     static testPathUtilities(): void {
         // Test normalization
-        const normalized = PathUtils.normalize('//inbox\\audio//tasks\\');
-        if (normalized !== 'inbox/audio/tasks') {
+        const normalized = PathUtils.normalize('//inbox\\audio//transcripts\\');
+        if (normalized !== 'inbox/audio/transcripts') {
             throw new Error(`Normalization failed: ${normalized}`);
         }
         
         // Test joining
-        const joined = PathUtils.join('inbox', 'audio', 'tasks');
-        if (joined !== 'inbox/audio/tasks') {
+        const joined = PathUtils.join('inbox', 'audio', 'recordings');
+        if (joined !== 'inbox/audio/recordings') {
             throw new Error(`Join failed: ${joined}`);
         }
         
@@ -156,25 +154,6 @@ export class PathResolverTests {
     }
 
     /**
-     * Test category extraction from paths
-     */
-    static testCategoryExtraction(): void {
-        const pattern = 'inbox/audio/{category}';
-        const path = 'inbox/audio/personal-notes';
-        
-        const category = PathUtils.extractCategory(path, pattern);
-        if (category !== 'personal-notes') {
-            throw new Error(`Category extraction failed: ${category}`);
-        }
-        
-        // Test with no category
-        const noCategory = PathUtils.extractCategory('other/path', pattern);
-        if (noCategory !== null) {
-            throw new Error('Should return null for non-matching pattern');
-        }
-    }
-
-    /**
      * Test error handling
      */
     static testErrorHandling(): void {
@@ -191,7 +170,7 @@ export class PathResolverTests {
         // Test throwOnMissing option
         try {
             PathResolver.resolvePath(
-                'inbox/{category}', 
+                'inbox/{stepId}', 
                 {}, 
                 { throwOnMissing: true }
             );
@@ -208,40 +187,39 @@ export class PathResolverTests {
      */
     static testRealWorldScenarios(): void {
         // Test default pipeline patterns
-        const transcribePattern = 'inbox/transcripts/{category}/{filename}-transcript.md';
-        const processPattern = 'inbox/results/{category}/{filename}-processed.md';
-        const archivePattern = 'inbox/archive/{stepId}/{category}';
+        const transcribePattern = 'inbox/transcripts/{filename}-transcript.md';
+        const processPattern = 'inbox/process-thoughts/{filename}-processed.md';
+        const archivePattern = 'inbox/archive/{stepId}';
         
         const context: PathContext = {
-            category: 'work-meetings',
             filename: 'standup-2024-01-15',
             stepId: 'transcribe'
         };
         
         // Test transcribe output
         const transcribeResult = PathResolver.resolvePath(transcribePattern, context);
-        const expectedTranscribe = 'inbox/transcripts/work-meetings/standup-2024-01-15-transcript.md';
+        const expectedTranscribe = 'inbox/transcripts/standup-2024-01-15-transcript.md';
         if (transcribeResult.resolvedPath !== expectedTranscribe) {
             throw new Error(`Transcribe pattern failed: ${transcribeResult.resolvedPath}`);
         }
         
         // Test process output
         const processResult = PathResolver.resolvePath(processPattern, context);
-        const expectedProcess = 'inbox/results/work-meetings/standup-2024-01-15-processed.md';
+        const expectedProcess = 'inbox/process-thoughts/standup-2024-01-15-processed.md';
         if (processResult.resolvedPath !== expectedProcess) {
             throw new Error(`Process pattern failed: ${processResult.resolvedPath}`);
         }
         
         // Test archive
         const archiveResult = PathResolver.resolvePath(archivePattern, context);
-        const expectedArchive = 'inbox/archive/transcribe/work-meetings';
+        const expectedArchive = 'inbox/archive/transcribe';
         if (archiveResult.resolvedPath !== expectedArchive) {
             throw new Error(`Archive pattern failed: ${archiveResult.resolvedPath}`);
         }
         
         // Test timestamp generation
-        const timestampPattern = 'logs/{timestamp}/{category}.log';
-        const timestampResult = PathResolver.resolvePath(timestampPattern, { category: 'debug' });
+        const timestampPattern = 'logs/{timestamp}/{stepId}.log';
+        const timestampResult = PathResolver.resolvePath(timestampPattern, { stepId: 'debug' });
         if (!timestampResult.isComplete || !timestampResult.resolvedPath.includes('logs/')) {
             throw new Error('Timestamp generation failed');
         }
@@ -253,8 +231,8 @@ export class PathResolverTests {
     static smokeTest(): boolean {
         try {
             const result = PathResolver.resolvePath(
-                'inbox/audio/{category}', 
-                { category: 'test' }
+                'inbox/audio/{stepId}', 
+                { stepId: 'test' }
             );
             return result.resolvedPath === 'inbox/audio/test' && result.isComplete;
         } catch (error) {
@@ -268,16 +246,14 @@ export class PathResolverTests {
      */
     static testRequirementPatterns(): boolean {
         const patterns = [
-            'inbox/audio/{category}',
-            'inbox/transcripts/{category}/{filename}-transcript.md',
-            'inbox/results/{category}/{filename}-processed.md', 
-            'inbox/summary/{category}/',
-            'inbox/archive/{stepId}/{category}',
-            'inbox/templates/{stepId}.md'
+            'inbox/audio',
+            'inbox/transcripts/{filename}-transcript.md',
+            'inbox/process-thoughts/{filename}-processed.md', 
+            'inbox/summary-personal/',
+            'inbox/archive/{stepId}',
         ];
 
         const context: PathContext = {
-            category: 'tasks',
             filename: 'recording-001',
             stepId: 'transcribe',
             timestamp: '2024-01-15T10:30:00Z',
@@ -309,7 +285,7 @@ export function validatePathResolver(): boolean {
     logger.info('Running PathResolver validation...');
     
     // Check if all supported variables are accounted for
-    const expectedVariables = ['category', 'filename', 'timestamp', 'date', 'stepId'];
+    const expectedVariables = ['filename', 'timestamp', 'date', 'stepId'];
     const actualVariables = [...SUPPORTED_PATH_VARIABLES];
     
     if (JSON.stringify(expectedVariables.sort()) !== JSON.stringify(actualVariables.sort())) {

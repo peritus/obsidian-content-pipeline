@@ -14,29 +14,12 @@ export class FileInfoProvider {
         const path = file.path;
         const extension = PathUtils.getExtension(path);
         const isProcessable = this.isProcessableFile(extension);
-        
-        // Extract category from path if possible
-        let category = 'uncategorized';
-        const pathParts = path.split('/');
-        if (pathParts.length >= 2) {
-            // Try to find category in common locations like inbox/audio/{category}
-            for (let i = 0; i < pathParts.length - 1; i++) {
-                if (pathParts[i] === 'audio' || pathParts[i] === 'transcripts' || 
-                    pathParts[i] === 'results' || pathParts[i] === 'summary') {
-                    if (i + 1 < pathParts.length - 1) {
-                        category = pathParts[i + 1];
-                        break;
-                    }
-                }
-            }
-        }
 
         return {
             name: file.name,
             path: file.path,
             size: file.stat.size,
             extension,
-            category,
             isProcessable,
             lastModified: new Date(file.stat.mtime),
             mimeType: this.getMimeType(extension)

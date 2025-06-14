@@ -90,7 +90,10 @@ export class FileDiscovery {
         allSteps.forEach(stepId => {
             const step = config[stepId];
             if (step.next) {
-                referencedSteps.add(step.next);
+                // step.next is now an object mapping step IDs to routing prompts
+                Object.keys(step.next).forEach(nextStepId => {
+                    referencedSteps.add(nextStepId);
+                });
             }
         });
 

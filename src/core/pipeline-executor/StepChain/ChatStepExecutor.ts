@@ -51,8 +51,6 @@ export class ChatStepExecutor {
 
             // Create processing context
             const context: ProcessingContext = {
-                originalCategory: fileInfo.category,
-                resolvedCategory: fileInfo.category,
                 filename: PathUtils.getBasename(fileInfo.path),
                 timestamp: FileUtils.generateTimestamp(),
                 date: new Date().toISOString().split('T')[0],
@@ -62,12 +60,12 @@ export class ChatStepExecutor {
                 outputPath: '' // Will be resolved per output file
             };
 
-            // Format YAML request
+            // Format YAML request with next step routing
             const yamlRequest = await this.yamlProcessor.formatRequest(
                 fileInfo,
                 step.include || [],
                 context,
-                { includeCategory: true }
+                step.next // Pass next steps for routing
             );
 
             // Create chat client and process request
@@ -86,11 +84,29 @@ export class ChatStepExecutor {
             const archivePath = await this.archiveHandler.archive(fileInfo, step, stepId);
             context.archivePath = archivePath;
 
-            // Save output files using template engine
+            // Save output files with direct content output
             const outputFiles: string[] = [];
-            for (const section of parsedResponse.sections) {
-                const outputPath = await this.outputHandler.save(section, step, context);
+            let nextStep: string | undefined;
+
+            // Handle multi-file vs single-file responses
+            if (parsedResponse.isMultiFile) {
+                const savedFiles = await this.outputHandler.saveMultiple(parsedResponse.sections, step, context);
+                outputFiles.push(...Object.values(savedFiles));
+                
+                // Get nextStep from first section that has it
+                nextStep = parsedResponse.sections.find(section => section.nextStep)?.nextStep;
+            } else if (parsedResponse.sections.length > 0) {
+                const outputPath = await this.outputHandler.save(parsedResponse.sections[0], step, context);
                 outputFiles.push(outputPath);
+                nextStep = parsedResponse.sections[0].nextStep;
+            }
+
+            // Validate nextStep if present
+            if (nextStep) {
+                if (!step.next || !step.next[nextStep]) {
+                    logger.warn(`Invalid nextStep '${nextStep}' not found in step configuration. Ending processing chain.`);
+                    nextStep = undefined;
+                }
             }
 
             logger.info(`Chat processing completed: ${fileInfo.name} → ${outputFiles.length} files`);
@@ -103,7 +119,7 @@ export class ChatStepExecutor {
                 startTime,
                 endTime: new Date(),
                 stepId,
-                nextStep: step.next
+                nextStep
             };
 
         } catch (error) {

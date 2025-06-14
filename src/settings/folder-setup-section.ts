@@ -42,7 +42,7 @@ export class FolderSetupSection {
         // Create Initial Folders Button
         new Setting(containerEl)
             .setName('Create Inbox Folders')
-            .setDesc('Create the complete folder structure for audio processing pipeline')
+            .setDesc('Create folder structure based on your pipeline configuration')
             .addButton(button => button
                 .setButtonText('Create All Folders')
                 .setCta()
@@ -51,7 +51,13 @@ export class FolderSetupSection {
                     button.setButtonText('Creating...');
                     
                     try {
-                        const result = await this.fileOps.createInboxStructure(this.plugin.settings.defaultCategories);
+                        // Get pipeline configuration
+                        const pipelineConfig = this.plugin.settings.parsedPipelineConfig;
+                        if (!pipelineConfig) {
+                            throw new Error('No pipeline configuration found. Please configure your pipeline first.');
+                        }
+
+                        const result = await this.fileOps.createCompleteStructure(pipelineConfig);
                         
                         if (result.success) {
                             new Notice(`✅ Created ${result.foldersCreated} folders successfully!`, 5000);
@@ -73,7 +79,13 @@ export class FolderSetupSection {
                     button.setButtonText('Creating...');
                     
                     try {
-                        const result = await this.fileOps.createEntryPointFolders(this.plugin.settings.defaultCategories);
+                        // Get pipeline configuration
+                        const pipelineConfig = this.plugin.settings.parsedPipelineConfig;
+                        if (!pipelineConfig) {
+                            throw new Error('No pipeline configuration found. Please configure your pipeline first.');
+                        }
+
+                        const result = await this.fileOps.createEntryPointFolders(pipelineConfig);
                         
                         if (result.success) {
                             new Notice(`✅ Created ${result.foldersCreated} entry point folders!`, 5000);

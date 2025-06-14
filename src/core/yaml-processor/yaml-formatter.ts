@@ -8,7 +8,8 @@ import {
     FileInfo, 
     FileRole, 
     YamlRequestSection, 
-    ProcessingContext 
+    ProcessingContext,
+    StepRoutingInfo
 } from '../../types';
 import { YamlProcessingOptions } from './yaml-processor';
 import { ErrorFactory } from '../../error-handler';
@@ -39,10 +40,9 @@ export class YamlFormatter {
         fileInfo: FileInfo,
         includeFiles: string[],
         context: ProcessingContext,
+        nextSteps?: { [stepId: string]: string },
         options: YamlProcessingOptions = {}
     ): Promise<string> {
-        const { includeCategory = true } = options;
-
         try {
             const sections: YamlRequestSection[] = [];
 
@@ -51,7 +51,6 @@ export class YamlFormatter {
             const inputSection: YamlRequestSection = {
                 role: FileRole.INPUT,
                 filename: fileInfo.name,
-                category: includeCategory ? context.resolvedCategory : undefined,
                 content: inputContent
             };
             sections.push(inputSection);
@@ -59,6 +58,16 @@ export class YamlFormatter {
             // Process include files
             const includeSections = await this.processIncludeFiles(includeFiles);
             sections.push(...includeSections);
+
+            // Add routing section if next steps are available
+            if (nextSteps && Object.keys(nextSteps).length > 0) {
+                const routingSection: YamlRequestSection = {
+                    role: FileRole.ROUTING,
+                    filename: 'routing-info',
+                    content: this.formatRoutingInfo({ available_next_steps: nextSteps })
+                };
+                sections.push(routingSection);
+            }
 
             // Format all sections
             const formattedRequest = this.formatSections(sections);
@@ -123,14 +132,46 @@ export class YamlFormatter {
         return FileRole.CONTEXT;
     }
 
+    private formatRoutingInfo(routingInfo: StepRoutingInfo): string {
+        const lines = ['Based on the content above, please choose the most appropriate next processing step from the available options. Include your choice in the response frontmatter using the \'nextStep\' field.', ''];
+        
+        lines.push('Available next steps:');
+        for (const [stepId, description] of Object.entries(routingInfo.available_next_steps)) {
+            lines.push(`- ${stepId}: ${description}`);
+        }
+        
+        return lines.join('\n');
+    }
+
     private formatSections(sections: YamlRequestSection[]): string {
         return sections.map(section => {
             const frontmatter = ['---'];
             frontmatter.push(`role: ${section.role}`);
             frontmatter.push(`filename: ${section.filename}`);
-            if (section.category) {
-                frontmatter.push(`category: ${section.category}`);
+            
+            // Add routing-specific frontmatter for routing sections
+            if (section.role === FileRole.ROUTING) {
+                const routingContent = section.content;
+                const lines = routingContent.split('\n');
+                if (lines.length > 2 && lines[2] === 'Available next steps:') {
+                    // Parse the available next steps from content
+                    const availableSteps: { [stepId: string]: string } = {};
+                    for (let i = 3; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (line.startsWith('- ')) {
+                            const match = line.match(/^- ([^:]+): (.+)$/);
+                            if (match) {
+                                availableSteps[match[1]] = match[2];
+                            }
+                        }
+                    }
+                    frontmatter.push(`available_next_steps:`);
+                    for (const [stepId, description] of Object.entries(availableSteps)) {
+                        frontmatter.push(`  ${stepId}: "${description}"`);
+                    }
+                }
             }
+            
             frontmatter.push('---');
             frontmatter.push('');
             frontmatter.push(section.content);

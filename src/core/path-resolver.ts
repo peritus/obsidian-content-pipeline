@@ -16,7 +16,6 @@ const logger = createLogger('PathResolver');
  * Supported variables for path resolution
  */
 export const SUPPORTED_PATH_VARIABLES = Object.freeze([
-    'category',
     'filename', 
     'timestamp',
     'date',
@@ -241,7 +240,6 @@ export class PathResolver {
         const now = new Date();
         
         return {
-            category: 'uncategorized',
             timestamp: generateFileSafeTimestamp(),
             date: now.toISOString().split('T')[0],
             ...overrides
@@ -381,58 +379,6 @@ export class PathResolver {
         const normalized = PathResolver.normalizePath(path);
         return normalized.endsWith('/') ? normalized : normalized + '/';
     }
-
-    /**
-     * Extract category from a categorized path pattern
-     */
-    static extractCategoryFromPath(path: string, pattern: string): string | null {
-        // Input validation
-        if (!path || !pattern || typeof path !== 'string' || typeof pattern !== 'string') {
-            logger.warn('extractCategoryFromPath received invalid parameters', { path, pattern });
-            return null;
-        }
-        
-        logger.debug('Extracting category from path', { path, pattern });
-
-        // Simple approach: if pattern has {category}, find that segment in the path
-        const patternParts = pattern.split('/');
-        const pathParts = path.split('/');
-
-        if (patternParts.length !== pathParts.length) {
-            logger.debug('Path and pattern have different segment counts');
-            return null;
-        }
-
-        // Check if non-variable parts match
-        for (let i = 0; i < patternParts.length; i++) {
-            const patternPart = patternParts[i];
-            const pathPart = pathParts[i];
-            
-            // If it's not a variable, it must match exactly
-            if (!patternPart.startsWith('{') || !patternPart.endsWith('}')) {
-                if (patternPart !== pathPart) {
-                    logger.debug('Pattern part does not match path part', {
-                        patternPart,
-                        pathPart,
-                        index: i
-                    });
-                    return null;
-                }
-            }
-        }
-
-        // Now extract the category if the pattern matches
-        for (let i = 0; i < patternParts.length; i++) {
-            if (patternParts[i] === '{category}') {
-                const category = pathParts[i];
-                logger.debug('Found category in path', { category, segment: i });
-                return category;
-            }
-        }
-
-        logger.debug('No category found in pattern');
-        return null;
-    }
 }
 
 /**
@@ -506,8 +452,7 @@ export const PathUtils = {
     getBasename: (path: string) => PathResolver.getBasename(path),
     getExtension: (path: string) => PathResolver.getExtension(path),
     isDirectory: (path: string) => PathResolver.isDirectory(path),
-    ensureDirectory: (path: string) => PathResolver.ensureDirectory(path),
-    extractCategory: (path: string, pattern: string) => PathResolver.extractCategoryFromPath(path, pattern)
+    ensureDirectory: (path: string) => PathResolver.ensureDirectory(path)
 };
 
 /**

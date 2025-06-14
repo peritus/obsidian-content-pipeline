@@ -61,6 +61,17 @@ export class WhisperStepProcessor {
 
             logger.info(`Whisper transcription completed: ${fileInfo.name} → ${outputPath}`);
 
+            // Get next step from step configuration
+            let nextStep: string | undefined;
+            if (step.next) {
+                // For Whisper steps, we might have intelligent routing
+                // For now, just take the first available next step
+                const nextStepIds = Object.keys(step.next);
+                if (nextStepIds.length > 0) {
+                    nextStep = nextStepIds[0]; // Simple fallback
+                }
+            }
+
             return {
                 inputFile: fileInfo,
                 status: ProcessingStatus.COMPLETED,
@@ -68,7 +79,7 @@ export class WhisperStepProcessor {
                 startTime,
                 endTime: new Date(),
                 stepId,
-                nextStep: step.next
+                nextStep
             };
 
         } catch (error) {
@@ -103,13 +114,12 @@ export class WhisperStepProcessor {
 source: "${fileInfo.path}"
 processed: "${timestamp}"
 step: "${stepId}"
-category: "${fileInfo.category}"
+pipeline: "audio-processing"
 ---
 
 # Transcript: ${PathUtils.getBasename(fileInfo.path)}
 
 **Original Audio:** [[${fileInfo.path}]]
-**Category:** ${fileInfo.category}
 **Processed:** ${timestamp}
 
 ---
@@ -120,13 +130,15 @@ ${text}`;
     private resolveOutputPath(outputPattern: string, fileInfo: FileInfo): string {
         const basename = PathUtils.getBasename(fileInfo.path);
         return outputPattern
-            .replace('{category}', fileInfo.category)
-            .replace('{filename}', basename);
+            .replace('{filename}', basename)
+            .replace('{date}', new Date().toISOString().split('T')[0])
+            .replace('{timestamp}', new Date().toISOString());
     }
 
     private async archiveFile(sourcePath: string, archivePattern: string, fileInfo: FileInfo): Promise<void> {
         try {
-            const archivePath = archivePattern.replace('{category}', fileInfo.category) + '/' + fileInfo.name;
+            // Archive pattern should be step-based: inbox/archive/{stepId}
+            const archivePath = archivePattern + '/' + fileInfo.name;
             
             // Ensure archive directory exists
             const archiveDir = PathUtils.getDirectory(archivePath);

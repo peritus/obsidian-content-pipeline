@@ -4,7 +4,7 @@
 
 import { App, TFolder } from 'obsidian';
 import { PathResolver } from '../path-resolver';
-import { PathContext, FileInfo } from '../../types';
+import { PathContext, FileInfo, PipelineConfiguration } from '../../types';
 import { 
     FileOperationOptions, 
     FileOperationResult, 
@@ -47,16 +47,16 @@ export class FileOperations {
     }
 
     // Inbox structure operations
-    async createInboxStructure(categories?: string[]): Promise<FolderStructureResult> {
-        return this.inboxStructureManager.createInboxStructure(categories);
+    async createCompleteStructure(pipelineConfig: PipelineConfiguration): Promise<FolderStructureResult> {
+        return this.inboxStructureManager.createCompleteStructure(pipelineConfig);
     }
 
-    async createCategoryFolders(category: string): Promise<FolderStructureResult> {
-        return this.inboxStructureManager.createCategoryFolders(category);
+    async createStepFolders(stepId: string, step: any): Promise<FolderStructureResult> {
+        return this.inboxStructureManager.createStepFolders(stepId, step);
     }
 
-    async createEntryPointFolders(categories?: string[]): Promise<FolderStructureResult> {
-        return this.inboxStructureManager.createEntryPointFolders(categories);
+    async createEntryPointFolders(pipelineConfig: PipelineConfiguration): Promise<FolderStructureResult> {
+        return this.inboxStructureManager.createEntryPointFolders(pipelineConfig);
     }
 
     checkInboxStructure(): { exists: boolean; missingFolders: string[] } {
