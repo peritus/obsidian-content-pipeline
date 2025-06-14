@@ -1,7 +1,7 @@
 /**
  * Integration Test
  * 
- * Basic integration test to verify the test system is working
+ * Basic integration test to verify the test system is working with v1.1 schema
  */
 
 describe('Test System Integration', () => {
@@ -16,9 +16,11 @@ describe('Test System Integration', () => {
         await expect(promise).resolves.toBe('async result');
     });
 
-    it('should support custom matchers', () => {
+    it('should support custom matchers for v1.1 schema', () => {
         expect('valid/path/file.md').toBeValidPath();
-        expect('valid-category').toBeValidCategory();
+        expect('transcribe').toBeValidStepId();
+        expect('process-thoughts').toBeValidStepId();
+        expect('summary-personal').toBeValidStepId();
     });
 
     it('should handle TypeScript imports', () => {
@@ -30,5 +32,19 @@ describe('Test System Integration', () => {
         
         expect(obj.name).toBe('test');
         expect(obj.value).toBe(42);
+    });
+
+    it('should validate step routing structure', () => {
+        // Test the object-keyed next step configuration
+        const stepRouting = {
+            'process-thoughts': 'If personal content detected',
+            'process-tasks': 'If work content detected',
+            'process-ideas': 'If innovative ideas detected'
+        };
+
+        expect(Object.keys(stepRouting)).toHaveLength(3);
+        expect(stepRouting['process-thoughts']).toBe('If personal content detected');
+        expect(stepRouting['process-tasks']).toBe('If work content detected');
+        expect(stepRouting['process-ideas']).toBe('If innovative ideas detected');
     });
 });

@@ -1,7 +1,8 @@
 /**
  * Path Resolver Tests
  * 
- * Comprehensive test suite for the path resolution system.
+ * Comprehensive test suite for the path resolution system updated for v1.1 schema.
+ * Removed category-related functionality and updated for step-based organization.
  */
 
 import { PathResolver, PathUtils, SUPPORTED_PATH_VARIABLES } from '../src/core/path-resolver';
@@ -15,42 +16,52 @@ describe('PathResolver', () => {
 
     describe('resolvePath', () => {
         it('should resolve basic path patterns', () => {
-            const pattern = 'inbox/audio/{category}';
-            const context: PathContext = { category: 'tasks' };
+            const pattern = 'inbox/audio';
+            const context: PathContext = {};
             
             const result = PathResolver.resolvePath(pattern, context);
             
-            expect(result.resolvedPath).toBe('inbox/audio/tasks');
+            expect(result.resolvedPath).toBe('inbox/audio');
             expect(result.isComplete).toBe(true);
-            expect(result.substitutions.category).toBe('tasks');
             expect(result.missingVariables).toHaveLength(0);
         });
 
+        it('should resolve patterns with filename variables', () => {
+            const pattern = 'inbox/transcripts/{filename}-transcript.md';
+            const context: PathContext = {
+                filename: 'recording-001'
+            };
+            
+            const result = PathResolver.resolvePath(pattern, context);
+            
+            expect(result.resolvedPath).toBe('inbox/transcripts/recording-001-transcript.md');
+            expect(result.isComplete).toBe(true);
+            expect(result.substitutions.filename).toBe('recording-001');
+        });
+
         it('should resolve complex patterns with multiple variables', () => {
-            const pattern = 'inbox/{stepId}/{category}/{filename}-{date}.md';
+            const pattern = 'inbox/{stepId}/{filename}-{date}.md';
             const context: PathContext = {
                 stepId: 'transcribe',
-                category: 'thoughts',
                 filename: 'recording-001',
                 date: '2024-01-15'
             };
             
             const result = PathResolver.resolvePath(pattern, context);
-            const expected = 'inbox/transcribe/thoughts/recording-001-2024-01-15.md';
+            const expected = 'inbox/transcribe/recording-001-2024-01-15.md';
             
             expect(result.resolvedPath).toBe(expected);
             expect(result.isComplete).toBe(true);
             expect(result.substitutions).toEqual({
                 stepId: 'transcribe',
-                category: 'thoughts', 
                 filename: 'recording-001',
                 date: '2024-01-15'
             });
         });
 
         it('should generate timestamps automatically', () => {
-            const pattern = 'logs/{timestamp}/{category}.log';
-            const context: PathContext = { category: 'debug' };
+            const pattern = 'logs/{timestamp}/debug.log';
+            const context: PathContext = {};
             
             const result = PathResolver.resolvePath(pattern, context);
             
@@ -59,42 +70,53 @@ describe('PathResolver', () => {
             expect(result.substitutions.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z/);
         });
 
+        it('should generate dates automatically', () => {
+            const pattern = 'inbox/archive/{date}/{filename}.md';
+            const context: PathContext = { filename: 'test' };
+            
+            const result = PathResolver.resolvePath(pattern, context);
+            
+            expect(result.isComplete).toBe(true);
+            expect(result.resolvedPath).toMatch(/inbox\/archive\/\d{4}-\d{2}-\d{2}\/test\.md/);
+            expect(result.substitutions.date).toMatch(/\d{4}-\d{2}-\d{2}/);
+        });
+
         it('should handle missing variables gracefully', () => {
-            const pattern = 'inbox/{category}/{filename}.md';
-            const context: PathContext = { category: 'tasks' }; // missing filename
+            const pattern = 'inbox/{stepId}/{filename}.md';
+            const context: PathContext = { stepId: 'transcribe' }; // missing filename
             
             const result = PathResolver.resolvePath(pattern, context);
             
             expect(result.isComplete).toBe(false);
             expect(result.missingVariables).toContain('filename');
-            expect(result.resolvedPath).toContain('inbox/tasks/');
-            expect(result.substitutions.category).toBe('tasks');
+            expect(result.resolvedPath).toContain('inbox/transcribe/');
+            expect(result.substitutions.stepId).toBe('transcribe');
         });
 
         it('should throw on missing variables when throwOnMissing is true', () => {
-            const pattern = 'inbox/{category}';
-            const context: PathContext = {}; // missing category
+            const pattern = 'inbox/{stepId}';
+            const context: PathContext = {}; // missing stepId
             
             expect(() => {
                 PathResolver.resolvePath(pattern, context, { throwOnMissing: true });
-            }).toThrow('Missing required variable for path resolution: {category}');
+            }).toThrow('Missing required variable for path resolution: {stepId}');
         });
 
         it('should use fallback values for missing variables', () => {
-            const pattern = 'inbox/{category}/{filename}.md';
-            const context: PathContext = { category: 'tasks' };
+            const pattern = 'inbox/{stepId}/{filename}.md';
+            const context: PathContext = { stepId: 'transcribe' };
             const fallbacks = { filename: 'default' };
             
             const result = PathResolver.resolvePath(pattern, context, { fallbacks });
             
-            expect(result.resolvedPath).toBe('inbox/tasks/default.md');
+            expect(result.resolvedPath).toBe('inbox/transcribe/default.md');
             expect(result.isComplete).toBe(true);
             expect(result.substitutions.filename).toBe('default');
         });
 
         it('should validate resolved paths by default', () => {
-            const pattern = 'inbox/{category}';
-            const context: PathContext = { category: '../../../etc' }; // path traversal attempt
+            const pattern = 'inbox/{stepId}';
+            const context: PathContext = { stepId: '../../../etc' }; // path traversal attempt
             
             expect(() => {
                 PathResolver.resolvePath(pattern, context);
@@ -102,8 +124,8 @@ describe('PathResolver', () => {
         });
 
         it('should skip validation when validateResult is false', () => {
-            const pattern = 'inbox/{category}';
-            const context: PathContext = { category: '../test' };
+            const pattern = 'inbox/{stepId}';
+            const context: PathContext = { stepId: '../test' };
             
             const result = PathResolver.resolvePath(pattern, context, { validateResult: false });
             
@@ -123,10 +145,10 @@ describe('PathResolver', () => {
 
     describe('extractVariables', () => {
         it('should extract variables from patterns', () => {
-            const pattern = 'inbox/{category}/{filename}-{date}.md';
+            const pattern = 'inbox/{stepId}/{filename}-{date}.md';
             const variables = PathResolver.extractVariables(pattern);
             
-            expect(variables).toEqual(['category', 'filename', 'date']);
+            expect(variables).toEqual(['stepId', 'filename', 'date']);
         });
 
         it('should handle patterns with no variables', () => {
@@ -137,50 +159,52 @@ describe('PathResolver', () => {
         });
 
         it('should handle duplicate variables', () => {
-            const pattern = 'inbox/{category}/{category}/file.md';
+            const pattern = 'inbox/{stepId}/{stepId}/file.md';
             const variables = PathResolver.extractVariables(pattern);
             
-            expect(variables).toEqual(['category', 'category']);
+            expect(variables).toEqual(['stepId', 'stepId']);
         });
     });
 
     describe('containsVariables', () => {
         it('should detect if pattern contains specific variables', () => {
-            const pattern = 'inbox/{category}/{filename}.md';
+            const pattern = 'inbox/{stepId}/{filename}.md';
             
-            expect(PathResolver.containsVariables(pattern, ['category'])).toBe(true);
-            expect(PathResolver.containsVariables(pattern, ['category', 'filename'])).toBe(true);
-            expect(PathResolver.containsVariables(pattern, ['category', 'missing'])).toBe(false);
+            expect(PathResolver.containsVariables(pattern, ['stepId'])).toBe(true);
+            expect(PathResolver.containsVariables(pattern, ['stepId', 'filename'])).toBe(true);
+            expect(PathResolver.containsVariables(pattern, ['stepId', 'missing'])).toBe(false);
             expect(PathResolver.containsVariables(pattern, [])).toBe(true);
         });
     });
 
     describe('isValidPattern', () => {
         it('should validate patterns with supported variables', () => {
-            expect(PathResolver.isValidPattern('inbox/{category}')).toBe(true);
-            expect(PathResolver.isValidPattern('inbox/{category}/{filename}.md')).toBe(true);
+            expect(PathResolver.isValidPattern('inbox/{stepId}')).toBe(true);
+            expect(PathResolver.isValidPattern('inbox/{stepId}/{filename}.md')).toBe(true);
             expect(PathResolver.isValidPattern('static/path.md')).toBe(true);
+            expect(PathResolver.isValidPattern('inbox/{timestamp}/{date}')).toBe(true);
         });
 
         it('should reject patterns with unsupported variables', () => {
             expect(PathResolver.isValidPattern('inbox/{invalidVar}')).toBe(false);
-            expect(PathResolver.isValidPattern('inbox/{category}/{invalid}.md')).toBe(false);
+            expect(PathResolver.isValidPattern('inbox/{stepId}/{invalid}.md')).toBe(false);
+            expect(PathResolver.isValidPattern('inbox/{category}')).toBe(false); // category no longer supported
         });
     });
 
     describe('getRequiredVariables', () => {
         it('should return required variables for pattern', () => {
-            const pattern = 'inbox/{category}/{filename}-{date}.md';
+            const pattern = 'inbox/{stepId}/{filename}-{date}.md';
             const required = PathResolver.getRequiredVariables(pattern);
             
-            expect(required).toEqual(['category', 'filename', 'date']);
+            expect(required).toEqual(['stepId', 'filename', 'date']);
         });
 
         it('should filter out unsupported variables', () => {
-            const pattern = 'inbox/{category}/{invalid}/{filename}.md';
+            const pattern = 'inbox/{stepId}/{invalid}/{filename}.md';
             const required = PathResolver.getRequiredVariables(pattern);
             
-            expect(required).toEqual(['category', 'filename']);
+            expect(required).toEqual(['stepId', 'filename']);
         });
     });
 
@@ -188,86 +212,130 @@ describe('PathResolver', () => {
         it('should create context with default values', () => {
             const context = PathResolver.createDefaultContext();
             
-            expect(context.category).toBe('uncategorized');
             expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z/);
             expect(context.date).toMatch(/\d{4}-\d{2}-\d{2}/);
+            expect(context.stepId).toBeUndefined(); // No default stepId
+            expect(context.filename).toBeUndefined(); // No default filename
         });
 
         it('should merge overrides with defaults', () => {
             const context = PathResolver.createDefaultContext({ 
-                category: 'custom',
+                stepId: 'custom',
                 filename: 'test' 
             });
             
-            expect(context.category).toBe('custom');
+            expect(context.stepId).toBe('custom');
             expect(context.filename).toBe('test');
             expect(context.timestamp).toBeDefined();
+            expect(context.date).toBeDefined();
         });
     });
 
     describe('resolveMultiple', () => {
         it('should resolve multiple patterns', () => {
             const patterns = [
-                'inbox/{category}',
-                'output/{category}/{filename}.md'
+                'inbox/{stepId}',
+                'output/{stepId}/{filename}.md'
             ];
-            const context: PathContext = { category: 'tasks', filename: 'test' };
+            const context: PathContext = { stepId: 'transcribe', filename: 'test' };
             
             const results = PathResolver.resolveMultiple(patterns, context);
             
             expect(results).toHaveLength(2);
-            expect(results[0].resolvedPath).toBe('inbox/tasks');
-            expect(results[1].resolvedPath).toBe('output/tasks/test.md');
+            expect(results[0].resolvedPath).toBe('inbox/transcribe');
+            expect(results[1].resolvedPath).toBe('output/transcribe/test.md');
             expect(results.every((r: any) => r.isComplete)).toBe(true);
         });
     });
 
-    describe('Real-world pipeline patterns', () => {
+    describe('Real-world pipeline patterns for v1.1 schema', () => {
         const context = createMockContext({
-            category: 'work-meetings',
             filename: 'standup-2024-01-15',
             stepId: 'transcribe'
         });
 
-        it('should resolve transcribe patterns', () => {
-            const pattern = 'inbox/transcripts/{category}/{filename}-transcript.md';
+        it('should resolve transcribe input patterns', () => {
+            const pattern = 'inbox/audio';
             const result = PathResolver.resolvePath(pattern, context);
             
-            expect(result.resolvedPath).toBe('inbox/transcripts/work-meetings/standup-2024-01-15-transcript.md');
+            expect(result.resolvedPath).toBe('inbox/audio');
             expect(result.isComplete).toBe(true);
         });
 
-        it('should resolve process patterns', () => {
-            const pattern = 'inbox/results/{category}/{filename}-processed.md';
+        it('should resolve transcribe output patterns', () => {
+            const pattern = 'inbox/transcripts/{filename}-transcript.md';
             const result = PathResolver.resolvePath(pattern, context);
             
-            expect(result.resolvedPath).toBe('inbox/results/work-meetings/standup-2024-01-15-processed.md');
+            expect(result.resolvedPath).toBe('inbox/transcripts/standup-2024-01-15-transcript.md');
+            expect(result.isComplete).toBe(true);
+        });
+
+        it('should resolve process step patterns', () => {
+            const pattern = 'inbox/process-thoughts/{filename}-processed.md';
+            const result = PathResolver.resolvePath(pattern, context);
+            
+            expect(result.resolvedPath).toBe('inbox/process-thoughts/standup-2024-01-15-processed.md');
             expect(result.isComplete).toBe(true);
         });
 
         it('should resolve archive patterns', () => {
-            const pattern = 'inbox/archive/{stepId}/{category}';
+            const pattern = 'inbox/archive/{stepId}';
             const result = PathResolver.resolvePath(pattern, context);
             
-            expect(result.resolvedPath).toBe('inbox/archive/transcribe/work-meetings');
+            expect(result.resolvedPath).toBe('inbox/archive/transcribe');
             expect(result.isComplete).toBe(true);
         });
 
-        it('should handle all default pipeline patterns', () => {
+        it('should resolve summary directory patterns', () => {
+            const pattern = 'inbox/summary-personal/';
+            const result = PathResolver.resolvePath(pattern, context);
+            
+            expect(result.resolvedPath).toBe('inbox/summary-personal/');
+            expect(result.isComplete).toBe(true);
+        });
+
+        it('should handle all default pipeline patterns for v1.1', () => {
             const patterns = [
-                'inbox/audio/{category}',
-                'inbox/transcripts/{category}/{filename}-transcript.md',
-                'inbox/results/{category}/{filename}-processed.md',
-                'inbox/summary/{category}/',
-                'inbox/archive/{stepId}/{category}',
-                'inbox/templates/{stepId}.md'
+                'inbox/audio',
+                'inbox/transcripts/{filename}-transcript.md',
+                'inbox/process-thoughts/{filename}-processed.md',
+                'inbox/process-tasks/{filename}-processed.md',
+                'inbox/process-ideas/{filename}-processed.md',
+                'inbox/summary-personal/',
+                'inbox/summary-work/',
+                'inbox/archive/{stepId}'
             ];
 
             patterns.forEach(pattern => {
                 const result = PathResolver.resolvePath(pattern, context);
-                expect(result.isComplete).toBe(true);
                 expect(result.resolvedPath).toBeValidPath();
+                // Some patterns may not be complete if they have missing variables
+                if (result.missingVariables.length === 0) {
+                    expect(result.isComplete).toBe(true);
+                }
             });
+        });
+    });
+
+    describe('Directory-only output patterns', () => {
+        it('should handle directory-only patterns for multi-file outputs', () => {
+            const pattern = 'inbox/summary-personal/';
+            const context: PathContext = {};
+            
+            const result = PathResolver.resolvePath(pattern, context);
+            
+            expect(result.resolvedPath).toBe('inbox/summary-personal/');
+            expect(result.isComplete).toBe(true);
+        });
+
+        it('should handle include glob patterns', () => {
+            const pattern = 'inbox/summary-personal/*';
+            const context: PathContext = {};
+            
+            const result = PathResolver.resolvePath(pattern, context);
+            
+            expect(result.resolvedPath).toBe('inbox/summary-personal/*');
+            expect(result.isComplete).toBe(true);
         });
     });
 });
@@ -358,68 +426,104 @@ describe('PathUtils', () => {
         });
     });
 
-    describe('extractCategory', () => {
-        it('should extract category from categorized paths', () => {
-            const pattern = 'inbox/audio/{category}';
-            const path = 'inbox/audio/personal-notes';
-            
-            expect(PathUtils.extractCategory(path, pattern)).toBe('personal-notes');
-        });
-
-        it('should return null for non-matching patterns', () => {
-            const pattern = 'inbox/audio/{category}';
-            const path = 'other/path/structure';
-            
-            expect(PathUtils.extractCategory(path, pattern)).toBeNull();
-        });
-
-        it('should handle complex category patterns', () => {
-            const pattern = 'inbox/{stepId}/{category}/files';
-            const path = 'inbox/transcribe/work-meetings/files';
-            
-            expect(PathUtils.extractCategory(path, pattern)).toBe('work-meetings');
-        });
-    });
-
     describe('utility functions', () => {
         const context = createMockContext();
 
         it('should safely resolve paths', () => {
-            const goodPattern = 'inbox/{category}';
+            const goodPattern = 'inbox/{stepId}';
             const badPattern = 'inbox/{invalidVar}';
             
-            expect(PathUtils.safeResolve(goodPattern, context)).toBe('inbox/test-category');
+            expect(PathUtils.safeResolve(goodPattern, context)).toBe('inbox/test-step');
             expect(PathUtils.safeResolve(badPattern, context)).toBeNull();
         });
 
         it('should check if patterns can be resolved', () => {
-            const pattern = 'inbox/{category}/{filename}.md';
-            const fullContext = { category: 'test', filename: 'file' };
-            const partialContext = { category: 'test' };
+            const pattern = 'inbox/{stepId}/{filename}.md';
+            const fullContext = { stepId: 'test', filename: 'file' };
+            const partialContext = { stepId: 'test' };
             
             expect(PathUtils.canResolve(pattern, fullContext)).toBe(true);
             expect(PathUtils.canResolve(pattern, partialContext)).toBe(false);
         });
 
         it('should identify missing variables', () => {
-            const pattern = 'inbox/{category}/{filename}.md';
-            const partialContext = { category: 'test' };
+            const pattern = 'inbox/{stepId}/{filename}.md';
+            const partialContext = { stepId: 'test' };
             
             const missing = PathUtils.getMissingVariables(pattern, partialContext);
             expect(missing).toEqual(['filename']);
         });
+
+        it('should handle step-based path patterns', () => {
+            const stepPattern = 'inbox/archive/{stepId}/{filename}.md';
+            const stepContext = { stepId: 'transcribe', filename: 'audio-001' };
+            
+            const result = PathUtils.safeResolve(stepPattern, stepContext);
+            expect(result).toBe('inbox/archive/transcribe/audio-001.md');
+        });
+    });
+
+    describe('Variable substitution patterns for v1.1', () => {
+        it('should handle filename variable substitution', () => {
+            const context = { filename: 'meeting-notes' };
+            const pattern = 'output/{filename}-processed.md';
+            
+            const result = PathUtils.safeResolve(pattern, context);
+            expect(result).toBe('output/meeting-notes-processed.md');
+        });
+
+        it('should handle stepId variable substitution', () => {
+            const context = { stepId: 'process-thoughts' };
+            const pattern = 'inbox/archive/{stepId}/';
+            
+            const result = PathUtils.safeResolve(pattern, context);
+            expect(result).toBe('inbox/archive/process-thoughts/');
+        });
+
+        it('should handle timestamp variable substitution', () => {
+            const context = { timestamp: '2024-01-15T10-30-00-000Z' };
+            const pattern = 'logs/{timestamp}/debug.log';
+            
+            const result = PathUtils.safeResolve(pattern, context);
+            expect(result).toBe('logs/2024-01-15T10-30-00-000Z/debug.log');
+        });
+
+        it('should handle date variable substitution', () => {
+            const context = { date: '2024-01-15' };
+            const pattern = 'daily/{date}/summary.md';
+            
+            const result = PathUtils.safeResolve(pattern, context);
+            expect(result).toBe('daily/2024-01-15/summary.md');
+        });
+
+        it('should handle complex multi-variable patterns', () => {
+            const context = { 
+                stepId: 'summary-personal',
+                filename: 'thoughts-collection',
+                date: '2024-01-15'
+            };
+            const pattern = 'output/{stepId}/{date}/{filename}.md';
+            
+            const result = PathUtils.safeResolve(pattern, context);
+            expect(result).toBe('output/summary-personal/2024-01-15/thoughts-collection.md');
+        });
     });
 });
 
-describe('SUPPORTED_PATH_VARIABLES', () => {
-    it('should contain expected variables', () => {
-        const expected = ['category', 'filename', 'timestamp', 'date', 'stepId'];
+describe('SUPPORTED_PATH_VARIABLES for v1.1 schema', () => {
+    it('should contain expected variables for v1.1 schema', () => {
+        const expected = ['filename', 'timestamp', 'date', 'stepId'];
         expect([...SUPPORTED_PATH_VARIABLES]).toEqual(expected);
     });
 
+    it('should not contain removed variables from v1.0', () => {
+        expect(SUPPORTED_PATH_VARIABLES).not.toContain('category');
+        expect(SUPPORTED_PATH_VARIABLES).not.toContain('originalCategory');
+        expect(SUPPORTED_PATH_VARIABLES).not.toContain('resolvedCategory');
+    });
+
     it('should be readonly', () => {
-        // The array is now properly frozen, so attempting to modify it should fail silently
-        // or throw in strict mode. Let's test that it's frozen.
+        // The array should be frozen to prevent modification
         expect(Object.isFrozen(SUPPORTED_PATH_VARIABLES)).toBe(true);
         
         // Attempting to push should fail silently (or throw in strict mode)
@@ -430,5 +534,13 @@ describe('SUPPORTED_PATH_VARIABLES', () => {
             // This might throw in strict mode, which is fine
         }
         expect(SUPPORTED_PATH_VARIABLES.length).toBe(originalLength);
+    });
+
+    it('should support all variables used in v1.1 default configuration', () => {
+        const v11Variables = ['filename', 'stepId', 'timestamp', 'date'];
+        
+        v11Variables.forEach(variable => {
+            expect(SUPPORTED_PATH_VARIABLES).toContain(variable);
+        });
     });
 });

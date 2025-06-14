@@ -1,5 +1,6 @@
 /**
  * Tests for FileOperations.getFileInfo and integration tests
+ * Updated for v1.1 schema - removed category system, added step-based organization
  */
 
 import { FileOperations } from '../../src/core/file-operations';
@@ -22,92 +23,261 @@ describe('FileOperations - getFileInfo and Integration', () => {
         it('should extract correct file information', () => {
             const mockFile = createMockTFile(
                 'recording.mp3',
-                'inbox/audio/tasks/recording.mp3',
+                'inbox/audio/recording.mp3',
                 { size: 5000, mtime: 1640995200000, ctime: 1640995200000 }
             );
 
             const fileInfo = fileOps.getFileInfo(mockFile);
 
             expect(fileInfo.name).toBe('recording.mp3');
-            expect(fileInfo.path).toBe('inbox/audio/tasks/recording.mp3');
+            expect(fileInfo.path).toBe('inbox/audio/recording.mp3');
             expect(fileInfo.size).toBe(5000);
             expect(fileInfo.extension).toBe('.mp3');
-            expect(fileInfo.category).toBe('tasks');
             expect(fileInfo.isProcessable).toBe(true);
             expect(fileInfo.mimeType).toBe('audio/mpeg');
         });
 
-        it('should detect category from path', () => {
-            const paths = [
-                'inbox/audio/work-meetings/file.mp3',
-                'inbox/transcripts/personal/file.md',
-                'inbox/results/thoughts/file.md',
-                'inbox/summary/ideas/file.md'
+        it('should detect file types correctly for step-based processing', () => {
+            const testFiles = [
+                { name: 'audio.mp3', path: 'inbox/audio/audio.mp3', expectedProcessable: true, expectedMime: 'audio/mpeg' },
+                { name: 'audio.wav', path: 'inbox/audio/audio.wav', expectedProcessable: true, expectedMime: 'audio/wav' },
+                { name: 'audio.m4a', path: 'inbox/audio/audio.m4a', expectedProcessable: true, expectedMime: 'audio/mp4' },
+                { name: 'transcript.md', path: 'inbox/transcripts/transcript.md', expectedProcessable: true, expectedMime: 'text/markdown' },
+                { name: 'notes.txt', path: 'inbox/text/notes.txt', expectedProcessable: true, expectedMime: 'text/plain' },
+                { name: 'image.jpg', path: 'inbox/other/image.jpg', expectedProcessable: false, expectedMime: 'image/jpeg' }
             ];
 
-            const expectedCategories = ['work-meetings', 'personal', 'thoughts', 'ideas'];
-
-            paths.forEach((path, index) => {
-                const mockFile = createMockTFile('file', path);
+            testFiles.forEach(({ name, path, expectedProcessable, expectedMime }) => {
+                const mockFile = createMockTFile(name, path);
                 const fileInfo = fileOps.getFileInfo(mockFile);
-                expect(fileInfo.category).toBe(expectedCategories[index]);
+                
+                expect(fileInfo.name).toBe(name);
+                expect(fileInfo.path).toBe(path);
+                expect(fileInfo.isProcessable).toBe(expectedProcessable);
+                expect(fileInfo.mimeType).toBe(expectedMime);
             });
         });
 
-        it('should default to uncategorized for unknown paths', () => {
-            const mockFile = createMockTFile('file.md', 'random/path/file.md');
-            const fileInfo = fileOps.getFileInfo(mockFile);
-            expect(fileInfo.category).toBe('uncategorized');
+        it('should handle step-based folder structure', () => {
+            const stepBasedPaths = [
+                'inbox/audio/recording.mp3',
+                'inbox/transcripts/recording-transcript.md',
+                'inbox/process-thoughts/recording-processed.md',
+                'inbox/process-tasks/recording-processed.md',
+                'inbox/process-ideas/recording-processed.md',
+                'inbox/summary-personal/summary.md',
+                'inbox/summary-work/summary.md'
+            ];
+
+            stepBasedPaths.forEach(path => {
+                const mockFile = createMockTFile('test-file', path);
+                const fileInfo = fileOps.getFileInfo(mockFile);
+                
+                expect(fileInfo.path).toBe(path);
+                expect(fileInfo.name).toBe('test-file');
+                // No category field should be present in v1.1
+                expect(fileInfo).not.toHaveProperty('category');
+            });
+        });
+
+        it('should handle archive structure by step', () => {
+            const archivePaths = [
+                'inbox/archive/transcribe/audio-001.mp3',
+                'inbox/archive/process-thoughts/transcript-001.md',
+                'inbox/archive/process-tasks/transcript-002.md',
+                'inbox/archive/summary-personal/processed-content.md'
+            ];
+
+            archivePaths.forEach(path => {
+                const mockFile = createMockTFile('archived-file', path);
+                const fileInfo = fileOps.getFileInfo(mockFile);
+                
+                expect(fileInfo.path).toBe(path);
+                expect(fileInfo.name).toBe('archived-file');
+            });
+        });
+
+        it('should determine MIME types for all supported file extensions', () => {
+            const fileExtensions = [
+                { ext: '.mp3', mime: 'audio/mpeg' },
+                { ext: '.wav', mime: 'audio/wav' },
+                { ext: '.m4a', mime: 'audio/mp4' },
+                { ext: '.mp4', mime: 'video/mp4' },
+                { ext: '.md', mime: 'text/markdown' },
+                { ext: '.txt', mime: 'text/plain' }
+            ];
+
+            fileExtensions.forEach(({ ext, mime }) => {
+                const mockFile = createMockTFile(`test${ext}`, `inbox/test${ext}`);
+                const fileInfo = fileOps.getFileInfo(mockFile);
+                
+                expect(fileInfo.extension).toBe(ext);
+                expect(fileInfo.mimeType).toBe(mime);
+            });
         });
     });
 
-    describe('Integration Tests', () => {
-        it('should handle complete file processing workflow', async () => {
-            // Mock a complete workflow: read -> process -> write -> archive
-            const sourceContent = 'original content';
-            const processedContent = 'processed content';
-            const sourceFile = createMockTFile('input.md', 'inbox/input.md');
-            const outputFile = createMockTFile('output.md', 'results/output.md');
-            const archivedFile = createMockTFile('input.md', 'archive/input.md');
+    describe('Integration Tests for v1.1 Schema', () => {
+        it('should handle complete step-based processing workflow', async () => {
+            // Mock a complete workflow: audio -> transcribe -> process -> summarize -> archive
+            const originalAudio = 'binary audio data';
+            const transcriptContent = '# Transcript\n\nThis is a transcription of personal thoughts.';
+            const processedContent = '# Processed Thoughts\n\nThis content has been analyzed and categorized.';
+            
+            const audioFile = createMockTFile('recording.mp3', 'inbox/audio/recording.mp3');
+            const transcriptFile = createMockTFile('recording-transcript.md', 'inbox/transcripts/recording-transcript.md');
+            const processedFile = createMockTFile('recording-processed.md', 'inbox/process-thoughts/recording-processed.md');
+            const archivedFile = createMockTFile('recording.mp3', 'inbox/archive/transcribe/recording.mp3');
 
-            // Setup mocks for read
+            // Setup mocks for step-based workflow
             mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
-                if (path === 'inbox/input.md') return sourceFile;
-                if (path === 'results/output.md') return null; // Doesn't exist yet
-                if (path === 'archive') return null; // Directory doesn't exist
+                if (path === 'inbox/audio/recording.mp3') return audioFile;
+                if (path === 'inbox/transcripts/recording-transcript.md') return null; // Doesn't exist yet
+                if (path === 'inbox/process-thoughts/recording-processed.md') return null; // Doesn't exist yet
+                if (path === 'inbox/archive/transcribe') return null; // Directory doesn't exist
                 return null;
             });
 
-            mockVault.read.mockResolvedValue(sourceContent);
-            mockVault.create.mockResolvedValue(outputFile);
-            mockVault.createFolder.mockResolvedValue(createMockTFolder('archive', 'archive'));
+            mockVault.read.mockResolvedValue(originalAudio);
+            mockVault.create.mockImplementation((path: string, content: string) => {
+                if (path === 'inbox/transcripts/recording-transcript.md') return Promise.resolve(transcriptFile);
+                if (path === 'inbox/process-thoughts/recording-processed.md') return Promise.resolve(processedFile);
+                return Promise.resolve(createMockTFile('new-file', path));
+            });
+            mockVault.createFolder.mockResolvedValue(createMockTFolder('archive', 'inbox/archive/transcribe'));
             mockVault.rename.mockResolvedValue(archivedFile);
 
-            // Step 1: Read source file
-            const content = await fileOps.readFile('inbox/input.md');
-            expect(content).toBe(sourceContent);
+            // Step 1: Read source audio file
+            const audioContent = await fileOps.readFile('inbox/audio/recording.mp3');
+            expect(audioContent).toBe(originalAudio);
 
-            // Step 2: Write processed result
-            const writeResult = await fileOps.writeFile('results/output.md', processedContent);
-            expect(writeResult.success).toBe(true);
+            // Step 2: Write transcript (from transcribe step)
+            const transcriptResult = await fileOps.writeFile('inbox/transcripts/recording-transcript.md', transcriptContent);
+            expect(transcriptResult.success).toBe(true);
 
-            // Step 3: Archive original file
-            const context = { category: 'tasks', stepId: 'process' };
-            const archiveResult = await fileOps.archiveFile('inbox/input.md', 'archive', context);
+            // Step 3: Write processed content (from process-thoughts step)
+            const processedResult = await fileOps.writeFile('inbox/process-thoughts/recording-processed.md', processedContent);
+            expect(processedResult.success).toBe(true);
+
+            // Step 4: Archive original file to step-specific archive
+            const context = { stepId: 'transcribe' };
+            const archiveResult = await fileOps.archiveFile('inbox/audio/recording.mp3', 'inbox/archive/transcribe', context);
             expect(archiveResult.success).toBe(true);
         });
 
-        it('should handle error recovery in workflow', async () => {
-            // Test that errors in one operation don't break the entire workflow
+        it('should handle multi-file output from single step', async () => {
+            // Test scenario where one step produces multiple output files
+            const inputFile = createMockTFile('mixed-content.md', 'inbox/transcripts/mixed-content.md');
+            const personalFile = createMockTFile('personal-notes.md', 'inbox/process-thoughts/personal-notes.md');
+            const workFile = createMockTFile('work-tasks.md', 'inbox/process-tasks/work-tasks.md');
+
+            mockVault.getAbstractFileByPath.mockReturnValue(inputFile);
+            mockVault.read.mockResolvedValue('Mixed content with both personal and work items');
+            mockVault.create.mockImplementation((path: string) => {
+                if (path.includes('personal-notes.md')) return Promise.resolve(personalFile);
+                if (path.includes('work-tasks.md')) return Promise.resolve(workFile);
+                return Promise.resolve(createMockTFile('default', path));
+            });
+
+            // Read input
+            const content = await fileOps.readFile('inbox/transcripts/mixed-content.md');
+            expect(content).toBeDefined();
+
+            // Write multiple outputs with different routing
+            const personalResult = await fileOps.writeFile('inbox/process-thoughts/personal-notes.md', 'Personal content here');
+            const workResult = await fileOps.writeFile('inbox/process-tasks/work-tasks.md', 'Work content here');
+
+            expect(personalResult.success).toBe(true);
+            expect(workResult.success).toBe(true);
+        });
+
+        it('should handle directory-only outputs for summary steps', async () => {
+            // Test summary steps that output to directories rather than specific files
+            const summaryContent = '# Weekly Personal Summary\n\nThis week\'s personal insights...';
+            
+            mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+                if (path === 'inbox/summary-personal') return createMockTFolder('summary-personal', 'inbox/summary-personal');
+                return null;
+            });
+
+            mockVault.create.mockResolvedValue(
+                createMockTFile('weekly-summary.md', 'inbox/summary-personal/weekly-summary.md')
+            );
+
+            // Write to summary directory
+            const summaryResult = await fileOps.writeFile('inbox/summary-personal/weekly-summary.md', summaryContent);
+            expect(summaryResult.success).toBe(true);
+        });
+
+        it('should handle include file resolution for step contexts', async () => {
+            // Test that include files are properly resolved for different steps
+            const includeFiles = [
+                'transcriptionprompt.md',
+                'process-thoughts-prompt.md',
+                'inbox/summary-personal/previous-summary.md'
+            ];
+
+            mockVault.getAbstractFileByPath.mockImplementation((path: string) => {
+                if (includeFiles.some(f => path.includes(f))) {
+                    return createMockTFile(path.split('/').pop() || 'file', path);
+                }
+                return null;
+            });
+
+            mockVault.read.mockImplementation((file: any) => {
+                if (file.path.includes('transcriptionprompt.md')) {
+                    return Promise.resolve('Transcription instructions...');
+                }
+                if (file.path.includes('process-thoughts-prompt.md')) {
+                    return Promise.resolve('Process personal thoughts with empathy...');
+                }
+                if (file.path.includes('previous-summary.md')) {
+                    return Promise.resolve('Previous personal summary for context...');
+                }
+                return Promise.resolve('Generic content');
+            });
+
+            // Test reading different types of include files
+            for (const filePath of includeFiles) {
+                const content = await fileOps.readFile(filePath);
+                expect(content).toBeDefined();
+                expect(typeof content).toBe('string');
+            }
+        });
+
+        it('should handle error recovery in step-based workflow', async () => {
+            // Test that errors in one step don't break the entire pipeline
             mockVault.getAbstractFileByPath.mockReturnValue(null);
 
             // Reading non-existent file should throw
-            await expect(fileOps.readFile('nonexistent.md')).rejects.toThrow();
+            await expect(fileOps.readFile('nonexistent.mp3')).rejects.toThrow();
 
-            // But writing should still work
-            mockVault.create.mockResolvedValue(createMockTFile('new.md', 'new.md'));
-            const writeResult = await fileOps.writeFile('new.md', 'content');
+            // But writing to next step should still work
+            mockVault.create.mockResolvedValue(createMockTFile('new.md', 'inbox/transcripts/new.md'));
+            const writeResult = await fileOps.writeFile('inbox/transcripts/new.md', 'Transcription content');
             expect(writeResult.success).toBe(true);
+        });
+
+        it('should handle step-based archive paths correctly', async () => {
+            // Test that files are archived to the correct step-specific directories
+            const testFiles = [
+                { input: 'inbox/audio/test.mp3', step: 'transcribe', expectedArchive: 'inbox/archive/transcribe' },
+                { input: 'inbox/transcripts/test.md', step: 'process-thoughts', expectedArchive: 'inbox/archive/process-thoughts' },
+                { input: 'inbox/process-thoughts/test.md', step: 'summary-personal', expectedArchive: 'inbox/archive/summary-personal' }
+            ];
+
+            testFiles.forEach(async ({ input, step, expectedArchive }) => {
+                const mockFile = createMockTFile('test-file', input);
+                const archivedFile = createMockTFile('test-file', `${expectedArchive}/test-file`);
+
+                mockVault.getAbstractFileByPath.mockReturnValue(mockFile);
+                mockVault.createFolder.mockResolvedValue(createMockTFolder(step, expectedArchive));
+                mockVault.rename.mockResolvedValue(archivedFile);
+
+                const context = { stepId: step };
+                const archiveResult = await fileOps.archiveFile(input, expectedArchive, context);
+                expect(archiveResult.success).toBe(true);
+            });
         });
     });
 });
