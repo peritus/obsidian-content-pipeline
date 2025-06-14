@@ -47,17 +47,17 @@ export class WhisperStepProcessor {
                 { responseFormat: 'text' }
             );
 
-            // Format and save output
-            const outputContent = this.formatTranscriptionOutput(transcriptionResult.text, fileInfo, stepId);
+            // Archive original file first and capture archive path
+            const archivePath = await this.archiveFile(fileInfo.path, step.archive, fileInfo);
+
+            // Format and save output using archive path for source metadata
+            const outputContent = this.formatTranscriptionOutput(transcriptionResult.text, fileInfo, stepId, archivePath);
             const outputPath = this.resolveOutputPath(step.output, fileInfo);
             
             await this.fileOps.writeFile(outputPath, outputContent, {
                 createDirectories: true,
                 overwrite: true
             });
-
-            // Archive original file
-            await this.archiveFile(fileInfo.path, step.archive, fileInfo);
 
             logger.info(`Whisper transcription completed: ${fileInfo.name} → ${outputPath}`);
 
@@ -76,6 +76,7 @@ export class WhisperStepProcessor {
                 inputFile: fileInfo,
                 status: ProcessingStatus.COMPLETED,
                 outputFiles: [outputPath],
+                archivePath,
                 startTime,
                 endTime: new Date(),
                 stepId,
@@ -107,11 +108,11 @@ export class WhisperStepProcessor {
         }
     }
 
-    private formatTranscriptionOutput(text: string, fileInfo: FileInfo, stepId: string): string {
+    private formatTranscriptionOutput(text: string, fileInfo: FileInfo, stepId: string, archivePath: string): string {
         const timestamp = new Date().toISOString();
         
         return `---
-source: "${fileInfo.path}"
+source: "${archivePath}"
 processed: "${timestamp}"
 step: "${stepId}"
 pipeline: "audio-processing"
@@ -119,7 +120,7 @@ pipeline: "audio-processing"
 
 # Transcript: ${PathUtils.getBasename(fileInfo.path)}
 
-**Original Audio:** [[${fileInfo.path}]]
+**Original Audio:** [[${archivePath}]]
 **Processed:** ${timestamp}
 
 ---
@@ -135,7 +136,7 @@ ${text}`;
             .replace('{timestamp}', new Date().toISOString());
     }
 
-    private async archiveFile(sourcePath: string, archivePattern: string, fileInfo: FileInfo): Promise<void> {
+    private async archiveFile(sourcePath: string, archivePattern: string, fileInfo: FileInfo): Promise<string> {
         try {
             // Archive pattern should be step-based: inbox/archive/{stepId}
             const archivePath = archivePattern + '/' + fileInfo.name;
@@ -146,16 +147,51 @@ ${text}`;
                 await this.fileOps.ensureDirectory(archiveDir);
             }
 
+            // Generate unique archive path to handle conflicts
+            const finalArchivePath = await this.generateUniqueFilename(archivePath);
+
             // Move file to archive
             const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
             if (sourceFile) {
-                await this.app.vault.rename(sourceFile, archivePath);
-                logger.debug(`File archived: ${sourcePath} → ${archivePath}`);
+                await this.app.vault.rename(sourceFile, finalArchivePath);
+                logger.debug(`File archived: ${sourcePath} → ${finalArchivePath}`);
+                return finalArchivePath;
+            } else {
+                logger.warn(`Source file not found for archiving: ${sourcePath}`);
+                return sourcePath; // Return original path if source not found
             }
 
         } catch (error) {
             logger.warn(`Failed to archive file: ${sourcePath}`, error);
+            return sourcePath; // Return original path if archiving fails
         }
+    }
+
+    /**
+     * Generate a unique filename to avoid conflicts (similar to FileArchiver)
+     */
+    private async generateUniqueFilename(basePath: string): Promise<string> {
+        let counter = 0;
+        let testPath = basePath;
+
+        while (this.fileExists(testPath)) {
+            counter++;
+            const dir = PathUtils.getDirectory(basePath);
+            const basename = PathUtils.getBasename(basePath);
+            const extension = PathUtils.getExtension(basePath);
+            const uniqueName = `${basename}-${counter}${extension}`;
+            testPath = dir ? PathUtils.join(dir, uniqueName) : uniqueName;
+        }
+
+        return testPath;
+    }
+
+    /**
+     * Check if a file exists
+     */
+    private fileExists(filePath: string): boolean {
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+        return file !== null;
     }
 
     static isAudioFile(fileInfo: FileInfo): boolean {
