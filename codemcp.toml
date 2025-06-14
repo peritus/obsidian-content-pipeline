@@ -19,22 +19,52 @@ paths_blocked = [
     "node_modules/**",
 ]
 
+
 [commands]
-# Standard build
+# Standard build commands
 build = ["npm", "run", "build"]
-
-# Debug build
 build_debug = ["npm", "run", "build:debug"]
-
-# Type checking
 type_check = ["npm", "run", "type-check"]
-
-# Install packages
 npm_install = ["npm", "install"]
 
+# ===== OPTIMIZED TEST COMMANDS =====
 
-# Run tests
-npm_test = ["npm", "test", '--', '--json']
+# Quick test status - minimal output, failures only
+test_status = ["npm", "test", "--", "--json", "--silent", "--passWithNoTests"]
 
-# bump version
+# All tests with failures-only output (most common use case)
+test_failures_only = ["npm", "test", "--", "--verbose=false", "--silent"]
+
+# Individual test suite commands (secure - no arbitrary args)
+test_core = ["npm", "test", "--", "tests/!(file-operations)/**/*.test.ts", "--verbose=false"]
+test_file_ops = ["npm", "test", "--", "tests/file-operations/", "--verbose=false"]
+
+# Specific core component tests
+test_chat_api = ["npm", "test", "--", "tests/chat-api.test.ts"]
+test_validation = ["npm", "test", "--", "tests/validation.test.ts"]
+test_path_resolver = ["npm", "test", "--", "tests/path-resolver.test.ts"]
+test_pipeline = ["npm", "test", "--", "tests/pipeline-executor.test.ts"]
+test_yaml = ["npm", "test", "--", "tests/yaml-processor.test.ts"]
+test_error_handler = ["npm", "test", "--", "tests/error-handler.test.ts"]
+test_logger = ["npm", "test", "--", "tests/logger.test.ts"]
+test_routing = ["npm", "test", "--", "tests/step-routing.test.ts"]
+test_integration = ["npm", "test", "--", "tests/integration.test.ts"]
+
+# Specific file-operations tests
+test_archive = ["npm", "test", "--", "tests/file-operations/archiveFile.test.ts"]
+test_discover = ["npm", "test", "--", "tests/file-operations/discoverFiles.test.ts"]
+test_file_utils = ["npm", "test", "--", "tests/file-operations/fileUtils.test.ts"]
+test_file_exists = ["npm", "test", "--", "tests/file-operations/fileExistence.test.ts"]
+test_read_file = ["npm", "test", "--", "tests/file-operations/readFile.test.ts"]
+test_write_file = ["npm", "test", "--", "tests/file-operations/writeFile.test.ts"]
+test_ensure_dir = ["npm", "test", "--", "tests/file-operations/ensureDirectory.test.ts"]
+test_file_integration = ["npm", "test", "--", "tests/file-operations/integration.test.ts"]
+
+# Type checking for quick validation
+test_types_only = ["npm", "run", "type-check"]
+
+# Coverage when needed (use sparingly due to output size)
+test_coverage_summary = ["npm", "test", "--", "--coverage", "--coverageReporters=text-summary"]
+
+# Development utilities
 bump_version_patch = ["bump-my-version", "bump", "patch", "-vv"]
