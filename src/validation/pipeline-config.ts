@@ -1,7 +1,8 @@
 /**
  * Pipeline configuration validation utility
  * 
- * Validates complete pipeline configurations including structure and relationships.
+ * Validates complete pipeline configurations including structure and relationships
+ * for the new object-keyed next step schema.
  */
 
 import { ErrorFactory } from '../error-handler';
@@ -96,12 +97,16 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
         }
     });
 
-    // Validate step references (next fields)
+    // Validate step references (next fields) - updated for object format
     const invalidReferences: string[] = [];
     stepIds.forEach(stepId => {
         const step = config[stepId];
-        if (step.next && !stepIds.includes(step.next)) {
-            invalidReferences.push(`${stepId} → ${step.next}`);
+        if (step.next) {
+            Object.keys(step.next).forEach(nextStepId => {
+                if (!stepIds.includes(nextStepId)) {
+                    invalidReferences.push(`${stepId} → ${nextStepId}`);
+                }
+            });
         }
     });
 
@@ -119,13 +124,15 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
     stepIds.forEach(stepId => {
         const step = config[stepId];
         if (step.next) {
-            referencedSteps.add(step.next);
+            Object.keys(step.next).forEach(nextStepId => {
+                referencedSteps.add(nextStepId);
+            });
         }
     });
 
     const entryPoints = stepIds.filter(stepId => !referencedSteps.has(stepId));
 
-    // Detect circular references
+    // Detect circular references - updated for object format
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
     
@@ -142,8 +149,12 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
         recursionStack.add(stepId);
 
         const step = config[stepId];
-        if (step.next && hasCircularReference(step.next)) {
-            return true;
+        if (step.next) {
+            for (const nextStepId of Object.keys(step.next)) {
+                if (hasCircularReference(nextStepId)) {
+                    return true;
+                }
+            }
         }
 
         recursionStack.delete(stepId);
@@ -196,7 +207,7 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
         );
     }
 
-    // Find orphaned steps using connected components analysis
+    // Find orphaned steps using connected components analysis - updated for object format
     const visitedForComponents = new Set<string>();
     
     // Find all connected components
@@ -216,14 +227,21 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
                 visitedForComponents.add(currentStep);
                 
                 const step = config[currentStep];
-                if (step.next && !componentSteps.has(step.next)) {
-                    toVisit.push(step.next);
+                if (step.next) {
+                    Object.keys(step.next).forEach(nextStepId => {
+                        if (!componentSteps.has(nextStepId)) {
+                            toVisit.push(nextStepId);
+                        }
+                    });
                 }
                 
                 // Also check for steps that reference this step (reverse direction) 
                 stepIds.forEach(otherId => {
-                    if (!componentSteps.has(otherId) && config[otherId].next === currentStep) {
-                        toVisit.push(otherId);
+                    if (!componentSteps.has(otherId) && config[otherId].next) {
+                        const otherNext = config[otherId].next!;
+                        if (Object.keys(otherNext).includes(currentStep)) {
+                            toVisit.push(otherId);
+                        }
                     }
                 });
             }

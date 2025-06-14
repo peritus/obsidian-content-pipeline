@@ -1,7 +1,7 @@
 /**
  * Pipeline step validation utility
  * 
- * Validates individual pipeline step configurations.
+ * Validates individual pipeline step configurations for the new object-keyed schema.
  */
 
 import { ErrorFactory } from '../error-handler';
@@ -51,8 +51,8 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         );
     }
 
-    // Validate required fields
-    const requiredFields = ['model', 'input', 'output', 'archive', 'template', 'include', 'apiKey'];
+    // Validate required fields (template removed from requirements)
+    const requiredFields = ['model', 'input', 'output', 'archive', 'include', 'apiKey'];
     const missingFields = requiredFields.filter(field => !(field in step));
     
     if (missingFields.length > 0) {
@@ -124,19 +124,6 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
             `Pipeline step "${stepId}" archive pattern is invalid`,
             { stepId, archivePattern: step.archive, originalError: error },
             ['Fix the archive pattern', 'Check pattern syntax and variables']
-        );
-    }
-
-    // Validate template path
-    try {
-        validatePath(step.template, `template path for step ${stepId}`);
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        throw ErrorFactory.validation(
-            `Invalid template path in step ${stepId}: ${errorMessage}`,
-            `Pipeline step "${stepId}" template path is invalid`,
-            { stepId, templatePath: step.template, originalError: error },
-            ['Fix the template path', 'Use vault-relative paths only']
         );
     }
 
@@ -221,24 +208,76 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         );
     }
 
-    // Validate optional next step reference
-    if (step.next !== undefined) {
-        if (typeof step.next !== 'string') {
+    // Validate optional description
+    if (step.description !== undefined) {
+        if (typeof step.description !== 'string') {
             throw ErrorFactory.validation(
-                `Invalid next step reference in step ${stepId}`,
-                `Pipeline step "${stepId}" next field must be a string`,
-                { stepId, next: step.next },
-                ['Provide a valid step ID string', 'Remove next if this is the final step']
+                `Invalid description in step ${stepId}`,
+                `Pipeline step "${stepId}" description must be a string`,
+                { stepId, description: step.description },
+                ['Provide a valid description string', 'Remove description if not needed']
             );
         }
 
-        const trimmedNext = step.next.trim();
-        if (trimmedNext.length === 0) {
+        if (step.description.trim().length === 0) {
             throw ErrorFactory.validation(
-                `Empty next step reference in step ${stepId} - next field cannot be empty`,
-                `Pipeline step "${stepId}" next field cannot be empty`,
+                `Empty description in step ${stepId} - description cannot be empty`,
+                `Pipeline step "${stepId}" description cannot be empty`,
+                { stepId, description: step.description },
+                ['Provide a meaningful description', 'Remove description field if not needed']
+            );
+        }
+    }
+
+    // Validate optional next step configuration (object format)
+    if (step.next !== undefined) {
+        if (typeof step.next !== 'object' || Array.isArray(step.next) || step.next === null) {
+            throw ErrorFactory.validation(
+                `Invalid next step configuration in step ${stepId}`,
+                `Pipeline step "${stepId}" next field must be an object mapping step IDs to routing prompts`,
                 { stepId, next: step.next },
-                ['Provide a valid step ID', 'Remove next field if not needed']
+                ['Use object format: {"stepId": "routing prompt"}', 'Remove next if this is the final step', 'Example: {"process-tasks": "If work-related content"}']
+            );
+        }
+
+        // Validate each routing entry
+        Object.entries(step.next).forEach(([nextStepId, routingPrompt]) => {
+            if (typeof nextStepId !== 'string' || nextStepId.trim().length === 0) {
+                throw ErrorFactory.validation(
+                    `Invalid next step ID in step ${stepId}: ${nextStepId}`,
+                    `Next step IDs must be non-empty strings`,
+                    { stepId, nextStepId },
+                    ['Use valid step ID strings', 'Check for typos', 'Example: "process-tasks"']
+                );
+            }
+
+            if (typeof routingPrompt !== 'string' || routingPrompt.trim().length === 0) {
+                throw ErrorFactory.validation(
+                    `Invalid routing prompt in step ${stepId} for next step ${nextStepId}`,
+                    `Routing prompts must be non-empty strings`,
+                    { stepId, nextStepId, routingPrompt },
+                    ['Provide descriptive routing criteria', 'Explain when to route to this step', 'Example: "If the document contains work-related content"']
+                );
+            }
+
+            // Validate routing prompt has reasonable length
+            if (routingPrompt.trim().length < 10) {
+                throw ErrorFactory.validation(
+                    `Routing prompt too short in step ${stepId} for next step ${nextStepId}`,
+                    `Routing prompts should be descriptive (at least 10 characters)`,
+                    { stepId, nextStepId, routingPrompt, length: routingPrompt.trim().length },
+                    ['Provide more detailed routing criteria', 'Explain the content type clearly', 'Help the LLM make good routing decisions']
+                );
+            }
+        });
+
+        // Ensure at least one routing option if next is provided
+        if (Object.keys(step.next).length === 0) {
+            throw ErrorFactory.validation(
+                `Empty next step configuration in step ${stepId}`,
+                `Pipeline step "${stepId}" next field cannot be empty object`,
+                { stepId, next: step.next },
+                ['Add at least one routing option', 'Remove next field if not needed', 'Provide meaningful routing choices']
             );
         }
     }

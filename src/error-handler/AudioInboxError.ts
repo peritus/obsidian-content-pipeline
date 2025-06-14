@@ -62,8 +62,6 @@ export class AudioInboxError extends Error {
                 return NotificationType.ERROR;
             case ErrorType.VALIDATION:
                 return NotificationType.WARNING;
-            case ErrorType.TEMPLATE:
-                return NotificationType.WARNING;
             case ErrorType.PARSING:
                 return NotificationType.WARNING;
             default:

@@ -100,24 +100,6 @@ export const ErrorFactory = {
     },
 
     /**
-     * Create a template error
-     */
-    template(
-        message: string, 
-        userMessage: string, 
-        context?: any,
-        suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
-            ErrorType.TEMPLATE, 
-            message, 
-            userMessage,
-            context,
-            suggestions ?? ['Check your template syntax', 'Verify template file exists']
-        );
-    },
-
-    /**
      * Create a parsing error
      */
     parsing(

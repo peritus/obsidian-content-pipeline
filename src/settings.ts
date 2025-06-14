@@ -1,11 +1,10 @@
 import { App, PluginSettingTab } from 'obsidian';
 import AudioInboxPlugin from './main';
-import { AudioInboxSettings, DEFAULT_CATEGORIES } from './types';
+import { AudioInboxSettings } from './types';
 import { FileOperations } from './core/file-operations';
 import { DEFAULT_PIPELINE_CONFIG } from './settings/default-config';
 import { PipelineConfigSection } from './settings/pipeline-config-section';
 import { FolderSetupSection } from './settings/folder-setup-section';
-import { CategoriesSection } from './settings/categories-section';
 
 /**
  * Default settings for the plugin
@@ -13,7 +12,6 @@ import { CategoriesSection } from './settings/categories-section';
 export const DEFAULT_SETTINGS: AudioInboxSettings = {
     pipelineConfig: JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2),
     debugMode: false,
-    defaultCategories: [...DEFAULT_CATEGORIES],
     version: '1.0.0',
     lastSaved: undefined
 };
@@ -40,7 +38,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
 
         // Description
         const descEl = containerEl.createEl('p');
-        descEl.innerHTML = 'Configure your audio processing pipeline. Edit the JSON configuration below to customize your pipeline and add your API keys.';
+        descEl.innerHTML = 'Configure your audio processing pipeline with intelligent step routing. Edit the JSON configuration below to customize your pipeline and add your API keys.';
 
         // Pipeline Configuration Section
         const pipelineSection = new PipelineConfigSection(this.plugin);
@@ -49,10 +47,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         // Folder Setup Section
         const folderSection = new FolderSetupSection(this.plugin, this.fileOps);
         folderSection.render(containerEl);
-
-        // Categories Section
-        const categoriesSection = new CategoriesSection(this.plugin, this.fileOps);
-        categoriesSection.render(containerEl);
 
         // Getting Started Section
         this.renderGettingStarted(containerEl);
@@ -68,11 +62,11 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         instructionsEl.innerHTML = `
             <ol>
                 <li><strong>Configure Pipeline:</strong> Add your OpenAI API key to the "apiKey" fields above</li>
-                <li><strong>Create Folders:</strong> Click "Create All Folders" to set up the inbox structure</li>
-                <li><strong>Add Audio Files:</strong> Place audio files in <code>inbox/audio/{category}/</code> folders</li>
+                <li><strong>Create Folders:</strong> Click "Create Initial Folders" to set up the inbox structure</li>
+                <li><strong>Add Audio Files:</strong> Place audio files in <code>inbox/audio/</code> folder</li>
                 <li><strong>Process Files:</strong> Use the "Process Next File" command from the command palette</li>
             </ol>
-            <p><strong>Tip:</strong> Start with the default configuration - it works great for most users!</p>
+            <p><strong>Tip:</strong> The default configuration uses intelligent routing to automatically organize your content!</p>
         `;
     }
 }

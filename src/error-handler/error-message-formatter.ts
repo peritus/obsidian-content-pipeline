@@ -21,8 +21,6 @@ export function createUserFriendlyMessage(errorInfo: ErrorInfo): string {
             return `Pipeline Error: ${baseMessage}`;
         case ErrorType.VALIDATION:
             return `Validation Error: ${baseMessage}`;
-        case ErrorType.TEMPLATE:
-            return `Template Error: ${baseMessage}`;
         case ErrorType.PARSING:
             return `Parsing Error: ${baseMessage}`;
         default:

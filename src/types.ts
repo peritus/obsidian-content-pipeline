@@ -21,8 +21,6 @@ export interface PipelineStep {
     output: string;
     /** Pattern for archive directory (auto-generated) */
     archive: string;
-    /** Path to template file */
-    template: string;
     /** File patterns to include (prompts + additional files) */
     include: string[];
     /** API key for this specific step */
@@ -31,8 +29,10 @@ export interface PipelineStep {
     baseUrl?: string;
     /** Organization ID (optional) */
     organization?: string;
-    /** ID of the next step (optional) */
-    next?: string;
+    /** Object mapping step IDs to routing prompts (optional) */
+    next?: { [stepId: string]: string };
+    /** Description of what this step does */
+    description?: string;
 }
 
 /**
@@ -62,10 +62,6 @@ export interface PipelineValidationResult {
  * Context information available during file processing
  */
 export interface ProcessingContext {
-    /** Original category extracted from input file path */
-    originalCategory: string;
-    /** Resolved category (after any routing) */
-    resolvedCategory: string;
     /** Original filename without extension */
     filename: string;
     /** Current timestamp in ISO format */
@@ -83,23 +79,6 @@ export interface ProcessingContext {
 }
 
 /**
- * Variables available for template substitution
- */
-export interface TemplateVariables {
-    category: string;
-    content: string;
-    filename: string;
-    archivePath: string;
-    timestamp: string;
-    date: string;
-    originalCategory: string;
-    resolvedCategory: string;
-    stepId: string;
-    inputPath: string;
-    outputPath: string;
-}
-
-/**
  * File metadata stored in frontmatter
  */
 export interface FileMetadata {
@@ -109,10 +88,8 @@ export interface FileMetadata {
     processed: string;
     /** Step ID that generated this file */
     step: string;
-    /** Final category (after any routing) */
-    category: string;
-    /** Original category before routing (if different) */
-    originalCategory?: string;
+    /** Chosen next step for processing (if applicable) */
+    nextStep?: string;
     /** Pipeline identifier (for future multi-pipeline support) */
     pipeline?: string;
     /** Template version (for future template evolution) */
@@ -135,8 +112,6 @@ export interface FileInfo {
     size: number;
     /** File extension (including dot) */
     extension: string;
-    /** Extracted category from path */
-    category: string;
     /** Whether this file type can be processed */
     isProcessable: boolean;
     /** Last modified timestamp */
@@ -190,7 +165,8 @@ export interface ProcessingResult {
 export enum FileRole {
     INPUT = 'input',
     PROMPT = 'prompt',
-    CONTEXT = 'context'
+    CONTEXT = 'context',
+    ROUTING = 'routing'
 }
 
 /**
@@ -199,7 +175,6 @@ export enum FileRole {
 export interface YamlRequestSection {
     role: FileRole;
     filename: string;
-    category?: string;
     content: string;
 }
 
@@ -208,7 +183,7 @@ export interface YamlRequestSection {
  */
 export interface YamlResponseSection {
     filename: string;
-    category?: string;
+    nextStep?: string;
     content: string;
 }
 
@@ -221,86 +196,11 @@ export interface ParsedYamlResponse {
     rawResponse: string;
 }
 
-// =============================================================================
-// TEMPLATE SYSTEM TYPES
-// =============================================================================
-
 /**
- * Template file structure
+ * Step routing information for YAML requests
  */
-export interface TemplateFile {
-    /** Template frontmatter metadata */
-    frontmatter: TemplateMetadata;
-    /** Template content (after frontmatter) */
-    content: string;
-    /** Path to template file */
-    filePath: string;
-}
-
-/**
- * Template metadata from frontmatter
- */
-export interface TemplateMetadata {
-    /** Available variables in this template */
-    variables: string[];
-    /** Template description */
-    description?: string;
-    /** Step this template is for */
-    step?: string;
-    /** Template version */
-    version?: string;
-}
-
-/**
- * Template processing result
- */
-export interface TemplateResult {
-    /** Final rendered content */
-    content: string;
-    /** Variables that were used in substitution */
-    variables: TemplateVariables;
-    /** Path to template file used */
-    templatePath: string;
-    /** Processing timestamp */
-    processedAt: string;
-}
-
-// =============================================================================
-// CATEGORY SYSTEM TYPES
-// =============================================================================
-
-/**
- * Default categories provided by the plugin
- */
-export const DEFAULT_CATEGORIES = ['tasks', 'thoughts', 'uncategorized'] as const;
-export type DefaultCategory = typeof DEFAULT_CATEGORIES[number];
-
-/**
- * Category validation options
- */
-export interface CategoryValidationOptions {
-    /** Regex pattern for allowed characters */
-    allowedCharacters: RegExp;
-    /** Minimum category name length */
-    minLength: number;
-    /** Maximum category name length */
-    maxLength: number;
-    /** Reserved names that cannot be used */
-    reservedNames: string[];
-}
-
-/**
- * Category routing information
- */
-export interface CategoryRouting {
-    /** Original category from file path */
-    originalCategory: string;
-    /** Target category (may be different if routed) */
-    targetCategory: string;
-    /** Whether category was changed during processing */
-    wasRouted: boolean;
-    /** Reason for routing (if applicable) */
-    routingReason?: string;
+export interface StepRoutingInfo {
+    available_next_steps: { [stepId: string]: string };
 }
 
 // =============================================================================
@@ -327,8 +227,6 @@ export interface ValidationResult {
 export interface ValidationContext {
     /** Vault path for resolving relative paths */
     vaultPath: string;
-    /** Available categories */
-    categories: string[];
     /** Validation options */
     options: ValidationOptions;
 }
@@ -358,7 +256,6 @@ export enum ErrorType {
     API = 'api',
     PIPELINE = 'pipeline',
     VALIDATION = 'validation',
-    TEMPLATE = 'template',
     PARSING = 'parsing'
 }
 
@@ -529,9 +426,6 @@ export interface FolderStructure {
     inbox: {
         audio: string[];
         transcripts: string[];
-        results: string[];
-        summary: string[];
-        templates: string;
         archive: {
             [stepId: string]: string[];
         };
@@ -542,8 +436,6 @@ export interface FolderStructure {
  * Path pattern resolution context
  */
 export interface PathContext {
-    /** Category for path resolution */
-    category?: string;
     /** Filename for path resolution */
     filename?: string;
     /** Timestamp for path resolution */
@@ -555,7 +447,7 @@ export interface PathContext {
 }
 
 // =============================================================================
-// PLUGIN SETTINGS TYPES (Simplified - no log level)
+// PLUGIN SETTINGS TYPES
 // =============================================================================
 
 /**
@@ -569,8 +461,6 @@ export interface AudioInboxSettings {
     parsedPipelineConfig?: PipelineConfiguration;
     /** Enable debug mode for additional diagnostics in UI */
     debugMode: boolean;
-    /** Default categories to create on setup */
-    defaultCategories: string[];
     /** Plugin version (for migration purposes) */
     version: string;
     /** Last time settings were saved */

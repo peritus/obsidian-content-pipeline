@@ -87,7 +87,7 @@ export default class AudioInboxPlugin extends Plugin {
                     break;
                     
                 case ProcessingStatus.SKIPPED:
-                    this.showNotice('ℹ️ No files found to process. Place audio files in inbox/audio/{category}/ folders.', 6000);
+                    this.showNotice('ℹ️ No files found to process. Place audio files in inbox/audio/ folder.', 6000);
                     this.logger.info('No files available for processing');
                     break;
                     
@@ -190,13 +190,6 @@ export default class AudioInboxPlugin extends Plugin {
      */
     public getPipelineConfiguration(): PipelineConfiguration | undefined {
         return this.settings.parsedPipelineConfig;
-    }
-
-    /**
-     * Get default categories (type-safe)
-     */
-    public getDefaultCategories(): string[] {
-        return [...this.settings.defaultCategories];
     }
 
     /**
