@@ -7,6 +7,7 @@
 
 // Import the mocked obsidian module directly
 import { mockApp, Notice } from './__mocks__/obsidian';
+import { PipelineConfiguration } from '../src/types';
 
 // Mock console.log for tests (Jest captures these automatically, but we can control them)
 global.console = {
@@ -29,6 +30,7 @@ declare global {
         interface Matchers<R> {
             toBeValidPath(): R;
             toBeValidStepId(): R;
+            toStartWith(expected: string): R;
         }
     }
 }
@@ -57,6 +59,15 @@ expect.extend({
         return {
             message: () => `expected ${received} to be a valid step ID`,
             pass: isValid,
+        };
+    },
+
+    toStartWith(received: string, expected: string) {
+        const pass = typeof received === 'string' && received.startsWith(expected);
+        
+        return {
+            message: () => `expected "${received}" to start with "${expected}"`,
+            pass,
         };
     }
 });
@@ -156,7 +167,7 @@ export const createMockProcessingResult = (overrides: any = {}) => ({
 });
 
 // Helper function to create complex pipeline configurations for testing
-export const createComplexPipelineConfig = () => ({
+export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     'transcribe': createMockPipelineStep({
         model: 'whisper-1',
         input: 'inbox/audio',
@@ -223,40 +234,49 @@ export const createComplexPipelineConfig = () => ({
 });
 
 // Helper function to create invalid configurations for testing
-export const createInvalidPipelineConfig = (errorType: string) => {
+export const createInvalidPipelineConfig = (errorType: string): PipelineConfiguration => {
+    const baseStep = createMockPipelineStep();
+    
     switch (errorType) {
         case 'circular':
             return {
-                'step1': createMockPipelineStep({
+                'step1': {
+                    ...baseStep,
                     next: { 'step2': 'Route to step2' }
-                }),
-                'step2': createMockPipelineStep({
+                },
+                'step2': {
+                    ...baseStep,
                     next: { 'step1': 'Route back to step1' }
-                })
+                }
             };
         case 'missing-reference':
             return {
-                'step1': createMockPipelineStep({
+                'step1': {
+                    ...baseStep,
                     next: { 'non-existent': 'Route to missing step' }
-                })
+                }
             };
         case 'orphaned':
             return {
-                'entry': createMockPipelineStep({
+                'entry': {
+                    ...baseStep,
                     next: { 'connected': 'Route to connected' }
-                }),
-                'connected': createMockPipelineStep(),
-                'orphaned': createMockPipelineStep()
+                },
+                'connected': { ...baseStep },
+                'orphaned': { ...baseStep }
             };
         case 'no-audio':
             return {
-                'text-only': createMockPipelineStep({
+                'text-only': {
+                    ...baseStep,
                     model: 'gpt-4',
                     input: 'text/input'
-                })
+                }
             };
         default:
-            return {};
+            return {
+                'default-step': baseStep
+            };
     }
 };
 

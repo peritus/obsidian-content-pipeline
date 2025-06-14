@@ -247,10 +247,10 @@ describe('Pipeline Step Validation', () => {
 
         it('should reject invalid next step format', () => {
             const step = createMockPipelineStep({ next: 'string-instead-of-object' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('next field must be an object');
+            expect(() => validatePipelineStep(step, 'test-step')).toThrow('next field must be an object mapping step IDs to routing prompts');
 
             const step2 = createMockPipelineStep({ next: ['array-instead-of-object'] });
-            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('next field must be an object');
+            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('next field must be an object mapping step IDs to routing prompts');
         });
 
         it('should validate next step routing prompts', () => {
@@ -259,14 +259,14 @@ describe('Pipeline Step Validation', () => {
                     'step-id': '' // Empty routing prompt
                 }
             });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('Routing prompts must be non-empty');
+            expect(() => validatePipelineStep(step, 'test-step')).toThrow('Routing prompts must be non-empty strings');
 
             const step2 = createMockPipelineStep({ 
                 next: { 
                     '': 'Valid prompt but empty step ID'
                 }
             });
-            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('Next step IDs must be non-empty');
+            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('Next step IDs must be non-empty strings');
         });
 
         it('should accept valid description field', () => {
