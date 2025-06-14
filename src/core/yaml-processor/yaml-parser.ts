@@ -17,6 +17,8 @@ interface ParserStats {
     multiFileResponses: number;
     totalSections: number;
     parseErrors: number;
+    routedResponses: number;
+    sectionsWithRouting: number;
 }
 
 export class YamlParser {
@@ -24,7 +26,9 @@ export class YamlParser {
         responsesParsed: 0,
         multiFileResponses: 0,
         totalSections: 0,
-        parseErrors: 0
+        parseErrors: 0,
+        routedResponses: 0,
+        sectionsWithRouting: 0
     };
 
     constructor() {
@@ -54,6 +58,19 @@ export class YamlParser {
                 const section = this.parseSingleFileResponse(response, strictValidation);
                 sections = [section];
             }
+
+            // Track routing statistics
+            let sectionsWithRouting = 0;
+            sections.forEach(section => {
+                if (section.nextStep && section.nextStep.trim() !== '') {
+                    sectionsWithRouting++;
+                }
+            });
+
+            if (sectionsWithRouting > 0) {
+                this.stats.routedResponses++;
+            }
+            this.stats.sectionsWithRouting += sectionsWithRouting;
 
             this.stats.responsesParsed++;
             this.stats.totalSections += sections.length;
@@ -308,7 +325,9 @@ export class YamlParser {
             responsesParsed: 0,
             multiFileResponses: 0,
             totalSections: 0,
-            parseErrors: 0
+            parseErrors: 0,
+            routedResponses: 0,
+            sectionsWithRouting: 0
         };
     }
 }

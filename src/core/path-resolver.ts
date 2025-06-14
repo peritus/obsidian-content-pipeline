@@ -155,7 +155,9 @@ export class PathResolver {
         // Validate the resolved path if requested
         if (validateResult && missingVariables.length === 0) {
             try {
-                validatePath(resolvedPath, 'resolved path');
+                // Check if the resolved path is a glob pattern (contains *)
+                const isGlobPattern = resolvedPath.includes('*');
+                validatePath(resolvedPath, 'resolved path', isGlobPattern);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 throw ErrorFactory.validation(

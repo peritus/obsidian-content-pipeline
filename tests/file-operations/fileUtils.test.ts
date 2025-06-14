@@ -1,5 +1,6 @@
 /**
  * Tests for FileUtils utility functions
+ * Updated for v1.1 schema - no category system
  */
 
 import { FileUtils } from '../../src/core/file-operations';
@@ -61,10 +62,9 @@ describe('FileUtils', () => {
         it('should create valid processing context', () => {
             const fileInfo: FileInfo = {
                 name: 'test.mp3',
-                path: 'inbox/audio/tasks/test.mp3',
+                path: 'inbox/audio/test.mp3',
                 size: 1000,
                 extension: '.mp3',
-                category: 'tasks',
                 isProcessable: true,
                 lastModified: new Date(),
                 mimeType: 'audio/mpeg'
@@ -72,11 +72,12 @@ describe('FileUtils', () => {
 
             const context = FileUtils.createProcessingContext(fileInfo, 'transcribe');
 
-            expect(context.category).toBe('tasks');
             expect(context.filename).toBe('test');
             expect(context.stepId).toBe('transcribe');
             expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
             expect(context.date).toMatch(/\d{4}-\d{2}-\d{2}/);
+            // Category no longer exists in v1.1 schema - verify context doesn't have category fields
+            expect('category' in context).toBe(false);
         });
     });
 });

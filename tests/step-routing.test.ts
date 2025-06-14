@@ -36,7 +36,7 @@ describe('Step Routing Configuration', () => {
 
         it('should reject non-object next configurations', () => {
             const stepWithStringNext = createMockPipelineStep({
-                next: 'simple-string-instead-of-object'
+                next: 'simple-string-instead-of-object' as any
             });
 
             expect(() => validatePipelineStep(stepWithStringNext, 'test-step'))
@@ -45,7 +45,7 @@ describe('Step Routing Configuration', () => {
 
         it('should reject array next configurations', () => {
             const stepWithArrayNext = createMockPipelineStep({
-                next: ['step1', 'step2', 'step3']
+                next: ['step1', 'step2', 'step3'] as any
             });
 
             expect(() => validatePipelineStep(stepWithArrayNext, 'test-step'))
@@ -359,7 +359,7 @@ describe('Step Routing Error Handling', () => {
     describe('Configuration Errors', () => {
         it('should detect malformed routing objects', () => {
             const malformedStep = createMockPipelineStep({
-                next: null
+                next: null as any
             });
 
             expect(() => validatePipelineStep(malformedStep, 'test-step'))

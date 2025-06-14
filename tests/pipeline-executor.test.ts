@@ -234,12 +234,12 @@ describe('Execution State', () => {
     });
 
     it('should handle step transitions', () => {
-        state.addActiveFile('test.mp3', 'transcribe');
+        state.addActiveFile('test.mp3');
         expect(state.getActiveFiles()).toContain('test.mp3');
         
         // Simulate step transition
         state.removeActiveFile('test.mp3');
-        state.addActiveFile('test-transcript.md', 'process-thoughts');
+        state.addActiveFile('test-transcript.md');
         
         expect(state.getActiveFiles()).toContain('test-transcript.md');
         expect(state.getActiveFiles()).not.toContain('test.mp3');
@@ -278,7 +278,7 @@ describe('File Discovery', () => {
         // we're testing the logic structure
         try {
             await discovery.findNextAvailableFile(complexConfig, excludeFiles);
-        } catch (error) {
+        } catch (error: any) {
             // Expected to fail due to no actual files, but should not fail on configuration
             expect(error.message).not.toContain('No entry points found');
         }
@@ -300,7 +300,7 @@ describe('File Discovery', () => {
         
         try {
             await discovery.findNextAvailableFile(multiStepConfig, excludeFiles);
-        } catch (error) {
+        } catch (error: any) {
             // Expected to fail due to no actual files
             expect(error.message).not.toContain('Invalid configuration');
         }

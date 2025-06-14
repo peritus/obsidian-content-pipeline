@@ -428,8 +428,8 @@ describe('Validators Object', () => {
         expect(typeof Validators.pipelineStep).toBe('function');
         expect(typeof Validators.pipelineConfig).toBe('function');
         
-        // Category validation should no longer exist
-        expect(Validators.category).toBeUndefined();
+        // Category validation should no longer exist in v1.1 schema
+        expect('category' in Validators).toBe(false);
     });
 
     it('should work the same as individual imports', () => {

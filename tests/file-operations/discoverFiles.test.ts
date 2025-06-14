@@ -1,5 +1,6 @@
 /**
  * Tests for FileOperations.discoverFiles method
+ * Updated for v1.1 schema - no category system
  */
 
 import { FileOperations } from '../../src/core/file-operations';
@@ -19,29 +20,29 @@ describe('FileOperations - discoverFiles', () => {
     });
 
     it('should discover files in single path', async () => {
-        const mockFile1 = createMockTFile('file1.md', 'inbox/tasks/file1.md');
-        const mockFile2 = createMockTFile('file2.md', 'inbox/tasks/file2.md');
-        const mockFolder = createMockTFolder('tasks', 'inbox/tasks', [mockFile1, mockFile2]);
+        const mockFile1 = createMockTFile('file1.md', 'inbox/transcripts/file1.md');
+        const mockFile2 = createMockTFile('file2.md', 'inbox/transcripts/file2.md');
+        const mockFolder = createMockTFolder('transcripts', 'inbox/transcripts', [mockFile1, mockFile2]);
 
         mockVault.getAbstractFileByPath.mockReturnValue(mockFolder);
         // Mock the vault methods to return files that start with the path
         mockVault.getMarkdownFiles.mockReturnValue([mockFile1, mockFile2]);
         mockVault.getFiles.mockReturnValue([mockFile1, mockFile2]);
 
-        const files = await fileOps.discoverFiles('inbox/tasks', { category: 'tasks' });
+        const files = await fileOps.discoverFiles('inbox/transcripts', { stepId: 'transcribe' });
 
         expect(files).toHaveLength(2);
         expect(files[0].name).toBe('file1.md');
         expect(files[1].name).toBe('file2.md');
     });
 
-    it('should expand categories when needed', async () => {
-        // Test discovering files across multiple categories
+    it('should handle step-based paths', async () => {
+        // Test discovering files in step-based directories
         mockVault.getAbstractFileByPath.mockReturnValue(null); // No specific folder found
         mockVault.getMarkdownFiles.mockReturnValue([]);
         mockVault.getFiles.mockReturnValue([]);
 
-        const files = await fileOps.discoverFiles('inbox/audio/{category}');
+        const files = await fileOps.discoverFiles('inbox/process-thoughts');
 
         expect(files).toHaveLength(0); // No files found but no error
     });

@@ -67,7 +67,7 @@ available_next_steps:
   process-ideas: "If the document contains innovative concepts or brainstorming"
 ---
 
-Based on the content above, please choose the most appropriate next processing step from the available options. Include your choice in the response frontmatter using the 'nextStep' field.`;
+Based on the content above, please choose the most appropriate next processing step: process-thoughts for personal content, process-tasks for work content, or process-ideas for innovative content. Include your choice in the response frontmatter using the 'nextStep' field.`;
 
             const messages = yamlToMessages(yamlRequestWithRouting);
             expect(messages).toHaveLength(3);
@@ -80,9 +80,9 @@ Based on the content above, please choose the most appropriate next processing s
             expect(messages[1].role).toBe('system');
             expect(messages[1].content).toContain('Process this content appropriately');
             
-            // Routing becomes user instruction
+            // Routing becomes user instruction - check for the actual instruction content
             expect(messages[2].role).toBe('user');
-            expect(messages[2].content).toContain('available_next_steps');
+            expect(messages[2].content).toContain('choose the most appropriate next processing step');
             expect(messages[2].content).toContain('process-thoughts');
             expect(messages[2].content).toContain('nextStep');
         });
@@ -180,15 +180,15 @@ available_next_steps:
   process-ideas: "${complexRouting.available_next_steps['process-ideas']}"
 ---
 
-Choose the most appropriate processing step based on the content analysis.`;
+Choose the most appropriate processing step. Use process-thoughts for personal thoughts and reflections, process-tasks for work content, or process-ideas for innovative concepts.`;
 
             const messages = yamlToMessages(yamlWithComplexRouting);
             expect(messages).toHaveLength(3);
             
-            const routingMessage = messages.find(m => m.content.includes('available_next_steps'));
+            const routingMessage = messages.find(m => m.content.includes('Choose the most appropriate'));
             expect(routingMessage).toBeDefined();
+            expect(routingMessage!.content).toContain('processing step');
             expect(routingMessage!.content).toContain('process-thoughts');
-            expect(routingMessage!.content).toContain('personal thoughts');
         });
     });
 

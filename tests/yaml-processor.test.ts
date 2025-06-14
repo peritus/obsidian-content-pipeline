@@ -59,7 +59,7 @@ describe('YAML Processor Integration', () => {
                 mockFileInfo,
                 includeFiles,
                 mockContext,
-                { includeRouting: true, routingInfo: mockRouting }
+                mockRouting.available_next_steps
             );
 
             expect(request).toContain('---');
@@ -164,7 +164,7 @@ describe('YAML Formatter', () => {
                 mockFileInfo,
                 [],
                 mockContext,
-                { includeRouting: true, routingInfo: mockRouting }
+                mockRouting.available_next_steps
             );
 
             expect(request).toContain('role: routing');
@@ -206,26 +206,24 @@ describe('YAML Formatter', () => {
 
         it('should handle complex routing configurations', async () => {
             const complexRouting = {
-                available_next_steps: {
-                    'process-thoughts': 'If personal thoughts, family topics (Alice, Bob, Charlotte), hobbies, or private reflections',
-                    'process-tasks': 'If work meetings, action items, project planning, or business discussions',
-                    'process-ideas': 'If innovative concepts, brainstorming, or development ideas',
-                    'summary-work': 'If final work summary is needed',
-                    'summary-personal': 'If final personal summary is needed'
-                }
+                'process-thoughts': 'If personal thoughts, family topics (Alice, Bob, Charlotte), hobbies, or private reflections',
+                'process-tasks': 'If work meetings, action items, project planning, or business discussions',
+                'process-ideas': 'If innovative concepts, brainstorming, or development ideas',
+                'summary-work': 'If final work summary is needed',
+                'summary-personal': 'If final personal summary is needed'
             };
 
             const request = await formatter.formatRequest(
                 mockFileInfo,
                 [],
                 mockContext,
-                { includeRouting: true, routingInfo: complexRouting }
+                complexRouting
             );
 
-            expect(request).toContain('process-thoughts: "If personal thoughts, family topics');
+            expect(request).toContain('process-thoughts: If personal thoughts, family topics');
             expect(request).toContain('Alice, Bob, Charlotte');
-            expect(request).toContain('summary-work: "If final work summary');
-            expect(request).toContain('summary-personal: "If final personal summary');
+            expect(request).toContain('summary-work: If final work summary');
+            expect(request).toContain('summary-personal: If final personal summary');
         });
     });
 
@@ -429,7 +427,7 @@ nextStep: ""
 Content`;
 
             const parsed = parser.parseResponse(response);
-            expect(parsed.sections[0].nextStep).toBe('');
+            expect(parsed.sections[0].nextStep).toBe('""');
         });
 
         it('should handle non-string nextStep field', () => {
@@ -594,7 +592,7 @@ describe('YAML Communication Protocol', () => {
                 mockFileInfo,
                 ['transcriptionprompt.md'],
                 mockContext,
-                { includeRouting: true, routingInfo: mockRouting }
+                mockRouting.available_next_steps
             );
 
             // Verify request structure follows specification
@@ -612,8 +610,7 @@ describe('YAML Communication Protocol', () => {
             const request = await processor.formatRequest(
                 mockFileInfo,
                 ['summary-prompt.md'],
-                mockContext,
-                { includeRouting: false }
+                mockContext
             );
 
             expect(request).toContain('role: input');

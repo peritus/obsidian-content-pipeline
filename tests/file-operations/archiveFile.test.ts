@@ -1,5 +1,6 @@
 /**
  * Tests for FileOperations.archiveFile method
+ * Updated for v1.1 schema - no category system, step-based archiving
  */
 
 import { FileOperations } from '../../src/core/file-operations';
@@ -20,8 +21,8 @@ describe('FileOperations - archiveFile', () => {
 
     it('should archive file successfully', async () => {
         const sourceFile = createMockTFile('source.md', 'inbox/source.md');
-        const archivedFile = createMockTFile('source.md', 'archive/tasks/source.md');
-        const context = createMockContext({ category: 'tasks', stepId: 'transcribe' });
+        const archivedFile = createMockTFile('source.md', 'inbox/archive/transcribe/source.md');
+        const context = createMockContext({ stepId: 'transcribe' });
 
         mockVault.getAbstractFileByPath
             .mockReturnValueOnce(sourceFile) // Source file exists
@@ -29,13 +30,13 @@ describe('FileOperations - archiveFile', () => {
             .mockReturnValueOnce(null) // Archive file doesn't exist
             .mockReturnValueOnce(archivedFile); // Final archived file
 
-        const mockFolder = createMockTFolder('archive', 'archive/transcribe/tasks');
+        const mockFolder = createMockTFolder('archive', 'inbox/archive/transcribe');
         mockVault.createFolder.mockResolvedValue(mockFolder);
         mockVault.rename.mockResolvedValue(archivedFile);
 
         const result = await fileOps.archiveFile(
             'inbox/source.md',
-            'archive/{stepId}/{category}',
+            'inbox/archive/{stepId}',
             context
         );
 
@@ -46,11 +47,11 @@ describe('FileOperations - archiveFile', () => {
 
     it('should fail if source file not found', async () => {
         mockVault.getAbstractFileByPath.mockReturnValue(null);
-        const context = createMockContext();
+        const context = createMockContext({ stepId: 'transcribe' });
 
         await expect(fileOps.archiveFile(
             'nonexistent.md',
-            'archive/{category}',
+            'inbox/archive/{stepId}',
             context
         )).rejects.toThrow('Source file not found');
     });
@@ -59,11 +60,11 @@ describe('FileOperations - archiveFile', () => {
         const sourceFile = createMockTFile('source.md', 'source.md');
         mockVault.getAbstractFileByPath.mockReturnValue(sourceFile);
 
-        const incompleteContext = {}; // Missing required variables
+        const incompleteContext = {}; // Missing required stepId variable
 
         await expect(fileOps.archiveFile(
             'source.md',
-            'archive/{category}/{stepId}',
+            'inbox/archive/{stepId}',
             incompleteContext
         )).rejects.toThrow('Cannot resolve archive path');
     });

@@ -11,10 +11,11 @@ import { ErrorFactory } from '../error-handler';
  * 
  * @param path - The path to validate
  * @param context - Context for error reporting (e.g., "template path", "input directory")
+ * @param allowGlobs - Whether to allow glob patterns (* characters) - defaults to false
  * @returns true if valid
  * @throws AudioInboxError if invalid
  */
-export function validatePath(path: string, context: string): true {
+export function validatePath(path: string, context: string, allowGlobs: boolean = false): true {
     // Check if path is empty or only whitespace
     if (!path || path.trim().length === 0) {
         throw ErrorFactory.validation(
@@ -48,7 +49,13 @@ export function validatePath(path: string, context: string): true {
     }
 
     // Check for invalid characters (basic check for common problematic chars)
-    const invalidChars = ['<', '>', ':', '"', '|', '?', '*'];
+    let invalidChars = ['<', '>', ':', '"', '|', '?'];
+    
+    // Only include * as invalid if globs are not allowed
+    if (!allowGlobs) {
+        invalidChars.push('*');
+    }
+    
     const foundInvalidChars = invalidChars.filter(char => trimmedPath.includes(char));
     
     if (foundInvalidChars.length > 0) {
