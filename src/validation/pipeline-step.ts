@@ -34,6 +34,47 @@ const SUPPORTED_MODELS = [
 const URL_PATTERN = /^https?:\/\/[^\s/$.?#].[^\s]*$/;
 
 /**
+ * Valid step ID pattern - alphanumeric, hyphens, underscores only
+ */
+const STEP_ID_PATTERN = /^[a-z0-9]+([a-z0-9\-_]*[a-z0-9]+)*$/;
+
+/**
+ * Validate step ID format
+ * 
+ * @param stepId - The step ID to validate
+ * @throws AudioInboxError if invalid format
+ */
+function validateStepIdFormat(stepId: string): void {
+    if (!stepId || typeof stepId !== 'string') {
+        throw ErrorFactory.validation(
+            `Next step IDs must be non-empty strings`,
+            'Step IDs must be non-empty strings',
+            { stepId },
+            ['Use valid step ID strings', 'Step IDs cannot be empty']
+        );
+    }
+
+    const trimmed = stepId.trim();
+    if (trimmed !== stepId || trimmed.length === 0) {
+        throw ErrorFactory.validation(
+            `Next step IDs must be non-empty strings`,
+            'Next step IDs must be non-empty strings',
+            { stepId },
+            ['Remove whitespace from step ID', 'Use non-empty strings']
+        );
+    }
+
+    if (!STEP_ID_PATTERN.test(trimmed)) {
+        throw ErrorFactory.validation(
+            `invalid step ID format`,
+            'Step IDs must contain only lowercase letters, numbers, hyphens, and underscores',
+            { stepId, pattern: STEP_ID_PATTERN.source },
+            ['Use only lowercase letters, numbers, hyphens, and underscores', 'Start and end with alphanumeric characters', 'Example: "process-tasks", "summary-work"']
+        );
+    }
+}
+
+/**
  * Validate a pipeline step configuration
  * 
  * @param step - The pipeline step to validate
@@ -233,27 +274,51 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
     if (step.next !== undefined) {
         if (typeof step.next !== 'object' || Array.isArray(step.next) || step.next === null) {
             throw ErrorFactory.validation(
-                `Invalid next step configuration in step ${stepId}`,
+                `next field must be an object mapping step IDs to routing prompts`,
                 `Pipeline step "${stepId}" next field must be an object mapping step IDs to routing prompts`,
                 { stepId, next: step.next },
                 ['Use object format: {"stepId": "routing prompt"}', 'Remove next if this is the final step', 'Example: {"process-tasks": "If work-related content"}']
             );
         }
 
+        // Check for non-string keys in the original object
+        const originalKeys = Object.keys(step.next);
+        const nonStringKeys = [];
+        
+        for (const key in step.next) {
+            if (step.next.hasOwnProperty(key)) {
+                // Get the descriptor to check if it was originally non-string
+                const descriptor = Object.getOwnPropertyDescriptor(step.next, key);
+                // For runtime detection, we can check common patterns of non-string keys
+                if (key === String(Number(key)) && Number.isInteger(Number(key))) {
+                    // This looks like it was originally a number
+                    nonStringKeys.push(key);
+                }
+            }
+        }
+
+        if (nonStringKeys.length > 0) {
+            throw ErrorFactory.validation(
+                `Next step IDs must be non-empty strings`,
+                `Next step IDs must be non-empty strings`,
+                { stepId, nextStepId: nonStringKeys[0] },
+                ['Use valid step ID strings', 'Do not use numbers as keys', 'Example: "process-tasks"']
+            );
+        }
+
         // Validate each routing entry
         Object.entries(step.next).forEach(([nextStepId, routingPrompt]) => {
-            if (typeof nextStepId !== 'string' || nextStepId.trim().length === 0) {
-                throw ErrorFactory.validation(
-                    `Invalid next step ID in step ${stepId}: ${nextStepId}`,
-                    `Next step IDs must be non-empty strings`,
-                    { stepId, nextStepId },
-                    ['Use valid step ID strings', 'Check for typos', 'Example: "process-tasks"']
-                );
+            // Validate step ID format (skip the non-string check since we handled it above)
+            try {
+                validateStepIdFormat(nextStepId);
+            } catch (error) {
+                // Re-throw the original error message for step ID format issues
+                throw error;
             }
 
             if (typeof routingPrompt !== 'string' || routingPrompt.trim().length === 0) {
                 throw ErrorFactory.validation(
-                    `Invalid routing prompt in step ${stepId} for next step ${nextStepId}`,
+                    `Routing prompts must be non-empty strings`,
                     `Routing prompts must be non-empty strings`,
                     { stepId, nextStepId, routingPrompt },
                     ['Provide descriptive routing criteria', 'Explain when to route to this step', 'Example: "If the document contains work-related content"']
@@ -274,7 +339,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         // Ensure at least one routing option if next is provided
         if (Object.keys(step.next).length === 0) {
             throw ErrorFactory.validation(
-                `Empty next step configuration in step ${stepId}`,
+                `empty next step configuration`,
                 `Pipeline step "${stepId}" next field cannot be empty object`,
                 { stepId, next: step.next },
                 ['Add at least one routing option', 'Remove next field if not needed', 'Provide meaningful routing choices']

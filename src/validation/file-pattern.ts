@@ -116,8 +116,8 @@ export function validateFilePattern(pattern: string): true {
         );
     }
 
-    // Check for invalid characters in path components
-    const invalidChars = ['<', '>', ':', '"', '|', '?', '*'];
+    // Check for invalid characters in path components (excluding * for glob patterns)
+    const invalidChars = ['<', '>', ':', '"', '|', '?'];
     // But exclude the variable syntax from this check
     const patternWithoutVariables = trimmedPattern.replace(/\{[^}]+\}/g, 'VAR');
     const foundInvalidChars = invalidChars.filter(char => patternWithoutVariables.includes(char));
@@ -127,7 +127,7 @@ export function validateFilePattern(pattern: string): true {
             `Invalid characters in pattern: ${foundInvalidChars.join(', ')} - invalid characters not allowed`,
             `File pattern contains invalid characters: ${foundInvalidChars.join(', ')}`,
             { pattern: trimmedPattern, invalidChars: foundInvalidChars },
-            ['Remove invalid characters', 'Use only letters, numbers, hyphens, underscores, slashes, and dots']
+            ['Remove invalid characters', 'Use only letters, numbers, hyphens, underscores, slashes, dots, and * for glob patterns']
         );
     }
 
