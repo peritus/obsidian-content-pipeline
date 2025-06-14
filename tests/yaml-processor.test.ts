@@ -288,7 +288,7 @@ This is the generated content with routing information.`;
             
             expect(parsed.isMultiFile).toBe(false);
             expect(parsed.sections).toHaveLength(1);
-            expect(parsed.sections[0].filename).toBe('response.md');
+            expect(parsed.sections[0].filename).toBe('output.md');
             expect(parsed.sections[0].content).toBe(response);
             expect(parsed.sections[0].nextStep).toBeUndefined();
         });

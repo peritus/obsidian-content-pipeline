@@ -15,6 +15,22 @@ import { createLogger } from '../../../logger';
 
 const logger = createLogger('OutputHandler');
 
+/**
+ * Generic/default filenames that should trigger fallback to original filename
+ */
+const GENERIC_FILENAMES = new Set([
+    'response',
+    'response.md',
+    'output',
+    'output.md',
+    'untitled',
+    'untitled.md',
+    'result',
+    'result.md',
+    'document',
+    'document.md'
+]);
+
 export class OutputHandler {
     private app: App;
     private fileOps: FileOperations;
@@ -29,12 +45,12 @@ export class OutputHandler {
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<string> {
-        // Determine if LLM provided filename or use pattern
-        const usedLLMFilename = section.filename && section.filename !== 'untitled.md' && section.filename !== 'response.md';
+        // Determine effective filename to use for path resolution
+        const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
         
-        // Resolve output path with filename from section
+        // Resolve output path with the effective filename
         const pathContext = {
-            filename: PathUtils.getBasename(section.filename || 'output'),
+            filename: effectiveFilename,
             timestamp: context.timestamp,
             date: context.date,
             stepId: context.stepId
@@ -75,8 +91,9 @@ export class OutputHandler {
                 outputPath: outputPath,
                 contentLength: finalContent.length,
                 frontmatterUsed: metadata,
-                filenameSource: usedLLMFilename ? "llm" : "pattern",
+                filenameSource: this.getFilenameSource(section.filename, context),
                 sectionFilename: section.filename,
+                effectiveFilename: effectiveFilename,
                 resolvedFilename: pathContext.filename
             });
 
@@ -150,7 +167,7 @@ export class OutputHandler {
         for (const section of sections) {
             try {
                 let outputPath: string;
-                const usedLLMFilename = section.filename && section.filename !== 'untitled.md' && section.filename !== 'response.md';
+                const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
 
                 if (isDirectoryOutput) {
                     // For directory outputs, combine directory with section filename
@@ -162,9 +179,9 @@ export class OutputHandler {
                     
                     outputPath = PathUtils.join(directoryPath, section.filename);
                 } else {
-                    // For file pattern outputs, use the section filename as the basis
+                    // For file pattern outputs, use the effective filename as the basis
                     const pathContext = {
-                        filename: PathUtils.getBasename(section.filename),
+                        filename: effectiveFilename,
                         timestamp: context.timestamp,
                         date: context.date,
                         stepId: context.stepId
@@ -203,8 +220,9 @@ export class OutputHandler {
                     outputPath: outputPath,
                     contentLength: finalContent.length,
                     frontmatterUsed: metadata,
-                    filenameSource: usedLLMFilename ? "llm" : "pattern",
+                    filenameSource: this.getFilenameSource(section.filename, context),
                     sectionFilename: section.filename,
+                    effectiveFilename: effectiveFilename,
                     isDirectoryOutput: isDirectoryOutput
                 });
 
@@ -230,5 +248,48 @@ export class OutputHandler {
         });
 
         return savedFiles;
+    }
+
+    /**
+     * Determine the effective filename to use for path resolution
+     * 
+     * Priority order:
+     * 1. If LLM provided a meaningful filename (not generic), use it
+     * 2. Otherwise, fall back to the original input filename from context
+     */
+    private resolveEffectiveFilename(sectionFilename: string | undefined, context: ProcessingContext): string {
+        // Check if LLM provided a meaningful filename
+        if (sectionFilename && this.isValidCustomFilename(sectionFilename)) {
+            // Use the basename of the LLM-provided filename (without extension)
+            return PathUtils.getBasename(sectionFilename);
+        }
+
+        // Fall back to original input filename from context
+        return context.filename;
+    }
+
+    /**
+     * Check if a filename is a valid custom filename (not generic)
+     */
+    private isValidCustomFilename(filename: string): boolean {
+        if (!filename || typeof filename !== 'string') {
+            return false;
+        }
+
+        // Get the basename without extension for comparison
+        const basename = PathUtils.getBasename(filename).toLowerCase();
+        
+        // Check if it's a generic filename
+        return !GENERIC_FILENAMES.has(basename) && !GENERIC_FILENAMES.has(filename.toLowerCase());
+    }
+
+    /**
+     * Get a description of the filename source for logging
+     */
+    private getFilenameSource(sectionFilename: string | undefined, context: ProcessingContext): string {
+        if (sectionFilename && this.isValidCustomFilename(sectionFilename)) {
+            return "llm-provided";
+        }
+        return "original-input";
     }
 }

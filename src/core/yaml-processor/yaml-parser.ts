@@ -177,8 +177,9 @@ export class YamlParser {
         if (trimmed.startsWith('---')) {
             return this.parseYamlSection(trimmed, strict);
         } else {
+            // Use a neutral filename that will trigger fallback to original filename in OutputHandler
             return {
-                filename: 'response.md',
+                filename: 'output.md',
                 content: trimmed
             };
         }
@@ -214,7 +215,7 @@ export class YamlParser {
                             if (strict) {
                                 throw error;
                             }
-                            // Use correct section index for fallback filename
+                            // Use neutral section filename that will trigger fallback to original filename in OutputHandler
                             sections.push({
                                 filename: `section-${sections.length + 1}.md`,
                                 content: currentSection.join('\n').trim()
@@ -247,7 +248,7 @@ export class YamlParser {
                 if (strict) {
                     throw error;
                 }
-                // Use correct section index for fallback filename
+                // Use neutral section filename that will trigger fallback to original filename in OutputHandler
                 sections.push({
                     filename: `section-${sections.length + 1}.md`,
                     content: currentSection.join('\n').trim()
