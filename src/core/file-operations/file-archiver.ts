@@ -30,7 +30,7 @@ export class FileArchiver {
         context: PathContext
     ): Promise<ArchiveResult> {
         try {
-            // Resolve the archive path
+            // Resolve the archive directory path
             const archiveResult = PathResolver.resolvePath(archivePattern, context);
             if (!archiveResult.isComplete) {
                 throw ErrorFactory.fileSystem(
@@ -41,7 +41,7 @@ export class FileArchiver {
                 );
             }
 
-            const archivePath = archiveResult.resolvedPath;
+            const archiveDir = archiveResult.resolvedPath;
 
             // Get source file
             const sourceFile = this.vault.getAbstractFileByPath(sourceFilePath);
@@ -55,13 +55,14 @@ export class FileArchiver {
             }
 
             // Ensure archive directory exists
-            const archiveDir = PathUtils.getDirectory(archivePath);
-            if (archiveDir) {
-                await this.directoryManager.ensureDirectory(archiveDir);
-            }
+            await this.directoryManager.ensureDirectory(archiveDir);
+
+            // Construct the full archive file path by appending source filename to archive directory
+            const sourceFilename = PathUtils.getFilename(sourceFilePath);
+            const baseArchivePath = PathUtils.join(archiveDir, sourceFilename);
 
             // Generate unique archive filename if needed
-            const finalArchivePath = await this.generateUniqueFilename(archivePath);
+            const finalArchivePath = await this.generateUniqueFilename(baseArchivePath);
 
             // Move the file
             await this.vault.rename(sourceFile, finalArchivePath);
