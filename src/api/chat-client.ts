@@ -45,6 +45,7 @@ export class ChatClient {
         const requestId = generateChatRequestId();
         const startTime = Date.now();
         const model = options.model || DEFAULT_CHAT_CONFIG.model;
+        const url = `${this.config.baseUrl}/chat/completions`;
 
         try {
             logger.info(`Processing YAML request with ${model}`, { requestId, requestSize: yamlRequest.length });
@@ -56,8 +57,41 @@ export class ChatClient {
             // Convert YAML to OpenAI messages
             const messages = yamlToMessages(yamlRequest);
             
+            // Prepare request body for logging
+            const requestBody = {
+                model,
+                messages: messages.map(msg => ({
+                    role: msg.role,
+                    content: msg.content
+                })),
+                temperature: options.temperature ?? DEFAULT_CHAT_CONFIG.temperature,
+                max_tokens: options.maxTokens ?? DEFAULT_CHAT_CONFIG.maxTokens,
+                top_p: options.topP,
+                frequency_penalty: options.frequencyPenalty,
+                presence_penalty: options.presencePenalty,
+                stop: options.stop
+            };
+
+            // Debug logging: Raw LLM Request
+            logger.debug("Raw LLM Request", { 
+                endpoint: url,
+                model: model,
+                requestBody: requestBody,
+                requestSize: yamlRequest.length 
+            });
+            
             // Make API request
             const chatResult = await this.makeChatRequest(messages, model, options, requestId);
+            
+            // Debug logging: Raw LLM Response
+            logger.debug("Raw LLM Response", {
+                responseBody: chatResult.content,
+                responseSize: chatResult.content.length,
+                responseType: typeof chatResult.content,
+                model: chatResult.model,
+                usage: chatResult.usage,
+                duration: chatResult.duration
+            });
             
             // Parse response as YAML
             const parsedResponse = this.yamlParser.parseResponse(chatResult.content);

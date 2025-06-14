@@ -29,6 +29,9 @@ export class OutputHandler {
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<string> {
+        // Determine if LLM provided filename or use pattern
+        const usedLLMFilename = section.filename && section.filename !== 'untitled.md' && section.filename !== 'response.md';
+        
         // Resolve output path with filename from section
         const pathContext = {
             filename: PathUtils.getBasename(section.filename || 'output'),
@@ -65,10 +68,20 @@ export class OutputHandler {
             frontmatterLines.push('');
 
             // Combine frontmatter with direct API response content
-            const content = frontmatterLines.join('\n') + section.content;
+            const finalContent = frontmatterLines.join('\n') + section.content;
+
+            // Debug logging: Saving output file
+            logger.debug("Saving output file", {
+                outputPath: outputPath,
+                contentLength: finalContent.length,
+                frontmatterUsed: metadata,
+                filenameSource: usedLLMFilename ? "llm" : "pattern",
+                sectionFilename: section.filename,
+                resolvedFilename: pathContext.filename
+            });
 
             // Write content to file
-            await this.fileOps.writeFile(outputPath, content, {
+            await this.fileOps.writeFile(outputPath, finalContent, {
                 createDirectories: true,
                 overwrite: true
             });
@@ -89,6 +102,12 @@ export class OutputHandler {
     ): Promise<{ [filename: string]: string }> {
         const savedFiles: { [filename: string]: string } = {};
 
+        logger.debug("Saving multiple sections", {
+            sectionCount: sections.length,
+            stepId: context.stepId,
+            stepOutput: step.output
+        });
+
         for (const section of sections) {
             try {
                 const outputPath = await this.save(section, step, context);
@@ -98,6 +117,12 @@ export class OutputHandler {
                 // Continue processing other sections even if one fails
             }
         }
+
+        logger.debug("Multiple sections save complete", {
+            successCount: Object.keys(savedFiles).length,
+            totalCount: sections.length,
+            savedFiles: savedFiles
+        });
 
         return savedFiles;
     }
@@ -115,9 +140,17 @@ export class OutputHandler {
         // Check if output is a directory pattern
         const isDirectoryOutput = step.output.endsWith('/') || !step.output.includes('{filename}');
 
+        logger.debug("Saving to directory", {
+            sectionCount: sections.length,
+            stepOutput: step.output,
+            isDirectoryOutput: isDirectoryOutput,
+            stepId: context.stepId
+        });
+
         for (const section of sections) {
             try {
                 let outputPath: string;
+                const usedLLMFilename = section.filename && section.filename !== 'untitled.md' && section.filename !== 'response.md';
 
                 if (isDirectoryOutput) {
                     // For directory outputs, combine directory with section filename
@@ -163,10 +196,20 @@ export class OutputHandler {
                 frontmatterLines.push('');
 
                 // Combine frontmatter with direct API response content
-                const content = frontmatterLines.join('\n') + section.content;
+                const finalContent = frontmatterLines.join('\n') + section.content;
+
+                // Debug logging: Saving section to directory
+                logger.debug("Saving section to directory", {
+                    outputPath: outputPath,
+                    contentLength: finalContent.length,
+                    frontmatterUsed: metadata,
+                    filenameSource: usedLLMFilename ? "llm" : "pattern",
+                    sectionFilename: section.filename,
+                    isDirectoryOutput: isDirectoryOutput
+                });
 
                 // Write content to file
-                await this.fileOps.writeFile(outputPath, content, {
+                await this.fileOps.writeFile(outputPath, finalContent, {
                     createDirectories: true,
                     overwrite: true
                 });
@@ -179,6 +222,12 @@ export class OutputHandler {
                 // Continue processing other sections even if one fails
             }
         }
+
+        logger.debug("Directory save complete", {
+            successCount: Object.keys(savedFiles).length,
+            totalCount: sections.length,
+            savedFiles: savedFiles
+        });
 
         return savedFiles;
     }

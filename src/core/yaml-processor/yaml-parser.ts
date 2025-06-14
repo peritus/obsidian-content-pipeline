@@ -39,6 +39,12 @@ export class YamlParser {
         const { maxResponseSize = 1024 * 1024, strictValidation = false } = options;
 
         try {
+            // Debug logging: Parsing YAML response
+            logger.debug("Parsing YAML response", {
+                responseLength: response.length,
+                rawResponse: response.substring(0, 500) + (response.length > 500 ? "..." : "") // First 500 chars
+            });
+
             if (response.length > maxResponseSize) {
                 throw ErrorFactory.parsing(
                     `Response too large: ${response.length} bytes`,
@@ -49,19 +55,42 @@ export class YamlParser {
             }
 
             const isMultiFile = this.detectMultiFileResponse(response);
-            let sections: YamlResponseSection[];
+            
+            // Debug logging: Split sections analysis
+            const sections = response.split('---');
+            logger.debug("Split sections", {
+                sectionCount: sections.length,
+                sectionLengths: sections.map(s => s.length),
+                firstSection: sections[0] || '',
+                secondSection: sections[1] || '',
+                thirdSection: sections[2] ? sections[2].substring(0, 100) + (sections[2].length > 100 ? "..." : "") : undefined // First 100 chars of content
+            });
+
+            let parsedSections: YamlResponseSection[];
 
             if (isMultiFile) {
-                sections = this.parseMultiFileResponse(response, strictValidation);
+                parsedSections = this.parseMultiFileResponse(response, strictValidation);
                 this.stats.multiFileResponses++;
             } else {
                 const section = this.parseSingleFileResponse(response, strictValidation);
-                sections = [section];
+                parsedSections = [section];
             }
+
+            // Debug logging: For each parsed file
+            parsedSections.forEach((parsedFile, index) => {
+                logger.debug(`Parsed file ${index + 1}`, {
+                    frontmatter: {
+                        filename: parsedFile.filename,
+                        nextStep: parsedFile.nextStep
+                    },
+                    contentLength: parsedFile.content?.length || 0,
+                    contentPreview: parsedFile.content ? parsedFile.content.substring(0, 100) + (parsedFile.content.length > 100 ? "..." : "") : undefined
+                });
+            });
 
             // Track routing statistics
             let sectionsWithRouting = 0;
-            sections.forEach(section => {
+            parsedSections.forEach(section => {
                 if (section.nextStep && section.nextStep.trim() !== '') {
                     sectionsWithRouting++;
                 }
@@ -73,18 +102,31 @@ export class YamlParser {
             this.stats.sectionsWithRouting += sectionsWithRouting;
 
             this.stats.responsesParsed++;
-            this.stats.totalSections += sections.length;
+            this.stats.totalSections += parsedSections.length;
 
-            logger.debug(`Parsed ${isMultiFile ? 'multi' : 'single'}-file response: ${sections.length} files`);
+            logger.debug(`Parsed ${isMultiFile ? 'multi' : 'single'}-file response: ${parsedSections.length} files`);
 
             return {
-                sections,
+                sections: parsedSections,
                 isMultiFile,
                 rawResponse: response
             };
 
         } catch (error) {
             this.stats.parseErrors++;
+            
+            // Debug logging: Parse error details
+            logger.debug("YAML parsing error details", {
+                error: error instanceof Error ? error.message : String(error),
+                responseLength: response.length,
+                responseStart: response.substring(0, 200) + (response.length > 200 ? "..." : ""),
+                splitAttempt: response.split('---').map((section, index) => ({
+                    index,
+                    length: section.length,
+                    preview: section.substring(0, 50) + (section.length > 50 ? "..." : "")
+                }))
+            });
+            
             throw ErrorFactory.parsing(
                 `Failed to parse YAML response: ${error instanceof Error ? error.message : String(error)}`,
                 'Could not understand LLM response format',
