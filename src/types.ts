@@ -6,6 +6,38 @@
  */
 
 // =============================================================================
+// MODEL CONFIGURATION TYPES (v1.2)
+// =============================================================================
+
+/**
+ * Supported model implementation types for automatic client mapping
+ */
+export type ModelImplementation = 'whisper' | 'chatgpt' | 'claude';
+
+/**
+ * Configuration for a single model (API credentials and implementation details)
+ */
+export interface ModelConfig {
+    /** API endpoint URL */
+    baseUrl: string;
+    /** API key for authentication */
+    apiKey: string;
+    /** Client implementation type for automatic mapping */
+    implementation: ModelImplementation;
+    /** Model name (e.g., "whisper-1", "gpt-4") */
+    model: string;
+    /** Organization ID (optional) */
+    organization?: string;
+}
+
+/**
+ * Complete models configuration - object-keyed by config ID
+ */
+export interface ModelsConfig {
+    [configId: string]: ModelConfig;
+}
+
+// =============================================================================
 // PIPELINE CONFIGURATION TYPES
 // =============================================================================
 
@@ -13,8 +45,8 @@
  * Configuration for a single pipeline step
  */
 export interface PipelineStep {
-    /** Model identifier (e.g., "whisper-1", "gpt-4") */
-    model: string;
+    /** Reference to ModelConfig ID */
+    modelConfig: string;
     /** Pattern for input directory */
     input: string;
     /** Pattern for output file path */
@@ -23,12 +55,6 @@ export interface PipelineStep {
     archive: string;
     /** File patterns to include (prompts + additional files) */
     include: string[];
-    /** API key for this specific step */
-    apiKey: string;
-    /** Custom API endpoint (optional) */
-    baseUrl?: string;
-    /** Organization ID (optional) */
-    organization?: string;
     /** Object mapping step IDs to routing prompts (optional) */
     next?: { [stepId: string]: string };
     /** Description of what this step does */
@@ -52,6 +78,50 @@ export interface PipelineValidationResult {
     entryPoints: string[];
     orphanedSteps: string[];
     circularReferences: string[];
+}
+
+// =============================================================================
+// CONFIGURATION RESOLUTION TYPES (v1.2)
+// =============================================================================
+
+/**
+ * Resolved pipeline step with actual model configuration
+ */
+export interface ResolvedPipelineStep {
+    /** Step ID */
+    stepId: string;
+    /** Resolved model configuration */
+    modelConfig: ModelConfig;
+    /** Input pattern */
+    input: string;
+    /** Output pattern */
+    output: string;
+    /** Archive pattern */
+    archive: string;
+    /** Include patterns */
+    include: string[];
+    /** Next step routing */
+    next?: { [stepId: string]: string };
+    /** Description */
+    description?: string;
+}
+
+/**
+ * Configuration validation result for dual config system
+ */
+export interface ConfigValidationResult {
+    /** Whether both configurations are valid */
+    isValid: boolean;
+    /** Models configuration validation errors */
+    modelsErrors: string[];
+    /** Pipeline configuration validation errors */
+    pipelineErrors: string[];
+    /** Cross-reference validation errors */
+    crossRefErrors: string[];
+    /** Validation warnings */
+    warnings: string[];
+    /** Entry points identified */
+    entryPoints: string[];
 }
 
 // =============================================================================
@@ -447,16 +517,20 @@ export interface PathContext {
 }
 
 // =============================================================================
-// PLUGIN SETTINGS TYPES
+// PLUGIN SETTINGS TYPES (v1.2)
 // =============================================================================
 
 /**
- * Complete plugin settings interface
+ * Complete plugin settings interface for dual configuration system
  * NOTE: Log level is now controlled at build-time via OBSIDIAN_AUDIO_INBOX_LOGLEVEL
  */
 export interface AudioInboxSettings {
-    /** JSON string containing the complete pipeline configuration */
+    /** JSON string containing the models configuration (private) */
+    modelsConfig: string;
+    /** JSON string containing the pipeline configuration (shareable) */
     pipelineConfig: string;
+    /** Parsed models configuration (computed from modelsConfig) */
+    parsedModelsConfig?: ModelsConfig;
     /** Parsed pipeline configuration (computed from pipelineConfig) */
     parsedPipelineConfig?: PipelineConfiguration;
     /** Enable debug mode for additional diagnostics in UI */
@@ -470,6 +544,13 @@ export interface AudioInboxSettings {
 // =============================================================================
 // TYPE GUARDS AND UTILITIES
 // =============================================================================
+
+/**
+ * Type guard for validating model implementations
+ */
+export function isValidModelImplementation(value: any): value is ModelImplementation {
+    return ['whisper', 'chatgpt', 'claude'].includes(value);
+}
 
 /**
  * Type guard for validating log levels

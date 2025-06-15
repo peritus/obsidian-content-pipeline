@@ -2,14 +2,15 @@ import { App, PluginSettingTab } from 'obsidian';
 import AudioInboxPlugin from './main';
 import { AudioInboxSettings } from './types';
 import { FileOperations } from './core/file-operations';
-import { DEFAULT_PIPELINE_CONFIG } from './settings/default-config';
+import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from './settings/default-config';
 import { PipelineConfigSection } from './settings/pipeline-config-section';
 import { FolderSetupSection } from './settings/folder-setup-section';
 
 /**
- * Default settings for the plugin
+ * Default settings for the plugin (v1.2 dual configuration)
  */
 export const DEFAULT_SETTINGS: AudioInboxSettings = {
+    modelsConfig: JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2),
     pipelineConfig: JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2),
     debugMode: false,
     version: '1.0.0',
@@ -38,7 +39,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
 
         // Description
         const descEl = containerEl.createEl('p');
-        descEl.innerHTML = 'Configure your audio processing pipeline with intelligent step routing. Edit the JSON configuration below to customize your pipeline and add your API keys.';
+        descEl.innerHTML = 'Configure your audio processing pipeline with intelligent step routing. Edit the JSON configurations below to customize your pipeline and add your API keys.';
 
         // Pipeline Configuration Section
         const pipelineSection = new PipelineConfigSection(this.plugin);
@@ -61,15 +62,16 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         const instructionsEl = containerEl.createEl('div');
         instructionsEl.innerHTML = `
             <ol>
-                <li><strong>Configure Pipeline:</strong> Add your OpenAI API key to the "apiKey" fields above</li>
+                <li><strong>Configure Models:</strong> Add your OpenAI API keys to the Models Configuration above</li>
+                <li><strong>Customize Pipeline:</strong> Edit the Pipeline Configuration to customize your workflow</li>
                 <li><strong>Create Folders:</strong> Click "Create Initial Folders" to set up the inbox structure</li>
                 <li><strong>Add Audio Files:</strong> Place audio files in <code>inbox/audio/</code> folder</li>
                 <li><strong>Process Files:</strong> Use the "Process Next File" command from the command palette</li>
             </ol>
-            <p><strong>Tip:</strong> The default configuration uses intelligent routing to automatically organize your content!</p>
+            <p><strong>Tip:</strong> The models configuration contains your API keys (private), while the pipeline configuration contains your workflow (shareable)!</p>
         `;
     }
 }
 
-// Export the default config for backwards compatibility
-export { DEFAULT_PIPELINE_CONFIG };
+// Export the default configs for backwards compatibility
+export { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG };

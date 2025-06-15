@@ -1,18 +1,37 @@
-import { PipelineConfiguration } from '../types';
+import { ModelsConfig, PipelineConfiguration } from '../types';
 
 /**
- * Default pipeline configuration following the new object-keyed schema
- * with intelligent step routing and direct content output
+ * Default models configuration for v1.2 split configuration system
+ * Contains API credentials and model implementation details (private)
+ */
+export const DEFAULT_MODELS_CONFIG: ModelsConfig = {
+    "openai-gpt": {
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "",
+        "implementation": "chatgpt",
+        "model": "gpt-4",
+        "organization": ""
+    },
+    "openai-whisper": {
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "",
+        "implementation": "whisper",
+        "model": "whisper-1",
+        "organization": ""
+    }
+};
+
+/**
+ * Default pipeline configuration for v1.2 split configuration system
+ * Contains workflow logic without sensitive data (shareable)
  */
 export const DEFAULT_PIPELINE_CONFIG: PipelineConfiguration = {
     "transcribe": {
-        "model": "whisper-1",
+        "modelConfig": "openai-whisper",
         "input": "inbox/audio",
         "output": "inbox/transcripts/{filename}-transcript.md",
         "archive": "inbox/archive/audio",
         "include": ["transcriptionprompt.md"],
-        "apiKey": "",
-        "baseUrl": "https://api.openai.com/v1",
         "description": "Transcribe audio files to text",
         "next": {
             "process-thoughts": "If the document contains personal thoughts, reflections, journal entries, creative ideas, or mentions private topics like children, home, hobbies, or family members Alice, Bob or Charlotte.",
@@ -21,39 +40,33 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfiguration = {
         }
     },
     "process-thoughts": {
-        "model": "gpt-4",
+        "modelConfig": "openai-gpt",
         "input": "inbox/transcripts",
         "output": "inbox/process-thoughts/{filename}-processed.md",
         "archive": "inbox/archive/transcripts",
         "include": ["process-thoughts-prompt.md"],
-        "apiKey": "",
-        "baseUrl": "https://api.openai.com/v1",
         "description": "Process personal thoughts and reflections with emotional intelligence",
         "next": {
             "summary-personal": "Always route personal thoughts and reflections to personal summary."
         }
     },
     "process-tasks": {
-        "model": "gpt-4",
+        "modelConfig": "openai-gpt",
         "input": "inbox/transcripts",
         "output": "inbox/process-tasks/{filename}-processed.md",
         "archive": "inbox/archive/transcripts",
         "include": ["process-tasks-prompt.md"],
-        "apiKey": "",
-        "baseUrl": "https://api.openai.com/v1",
         "description": "Process work content with focus on action items and project management",
         "next": {
             "summary-work": "Always route work content and action items to work summary."
         }
     },
     "process-ideas": {
-        "model": "gpt-4",
+        "modelConfig": "openai-gpt",
         "input": "inbox/transcripts",
         "output": "inbox/process-ideas/{filename}-processed.md",
         "archive": "inbox/archive/transcripts",
         "include": ["process-ideas-prompt.md"],
-        "apiKey": "",
-        "baseUrl": "https://api.openai.com/v1",
         "description": "Process innovative ideas with focus on development and connection",
         "next": {
             "summary-personal": "If the document specifically mentions this is private. If it mentions topics like children, home, my hobby flunky ball, my family members Alice, Bob or Charlotte.",
@@ -61,23 +74,19 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfiguration = {
         }
     },
     "summary-personal": {
-        "model": "gpt-4",
+        "modelConfig": "openai-gpt",
         "input": "inbox/process-thoughts",
         "output": "inbox/summary-personal/",
         "archive": "inbox/archive/process-thoughts",
         "include": ["summary-personal-prompt.md", "inbox/summary-personal/*"],
-        "apiKey": "",
-        "baseUrl": "https://api.openai.com/v1",
         "description": "Create personal summaries and insights"
     },
     "summary-work": {
-        "model": "gpt-4",
+        "modelConfig": "openai-gpt",
         "input": "inbox/process-tasks",
         "output": "inbox/summary-work/",
         "archive": "inbox/archive/process-tasks",
         "include": ["summary-work-prompt.md", "inbox/summary-work/*"],
-        "apiKey": "",
-        "baseUrl": "https://api.openai.com/v1",
         "description": "Create work-focused summaries with action items"
     }
 };
