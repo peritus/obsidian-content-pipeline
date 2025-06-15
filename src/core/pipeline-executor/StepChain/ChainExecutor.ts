@@ -1,12 +1,11 @@
 /**
- * Chain Execution Logic
+ * Chain Execution Logic (v1.2 - Updated for dual configuration)
  */
 
 import { App } from 'obsidian';
 import { FileOperations } from '../../file-operations';
 import { StepExecutor } from './StepExecutor';
 import { 
-    PipelineConfiguration, 
     FileInfo, 
     ProcessingResult,
     ProcessingStatus
@@ -28,8 +27,7 @@ export class ChainExecutor {
 
     async execute(
         startStepId: string, 
-        inputFile: FileInfo, 
-        config: PipelineConfiguration
+        inputFile: FileInfo
     ): Promise<ProcessingResult> {
         let currentStepId = startStepId;
         let currentFile = inputFile;
@@ -39,8 +37,8 @@ export class ChainExecutor {
             logger.info(`Starting chain execution: ${startStepId} for ${inputFile.path}`);
 
             while (currentStepId) {
-                // Execute current step
-                const result = await this.stepExecutor.execute(currentStepId, currentFile, config);
+                // Execute current step (StepExecutor handles configuration resolution internally)
+                const result = await this.stepExecutor.execute(currentStepId, currentFile);
                 allResults.push(result);
 
                 // Check if step failed

@@ -1,5 +1,5 @@
 /**
- * Chat Step Execution Logic
+ * Chat Step Execution Logic (v1.2 - Updated for dual configuration)
  */
 
 import { App } from 'obsidian';
@@ -10,6 +10,7 @@ import { PathUtils } from '../../path-resolver';
 import { ArchiveHandler } from './ArchiveHandler';
 import { OutputHandler } from './OutputHandler';
 import { 
+    ResolvedPipelineStep,
     PipelineStep,
     FileInfo, 
     ProcessingResult, 
@@ -39,15 +40,15 @@ export class ChatStepExecutor {
     async execute(
         stepId: string,
         fileInfo: FileInfo,
-        step: PipelineStep
+        resolvedStep: ResolvedPipelineStep
     ): Promise<ProcessingResult> {
         const startTime = new Date();
 
         try {
             // Validate input parameters
-            this.validateInput(stepId, fileInfo, step);
+            this.validateInput(stepId, fileInfo, resolvedStep);
 
-            logger.info(`Starting chat processing: ${fileInfo.name} with ${step.model}`);
+            logger.info(`Starting chat processing: ${fileInfo.name} with ${resolvedStep.modelConfig.model}`);
 
             // Create processing context
             const context: ProcessingContext = {
@@ -63,47 +64,66 @@ export class ChatStepExecutor {
             // Format YAML request with next step routing
             const yamlRequest = await this.yamlProcessor.formatRequest(
                 fileInfo,
-                step.include || [],
+                resolvedStep.include || [],
                 context,
-                step.next // Pass next steps for routing
+                resolvedStep.next // Pass next steps for routing
             );
 
-            // Create chat client and process request
+            // Create chat client and process request using resolved model config
             const chatClient = new ChatClient({
-                apiKey: step.apiKey,
-                baseUrl: step.baseUrl,
-                organization: step.organization
+                apiKey: resolvedStep.modelConfig.apiKey,
+                baseUrl: resolvedStep.modelConfig.baseUrl,
+                organization: resolvedStep.modelConfig.organization
             });
 
             const parsedResponse = await chatClient.processYamlRequest(yamlRequest, {
-                model: step.model,
+                model: resolvedStep.modelConfig.model,
                 temperature: 0.1
             });
 
-            // Archive input file first
-            const archivePath = await this.archiveHandler.archive(fileInfo, step, stepId);
+            // Archive input file first - create legacy step object for ArchiveHandler compatibility
+            const archiveStepCompat: PipelineStep = {
+                modelConfig: stepId, // Not used by ArchiveHandler but needed for interface
+                input: resolvedStep.input,
+                output: resolvedStep.output,
+                archive: resolvedStep.archive,
+                include: resolvedStep.include,
+                next: resolvedStep.next,
+                description: resolvedStep.description
+            };
+            const archivePath = await this.archiveHandler.archive(fileInfo, archiveStepCompat, stepId);
             context.archivePath = archivePath;
 
-            // Save output files with direct content output
+            // Save output files with direct content output - create legacy step object for OutputHandler compatibility  
+            const outputStepCompat: PipelineStep = {
+                modelConfig: stepId, // Not used by OutputHandler but needed for interface
+                input: resolvedStep.input,
+                output: resolvedStep.output,
+                archive: resolvedStep.archive,
+                include: resolvedStep.include,
+                next: resolvedStep.next,
+                description: resolvedStep.description
+            };
+            
             const outputFiles: string[] = [];
             let nextStep: string | undefined;
 
             // Handle multi-file vs single-file responses
             if (parsedResponse.isMultiFile) {
-                const savedFiles = await this.outputHandler.saveMultiple(parsedResponse.sections, step, context);
+                const savedFiles = await this.outputHandler.saveMultiple(parsedResponse.sections, outputStepCompat, context);
                 outputFiles.push(...Object.values(savedFiles));
                 
                 // Get nextStep from first section that has it
                 nextStep = parsedResponse.sections.find(section => section.nextStep)?.nextStep;
             } else if (parsedResponse.sections.length > 0) {
-                const outputPath = await this.outputHandler.save(parsedResponse.sections[0], step, context);
+                const outputPath = await this.outputHandler.save(parsedResponse.sections[0], outputStepCompat, context);
                 outputFiles.push(outputPath);
                 nextStep = parsedResponse.sections[0].nextStep;
             }
 
             // Validate nextStep if present
             if (nextStep) {
-                if (!step.next || !step.next[nextStep]) {
+                if (!resolvedStep.next || !resolvedStep.next[nextStep]) {
                     logger.warn(`Invalid nextStep '${nextStep}' not found in step configuration. Ending processing chain.`);
                     nextStep = undefined;
                 }
@@ -131,7 +151,7 @@ export class ChatStepExecutor {
     /**
      * Validate input parameters for chat execution
      */
-    private validateInput(stepId: string, fileInfo: FileInfo, step: PipelineStep): void {
+    private validateInput(stepId: string, fileInfo: FileInfo, resolvedStep: ResolvedPipelineStep): void {
         // Validate stepId
         if (!stepId || typeof stepId !== 'string') {
             throw ErrorFactory.validation(
@@ -142,13 +162,23 @@ export class ChatStepExecutor {
             );
         }
 
-        // Validate step configuration
-        if (!step) {
+        // Validate resolved step configuration
+        if (!resolvedStep) {
             throw ErrorFactory.validation(
-                'No step configuration provided to ChatStepExecutor',
-                'Pipeline step configuration is required',
+                'No resolved step configuration provided to ChatStepExecutor',
+                'Resolved pipeline step configuration is required',
                 { stepId },
-                ['Ensure step configuration is properly defined in pipeline']
+                ['Ensure step configuration is properly resolved', 'Check ConfigurationResolver is working']
+            );
+        }
+
+        // Validate model configuration exists
+        if (!resolvedStep.modelConfig) {
+            throw ErrorFactory.validation(
+                'No model configuration in resolved step',
+                'Model configuration is required for chat processing',
+                { stepId, resolvedStep },
+                ['Ensure model config reference is valid', 'Check models configuration contains referenced config']
             );
         }
 
@@ -189,7 +219,8 @@ export class ChatStepExecutor {
         logger.debug('Input validation passed', { 
             stepId, 
             fileName: fileInfo.name, 
-            filePath: fileInfo.path 
+            filePath: fileInfo.path,
+            modelConfig: resolvedStep.modelConfig.model
         });
     }
 }

@@ -1,12 +1,12 @@
 /**
- * Whisper-specific step processing
+ * Whisper-specific step processing (v1.2 - Updated for dual configuration)
  */
 
 import { App } from 'obsidian';
 import { PathUtils } from '../path-resolver';
 import { FileOperations } from '../file-operations';
 import { WhisperClient } from '../../api';
-import { FileInfo, ProcessingResult, ProcessingStatus } from '../../types';
+import { FileInfo, ProcessingResult, ProcessingStatus, ResolvedPipelineStep } from '../../types';
 import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
 
@@ -24,21 +24,21 @@ export class WhisperStepProcessor {
     async executeWhisperStep(
         stepId: string,
         fileInfo: FileInfo,
-        step: any
+        resolvedStep: ResolvedPipelineStep
     ): Promise<ProcessingResult> {
         const startTime = new Date();
 
         try {
-            logger.info(`Starting Whisper transcription: ${fileInfo.name}`);
+            logger.info(`Starting Whisper transcription: ${fileInfo.name} with ${resolvedStep.modelConfig.model}`);
 
             // Read audio file
             const audioBuffer = await this.readAudioFile(fileInfo.path);
             
-            // Create Whisper client and transcribe
+            // Create Whisper client and transcribe using resolved model config
             const whisperClient = new WhisperClient({
-                apiKey: step.apiKey,
-                baseUrl: step.baseUrl,
-                organization: step.organization
+                apiKey: resolvedStep.modelConfig.apiKey,
+                baseUrl: resolvedStep.modelConfig.baseUrl,
+                organization: resolvedStep.modelConfig.organization
             });
 
             const transcriptionResult = await whisperClient.transcribeAudio(
@@ -48,11 +48,11 @@ export class WhisperStepProcessor {
             );
 
             // Archive original file first and capture archive path
-            const archivePath = await this.archiveFile(fileInfo.path, step.archive, fileInfo);
+            const archivePath = await this.archiveFile(fileInfo.path, resolvedStep.archive, fileInfo);
 
             // Format and save output using archive path for source metadata
             const outputContent = this.formatTranscriptionOutput(transcriptionResult.text, fileInfo, stepId, archivePath);
-            const outputPath = this.resolveOutputPath(step.output, fileInfo);
+            const outputPath = this.resolveOutputPath(resolvedStep.output, fileInfo);
             
             await this.fileOps.writeFile(outputPath, outputContent, {
                 createDirectories: true,
@@ -61,14 +61,14 @@ export class WhisperStepProcessor {
 
             logger.info(`Whisper transcription completed: ${fileInfo.name} → ${outputPath}`);
 
-            // Get next step from step configuration
+            // Get next step from resolved step configuration
             let nextStep: string | undefined;
-            if (step.next) {
+            if (resolvedStep.next) {
                 // For Whisper steps, we might have intelligent routing
                 // For now, just take the first available next step
-                const nextStepIds = Object.keys(step.next);
+                const nextStepIds = Object.keys(resolvedStep.next);
                 if (nextStepIds.length > 0) {
-                    nextStep = nextStepIds[0]; // Simple fallback
+                    nextStep = nextStepIds[0]; // Simple fallback - could be enhanced with content analysis
                 }
             }
 

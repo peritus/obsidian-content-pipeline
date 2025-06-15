@@ -1,17 +1,17 @@
 /**
- * Individual Step Execution Logic
+ * Individual Step Execution Logic (v1.2 - Updated for dual configuration)
  */
 
 import { App } from 'obsidian';
 import { WhisperStepProcessor } from '../whisper-step';
 import { ChatStepExecutor } from './ChatStepExecutor';
+import { createConfigurationResolver } from '../../../validation/configuration-resolver';
 import { 
     AudioInboxSettings,
-    PipelineConfiguration, 
-    PipelineStep,
     FileInfo, 
     ProcessingResult, 
-    ProcessingStatus
+    ProcessingStatus,
+    ResolvedPipelineStep
 } from '../../../types';
 import { ErrorFactory } from '../../../error-handler';
 import { createLogger } from '../../../logger';
@@ -33,47 +33,41 @@ export class StepExecutor {
 
     async execute(
         stepId: string, 
-        fileInfo: FileInfo, 
-        config: PipelineConfiguration
+        fileInfo: FileInfo
     ): Promise<ProcessingResult> {
-        const step = config[stepId];
-        
-        if (!step) {
-            throw ErrorFactory.pipeline(
-                `Step not found: ${stepId}`,
-                `Pipeline step "${stepId}" is not configured`,
-                { stepId }
-            );
-        }
-
         const startTime = new Date();
 
         try {
             logger.info(`Executing step: ${stepId} for file: ${fileInfo.path}`);
 
-            // Check API key
-            if (!step.apiKey || step.apiKey.trim() === '') {
+            // Resolve step configuration using ConfigurationResolver
+            const resolvedStep = await this.resolveStep(stepId);
+
+            // Validate API key exists
+            if (!resolvedStep.modelConfig.apiKey || resolvedStep.modelConfig.apiKey.trim() === '') {
                 throw ErrorFactory.configuration(
                     'No API key configured for step',
-                    `Step "${stepId}" requires an API key`,
-                    { stepId, model: step.model },
-                    ['Configure API key in pipeline settings', 'Add valid OpenAI API key']
+                    `Step "${stepId}" requires an API key in model configuration "${resolvedStep.modelConfig.model}"`,
+                    { stepId, modelConfigId: resolvedStep.stepId, model: resolvedStep.modelConfig.model },
+                    ['Configure API key in models configuration', 'Add valid API key for the model']
                 );
             }
 
-            // Route to appropriate processor based on model
-            if (step.model === 'whisper-1' && WhisperStepProcessor.isAudioFile(fileInfo)) {
-                return await this.whisperProcessor.executeWhisperStep(stepId, fileInfo, step);
-            } else if (this.isChatModel(step.model)) {
-                return await this.chatExecutor.execute(stepId, fileInfo, step);
+            // Route to appropriate processor based on model implementation
+            const implementation = resolvedStep.modelConfig.implementation;
+            
+            if (implementation === 'whisper' && WhisperStepProcessor.isAudioFile(fileInfo)) {
+                return await this.whisperProcessor.executeWhisperStep(stepId, fileInfo, resolvedStep);
+            } else if (implementation === 'chatgpt' || implementation === 'claude') {
+                return await this.chatExecutor.execute(stepId, fileInfo, resolvedStep);
             }
 
-            // Unsupported model
+            // Unsupported implementation
             throw ErrorFactory.pipeline(
-                `Unsupported model: ${step.model}`,
-                `Model "${step.model}" is not supported`,
-                { stepId, model: step.model },
-                ['Use whisper-1 for audio transcription', 'Use gpt-4, gpt-3.5-turbo, or other chat models for text processing']
+                `Unsupported model implementation: ${implementation}`,
+                `Model implementation "${implementation}" is not supported`,
+                { stepId, implementation, model: resolvedStep.modelConfig.model },
+                ['Use "whisper" for audio transcription', 'Use "chatgpt" or "claude" for text processing']
             );
 
         } catch (error) {
@@ -92,8 +86,37 @@ export class StepExecutor {
         }
     }
 
-    private isChatModel(model: string): boolean {
-        const chatModels = ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'];
-        return chatModels.some(chatModel => model.startsWith(chatModel));
+    /**
+     * Resolve pipeline step using ConfigurationResolver
+     */
+    private async resolveStep(stepId: string): Promise<ResolvedPipelineStep> {
+        // Validate settings are available
+        if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
+            throw ErrorFactory.configuration(
+                'Configuration not available',
+                'Both models and pipeline configurations are required',
+                { stepId },
+                ['Configure models and pipeline in settings', 'Ensure configurations are saved']
+            );
+        }
+
+        try {
+            // Create resolver and resolve step
+            const resolver = createConfigurationResolver(
+                this.settings.modelsConfig,
+                this.settings.pipelineConfig
+            );
+
+            return resolver.resolveStep(stepId);
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw ErrorFactory.configuration(
+                `Failed to resolve step configuration: ${errorMessage}`,
+                `Cannot resolve step "${stepId}" configuration`,
+                { stepId, error: errorMessage },
+                ['Check step exists in pipeline configuration', 'Verify model config reference is valid', 'Validate configuration syntax']
+            );
+        }
     }
 }

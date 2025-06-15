@@ -1,5 +1,5 @@
 /**
- * Step Chain Execution - Main Orchestrator
+ * Step Chain Execution - Main Orchestrator (v1.2 - Updated for dual configuration)
  */
 
 import { App } from 'obsidian';
@@ -7,7 +7,6 @@ import { StepExecutor } from './StepExecutor';
 import { ChainExecutor } from './ChainExecutor';
 import { 
     AudioInboxSettings,
-    PipelineConfiguration, 
     FileInfo, 
     ProcessingResult
 } from '../../../types';
@@ -22,22 +21,20 @@ export class StepChain {
     constructor(app: App, settings: AudioInboxSettings) {
         this.stepExecutor = new StepExecutor(app, settings);
         this.chainExecutor = new ChainExecutor(app, this.stepExecutor);
-        logger.debug('StepChain initialized with full API support');
+        logger.debug('StepChain initialized with dual configuration support');
     }
 
     async executeStep(
         stepId: string, 
-        fileInfo: FileInfo, 
-        config: PipelineConfiguration
+        fileInfo: FileInfo
     ): Promise<ProcessingResult> {
-        return await this.stepExecutor.execute(stepId, fileInfo, config);
+        return await this.stepExecutor.execute(stepId, fileInfo);
     }
 
     async executeChain(
         startStepId: string, 
-        inputFile: FileInfo, 
-        config: PipelineConfiguration
+        inputFile: FileInfo
     ): Promise<ProcessingResult> {
-        return await this.chainExecutor.execute(startStepId, inputFile, config);
+        return await this.chainExecutor.execute(startStepId, inputFile);
     }
 }

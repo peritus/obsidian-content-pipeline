@@ -1,11 +1,12 @@
 /**
- * Pipeline Execution Engine - Main Orchestrator
+ * Pipeline Execution Engine - Main Orchestrator (v1.2 - Updated for dual configuration)
  */
 
 import { App } from 'obsidian';
 import { ExecutionState } from './execution-state';
 import { FileDiscovery } from './file-discovery';
 import { StepChain } from './StepChain';
+import { createConfigurationResolver } from '../../validation/configuration-resolver';
 import { 
     AudioInboxSettings, 
     PipelineConfiguration, 
@@ -34,7 +35,7 @@ export class PipelineExecutor {
         this.executionState = new ExecutionState();
         this.fileDiscovery = new FileDiscovery(app);
         this.stepChain = new StepChain(app, settings);
-        logger.debug('PipelineExecutor initialized');
+        logger.debug('PipelineExecutor initialized with dual configuration support');
     }
 
     async processNextFile(options: ExecutionOptions = {}): Promise<ProcessingResult> {
@@ -66,10 +67,11 @@ export class PipelineExecutor {
             logger.info(`Processing: ${fileToProcess.file.path} (${fileToProcess.stepId})`);
             
             this.executionState.addActiveFile(fileToProcess.file.path);
+            
+            // Execute step (StepChain now handles configuration resolution internally)
             const result = await this.stepChain.executeStep(
                 fileToProcess.stepId, 
-                fileToProcess.file, 
-                config
+                fileToProcess.file
             );
             
             logger.info(`Completed: ${result.outputFiles.length} files generated`);
@@ -88,8 +90,8 @@ export class PipelineExecutor {
     }
 
     async executeStep(stepId: string, fileInfo: FileInfo): Promise<ProcessingResult> {
-        const config = this.getPipelineConfiguration();
-        return await this.stepChain.executeStep(stepId, fileInfo, config);
+        // StepChain now handles configuration resolution internally
+        return await this.stepChain.executeStep(stepId, fileInfo);
     }
 
     getExecutionStatus() {
@@ -97,15 +99,60 @@ export class PipelineExecutor {
     }
 
     private getPipelineConfiguration(): PipelineConfiguration {
-        if (!this.settings.parsedPipelineConfig) {
+        // Validate that dual configuration is available
+        if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
             throw ErrorFactory.configuration(
-                'No pipeline configuration available',
-                'Pipeline configuration is not loaded',
-                {},
-                ['Configure pipeline in settings', 'Reload plugin']
+                'Dual configuration not available',
+                'Both models and pipeline configurations are required',
+                { hasModels: !!this.settings.modelsConfig, hasPipeline: !!this.settings.pipelineConfig },
+                ['Configure both models and pipeline in settings', 'Ensure configurations are saved']
             );
         }
-        return this.settings.parsedPipelineConfig;
+
+        // Use ConfigurationResolver to validate configuration is resolvable
+        try {
+            const resolver = createConfigurationResolver(
+                this.settings.modelsConfig,
+                this.settings.pipelineConfig
+            );
+            
+            const validationResult = resolver.validate();
+            if (!validationResult.isValid) {
+                const errorSummary = [
+                    ...validationResult.modelsErrors,
+                    ...validationResult.pipelineErrors,
+                    ...validationResult.crossRefErrors
+                ].join('; ');
+                
+                throw ErrorFactory.configuration(
+                    `Configuration validation failed: ${errorSummary}`,
+                    'Pipeline configuration contains validation errors',
+                    { validationResult },
+                    ['Fix configuration errors in settings', 'Validate configuration before processing']
+                );
+            }
+
+            // Return parsed pipeline configuration (FileDiscovery still expects this format)
+            if (!this.settings.parsedPipelineConfig) {
+                throw ErrorFactory.configuration(
+                    'Parsed pipeline configuration not available',
+                    'Pipeline configuration is not parsed',
+                    {},
+                    ['Reload plugin', 'Re-save configuration in settings']
+                );
+            }
+
+            return this.settings.parsedPipelineConfig;
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw ErrorFactory.configuration(
+                `Failed to validate configuration: ${errorMessage}`,
+                'Cannot validate dual configuration for pipeline execution',
+                { error: errorMessage },
+                ['Check configuration syntax', 'Verify model config references', 'Reload plugin']
+            );
+        }
     }
 
     private createResult(status: ProcessingStatus, error?: string): ProcessingResult {
