@@ -1,8 +1,8 @@
 /**
  * Validation System Tests
  * 
- * Comprehensive test suite for all validation modules updated for v1.1 schema.
- * Removed category validation tests and updated for object-keyed next step configuration.
+ * Comprehensive test suite for all validation modules updated for v1.2 schema.
+ * Updated for dual configuration system with models and pipeline configs.
  */
 
 import { 
@@ -200,17 +200,18 @@ describe('Pipeline Step Validation', () => {
 
         it('should reject missing required fields', () => {
             const step = createMockPipelineStep();
-            delete (step as any).model;
+            delete (step as any).modelConfig;
             
             expect(() => validatePipelineStep(step, 'test-step')).toThrow('missing required fields');
         });
 
-        it('should reject invalid model specifications', () => {
-            const step = createMockPipelineStep({ model: '' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('model must be');
+        it('should reject invalid model config format', () => {
+            const step = createMockPipelineStep({ modelConfig: '' });
+            expect(() => validatePipelineStep(step, 'test-step')).toThrow('modelConfig must be');
 
-            const step2 = createMockPipelineStep({ model: 'invalid-model' });
-            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('unsupported model');
+            // Test invalid format (note: this tests format validation, not existence validation)
+            const step2 = createMockPipelineStep({ modelConfig: 'Invalid Model Config!' });
+            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('Invalid modelConfig format in step test-step');
         });
 
         it('should validate input, output, and archive patterns', () => {
@@ -219,21 +220,14 @@ describe('Pipeline Step Validation', () => {
         });
 
         it('should validate include array', () => {
-            const step = createMockPipelineStep({ include: 'not-an-array' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('include field must be an array');
+            // Test with properly typed invalid values
+            const invalidStep: any = createMockPipelineStep();
+            invalidStep.include = 'not-an-array';
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('include field must be an array');
 
-            const step2 = createMockPipelineStep({ include: [123] });
-            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('include paths must be strings');
-        });
-
-        it('should validate API key format', () => {
-            const step = createMockPipelineStep({ apiKey: 'invalid-key' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('invalid API key format');
-        });
-
-        it('should validate baseUrl format', () => {
-            const step = createMockPipelineStep({ baseUrl: 'not-a-url' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('not a valid URL');
+            const invalidStep2: any = createMockPipelineStep();
+            invalidStep2.include = [123];
+            expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow('include paths must be strings');
         });
 
         it('should validate object-keyed next step configuration', () => {
@@ -246,11 +240,14 @@ describe('Pipeline Step Validation', () => {
         });
 
         it('should reject invalid next step format', () => {
-            const step = createMockPipelineStep({ next: 'string-instead-of-object' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('next field must be an object mapping step IDs to routing prompts');
+            // Test with properly typed invalid values
+            const invalidStep: any = createMockPipelineStep();
+            invalidStep.next = 'string-instead-of-object';
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('next field must be an object');
 
-            const step2 = createMockPipelineStep({ next: ['array-instead-of-object'] });
-            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('next field must be an object mapping step IDs to routing prompts');
+            const invalidStep2: any = createMockPipelineStep();
+            invalidStep2.next = ['array-instead-of-object'];
+            expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow('next field must be an object');
         });
 
         it('should validate next step routing prompts', () => {
@@ -295,14 +292,15 @@ describe('Pipeline Configuration Validation', () => {
         });
 
         it('should validate individual steps', () => {
+            const invalidStep: any = { modelConfig: 'invalid' }; // Missing required fields
             const config = createMockPipelineConfig({
-                'invalid-step': { model: 'invalid' }
+                'invalid-step': invalidStep
             });
             expect(() => validatePipelineConfig(config)).toThrow('configuration is invalid');
         });
 
         it('should validate step ID format', () => {
-            const config = {
+            const config: any = {
                 '123-invalid': createMockPipelineStep()
             };
             expect(() => validatePipelineConfig(config)).toThrow('must start with a letter');
@@ -360,7 +358,7 @@ describe('Pipeline Configuration Validation', () => {
             const config = {
                 'text-only': createMockPipelineStep({ 
                     input: 'text/input',
-                    model: 'gpt-4'
+                    modelConfig: 'openai-gpt'
                 })
             };
             expect(() => validatePipelineConfig(config)).toThrow('no audio input steps');
@@ -377,7 +375,7 @@ describe('Pipeline Configuration Validation', () => {
         it('should validate complex routing configurations', () => {
             const config = {
                 'transcribe': createMockPipelineStep({
-                    model: 'whisper-1',
+                    modelConfig: 'openai-whisper',
                     next: {
                         'process-thoughts': 'If personal content is detected',
                         'process-tasks': 'If work content is detected',
@@ -385,29 +383,29 @@ describe('Pipeline Configuration Validation', () => {
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     next: {
                         'summary-personal': 'Always route personal content to personal summary'
                     }
                 }),
                 'process-tasks': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     next: {
                         'summary-work': 'Always route work content to work summary'
                     }
                 }),
                 'process-ideas': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     next: {
                         'summary-personal': 'If personal ideas detected',
                         'summary-work': 'If business ideas detected'
                     }
                 }),
                 'summary-personal': createMockPipelineStep({
-                    model: 'gpt-4'
+                    modelConfig: 'openai-gpt'
                 }),
                 'summary-work': createMockPipelineStep({
-                    model: 'gpt-4'
+                    modelConfig: 'openai-gpt'
                 })
             };
             
@@ -511,23 +509,21 @@ describe('Step Routing Validation', () => {
         });
 
         it('should reject non-string step IDs', () => {
-            const step = createMockPipelineStep({
-                next: {
-                    123: 'Invalid numeric step ID'
-                }
-            });
+            const invalidStep: any = createMockPipelineStep();
+            invalidStep.next = {
+                123: 'Invalid numeric step ID'
+            };
             
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('Next step IDs must be non-empty strings');
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('Next step IDs must be non-empty strings');
         });
 
         it('should reject non-string routing prompts', () => {
-            const step = createMockPipelineStep({
-                next: {
-                    'valid-step': 123
-                }
-            });
+            const invalidStep: any = createMockPipelineStep();
+            invalidStep.next = {
+                'valid-step': 123
+            };
             
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('Routing prompts must be non-empty strings');
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('Routing prompts must be non-empty strings');
         });
 
         it('should validate step ID format in routing', () => {

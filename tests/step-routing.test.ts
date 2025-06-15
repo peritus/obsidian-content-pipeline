@@ -126,7 +126,7 @@ describe('Step Routing Configuration', () => {
         it('should support branching workflows', () => {
             const branchingConfig = {
                 'transcribe': createMockPipelineStep({
-                    model: 'whisper-1',
+                    modelConfig: 'openai-whisper',
                     next: {
                         'process-thoughts': 'For personal content',
                         'process-tasks': 'For work content',

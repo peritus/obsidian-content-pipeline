@@ -29,12 +29,12 @@ describe('ArchiveHandler with Conflict Resolution', () => {
         };
 
         const step = {
-            model: 'gpt-4',
+            modelConfig: 'openai-gpt',
             input: 'inbox/transcripts',
             output: 'inbox/output',
             archive: 'inbox/archive/{stepId}',
             include: [],
-            apiKey: 'test-key'
+            description: 'Test step for archive handler'
         };
 
         const stepId = 'transcribe';
@@ -75,12 +75,12 @@ describe('ArchiveHandler with Conflict Resolution', () => {
         };
 
         const step = {
-            model: 'gpt-4',
+            modelConfig: 'openai-gpt',
             input: 'inbox/transcripts',
             output: 'inbox/output',
             archive: 'inbox/archive/{stepId}',
             include: [],
-            apiKey: 'test-key'
+            description: 'Test step for archive handler'
         };
 
         const stepId = 'transcribe';

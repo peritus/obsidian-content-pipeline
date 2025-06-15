@@ -1,8 +1,8 @@
 /**
  * Pipeline Executor Tests
  * 
- * Test suite for the pipeline execution engine and its components updated for v1.1 schema.
- * Removed category references and added step routing tests.
+ * Test suite for the pipeline execution engine and its components updated for v1.2 schema.
+ * Updated for dual configuration system with models and pipeline configs.
  */
 
 import { PipelineExecutor, ExecutionState, FileDiscovery, StepChain } from '../src/core/pipeline-executor';
@@ -13,12 +13,13 @@ import { AudioInboxSettings, ProcessingStatus } from '../src/types';
 // Mock app for testing
 const mockApp = {} as App;
 
-// Mock settings with pipeline config for v1.1 schema
+// Mock settings with dual configuration for v1.2 schema
 const mockSettings: AudioInboxSettings = {
+    modelsConfig: '{"test-model": {"baseUrl": "https://api.openai.com/v1", "apiKey": "test-key", "implementation": "chatgpt", "model": "gpt-4"}}',
     pipelineConfig: '{}',
     parsedPipelineConfig: createMockPipelineConfig(),
     debugMode: true,
-    version: '1.1.0'
+    version: '1.2.0'
 };
 
 describe('Pipeline Executor', () => {
@@ -48,7 +49,7 @@ describe('Pipeline Executor', () => {
     });
 
     describe('Configuration Validation', () => {
-        it('should throw error when no pipeline config is available', async () => {
+        it('should throw error when configuration validation fails', async () => {
             const settingsWithoutConfig: AudioInboxSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: undefined
@@ -57,7 +58,7 @@ describe('Pipeline Executor', () => {
             const executorWithoutConfig = new PipelineExecutor(mockApp, settingsWithoutConfig);
             
             await expect(executorWithoutConfig.processNextFile())
-                .rejects.toThrow('No pipeline configuration available');
+                .rejects.toThrow('Failed to validate configuration');
         });
 
         it('should validate object-keyed pipeline configuration', () => {
@@ -76,18 +77,18 @@ describe('Pipeline Executor', () => {
         it('should handle step routing based on nextStep in response', async () => {
             const routingConfig = {
                 'transcribe': createMockPipelineStep({
-                    model: 'whisper-1',
+                    modelConfig: 'openai-whisper',
                     next: {
                         'process-thoughts': 'If personal content detected',
                         'process-tasks': 'If work content detected'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     input: 'inbox/transcripts'
                 }),
                 'process-tasks': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     input: 'inbox/transcripts'
                 })
             };
@@ -105,7 +106,7 @@ describe('Pipeline Executor', () => {
             // This would be tested with actual execution, but we're testing the structure
             const finalStepConfig = {
                 'final-step': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     // No next field means this is a terminal step
                 })
             };
@@ -137,20 +138,20 @@ describe('Pipeline Executor', () => {
         it('should handle multiple entry points', () => {
             const multiEntryConfig = {
                 'audio-entry': createMockPipelineStep({
-                    model: 'whisper-1',
+                    modelConfig: 'openai-whisper',
                     input: 'inbox/audio',
                     next: { 'audio-process': 'Route audio to processing' }
                 }),
                 'text-entry': createMockPipelineStep({
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     input: 'inbox/text',
                     next: { 'text-process': 'Route text to processing' }
                 }),
                 'audio-process': createMockPipelineStep({
-                    model: 'gpt-4'
+                    modelConfig: 'openai-gpt'
                 }),
                 'text-process': createMockPipelineStep({
-                    model: 'gpt-4'
+                    modelConfig: 'openai-gpt'
                 })
             };
 
@@ -288,11 +289,11 @@ describe('File Discovery', () => {
         const multiStepConfig = {
             'step1': createMockPipelineStep({
                 input: 'inbox/step1',
-                model: 'whisper-1'
+                modelConfig: 'openai-whisper'
             }),
             'step2': createMockPipelineStep({
                 input: 'inbox/step2',
-                model: 'whisper-1'
+                modelConfig: 'openai-whisper'
             })
         };
         
@@ -328,7 +329,7 @@ describe('Step Chain', () => {
         it('should execute single step without routing', async () => {
             const singleStepConfig = {
                 'final-step': createMockPipelineStep({
-                    model: 'gpt-4'
+                    modelConfig: 'openai-gpt'
                     // No next field
                 })
             };

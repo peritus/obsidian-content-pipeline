@@ -2,12 +2,12 @@
  * Jest test setup file
  * 
  * This file runs before each test suite and sets up mocks and global test configuration.
- * Updated for v1.1 schema - removed category and template references.
+ * Updated for v1.2 schema - dual configuration system with models and pipeline configs.
  */
 
 // Import the mocked obsidian module directly
 import { mockApp, Notice } from './__mocks__/obsidian';
-import { PipelineConfiguration } from '../src/types';
+import { PipelineConfiguration, ModelsConfig, ModelConfig, PipelineStep } from '../src/types';
 
 // Mock console.log for tests (Jest captures these automatically, but we can control them)
 global.console = {
@@ -35,7 +35,7 @@ declare global {
     }
 }
 
-// Custom Jest matchers updated for v1.1 schema
+// Custom Jest matchers updated for v1.2 schema
 expect.extend({
     toBeValidPath(received: string) {
         const isValid = typeof received === 'string' && 
@@ -72,7 +72,8 @@ expect.extend({
     }
 });
 
-// Test data factories updated for v1.1 schema
+// Test data factories updated for v1.2 schema
+
 export const createMockContext = (overrides: any = {}) => ({
     filename: 'test-file',
     stepId: 'test-step',
@@ -84,24 +85,48 @@ export const createMockContext = (overrides: any = {}) => ({
     ...overrides
 });
 
-export const createMockPipelineStep = (overrides: any = {}) => ({
-    model: 'whisper-1',  // Use whisper-1 as default to pass audio input validation
-    input: 'inbox/audio',  // Simplified path pattern without category
-    output: 'inbox/results/{filename}.md',
-    archive: 'inbox/archive/test-step',  // Auto-generated archive path
-    include: ['prompt.md'],
-    apiKey: 'sk-proj-test1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',  // Valid project key format
+// Factory for creating mock model configurations (v1.2)
+export const createMockModelConfig = (overrides: Partial<ModelConfig> = {}): ModelConfig => ({
     baseUrl: 'https://api.openai.com/v1',
+    apiKey: 'sk-proj-test1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+    implementation: 'chatgpt',
+    model: 'gpt-4',
+    organization: '',
+    ...overrides
+});
+
+// Factory for creating mock models configuration (v1.2)
+export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): ModelsConfig => ({
+    'openai-gpt': createMockModelConfig({
+        implementation: 'chatgpt',
+        model: 'gpt-4'
+    }),
+    'openai-whisper': createMockModelConfig({
+        implementation: 'whisper',
+        model: 'whisper-1'
+    }),
+    'test-model': createMockModelConfig(),
+    ...overrides
+});
+
+// Factory for creating mock pipeline steps (v1.2)
+export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): PipelineStep => ({
+    modelConfig: 'test-model',  // Reference to models config
+    input: 'inbox/audio',
+    output: 'inbox/results/{filename}.md',
+    archive: 'inbox/archive/test-step',
+    include: ['prompt.md'],
     description: 'Test pipeline step for automated testing',
     ...overrides
 });
 
-export const createMockPipelineConfig = (overrides: any = {}) => ({
+// Factory for creating mock pipeline configuration (v1.2)
+export const createMockPipelineConfig = (overrides: Partial<PipelineConfiguration> = {}): PipelineConfiguration => ({
     'test-step': createMockPipelineStep(),
     ...overrides
 });
 
-// Mock file info factory for v1.1 schema
+// Mock file info factory for v1.2 schema
 export const createMockFileInfo = (overrides: any = {}) => ({
     name: 'test-audio.mp3',
     path: 'inbox/audio/test-audio.mp3',
@@ -113,14 +138,14 @@ export const createMockFileInfo = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Mock file metadata factory for v1.1 schema
+// Mock file metadata factory for v1.2 schema
 export const createMockFileMetadata = (overrides: any = {}) => ({
     source: 'inbox/archive/transcribe/test-audio.mp3',
     processed: '2024-01-15T10:30:00Z',
     step: 'transcribe',
     nextStep: 'process-thoughts',
     pipeline: 'audio-processing',
-    version: '1.1',
+    version: '1.2',
     ...overrides
 });
 
@@ -153,7 +178,7 @@ export const createMockValidationResult = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Mock processing result for v1.1 schema
+// Mock processing result for v1.2 schema
 export const createMockProcessingResult = (overrides: any = {}) => ({
     inputFile: createMockFileInfo(),
     status: 'completed',
@@ -166,10 +191,10 @@ export const createMockProcessingResult = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Helper function to create complex pipeline configurations for testing
+// Helper function to create complex pipeline configurations for testing (v1.2)
 export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     'transcribe': createMockPipelineStep({
-        model: 'whisper-1',
+        modelConfig: 'openai-whisper',
         input: 'inbox/audio',
         output: 'inbox/transcripts/{filename}-transcript.md',
         archive: 'inbox/archive/transcribe',
@@ -182,7 +207,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         }
     }),
     'process-thoughts': createMockPipelineStep({
-        model: 'gpt-4',
+        modelConfig: 'openai-gpt',
         input: 'inbox/transcripts',
         output: 'inbox/process-thoughts/{filename}-processed.md',
         archive: 'inbox/archive/process-thoughts',
@@ -193,7 +218,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         }
     }),
     'process-tasks': createMockPipelineStep({
-        model: 'gpt-4',
+        modelConfig: 'openai-gpt',
         input: 'inbox/transcripts',
         output: 'inbox/process-tasks/{filename}-processed.md',
         archive: 'inbox/archive/process-tasks',
@@ -204,7 +229,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         }
     }),
     'process-ideas': createMockPipelineStep({
-        model: 'gpt-4',
+        modelConfig: 'openai-gpt',
         input: 'inbox/transcripts',
         output: 'inbox/process-ideas/{filename}-processed.md',
         archive: 'inbox/archive/process-ideas',
@@ -216,7 +241,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         }
     }),
     'summary-personal': createMockPipelineStep({
-        model: 'gpt-4',
+        modelConfig: 'openai-gpt',
         input: 'inbox/process-thoughts',
         output: 'inbox/summary-personal/',
         archive: 'inbox/archive/summary-personal',
@@ -224,7 +249,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         description: 'Create personal summaries and insights'
     }),
     'summary-work': createMockPipelineStep({
-        model: 'gpt-4',
+        modelConfig: 'openai-gpt',
         input: 'inbox/process-tasks',
         output: 'inbox/summary-work/',
         archive: 'inbox/archive/summary-work',
@@ -233,7 +258,19 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     })
 });
 
-// Helper function to create invalid configurations for testing
+// Helper function to create complex models config for testing (v1.2)
+export const createComplexModelsConfig = (): ModelsConfig => ({
+    'openai-gpt': createMockModelConfig({
+        implementation: 'chatgpt',
+        model: 'gpt-4'
+    }),
+    'openai-whisper': createMockModelConfig({
+        implementation: 'whisper',
+        model: 'whisper-1'
+    })
+});
+
+// Helper function to create invalid configurations for testing (v1.2)
 export const createInvalidPipelineConfig = (errorType: string): PipelineConfiguration => {
     const baseStep = createMockPipelineStep();
     
@@ -269,13 +306,40 @@ export const createInvalidPipelineConfig = (errorType: string): PipelineConfigur
             return {
                 'text-only': {
                     ...baseStep,
-                    model: 'gpt-4',
+                    modelConfig: 'openai-gpt',
                     input: 'text/input'
                 }
             };
         default:
             return {
                 'default-step': baseStep
+            };
+    }
+};
+
+// Helper function to create invalid models config for testing (v1.2)
+export const createInvalidModelsConfig = (errorType: string): ModelsConfig => {
+    const baseModel = createMockModelConfig();
+    
+    switch (errorType) {
+        case 'missing-fields':
+            return {
+                'invalid-model': {
+                    ...baseModel,
+                    apiKey: '', // Missing API key
+                    baseUrl: ''  // Missing base URL
+                }
+            };
+        case 'invalid-implementation':
+            return {
+                'invalid-model': {
+                    ...baseModel,
+                    implementation: 'invalid-type' as any
+                }
+            };
+        default:
+            return {
+                'default-model': baseModel
             };
     }
 };
