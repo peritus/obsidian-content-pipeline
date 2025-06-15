@@ -1,5 +1,5 @@
 /**
- * Validation utilities index
+ * Validation utilities index (v1.2)
  * 
  * Re-exports all validation functions for convenient importing.
  */
@@ -11,12 +11,17 @@ export { validateFilePattern } from './file-pattern';
 export { validatePipelineStep } from './pipeline-step';
 export { validatePipelineConfig } from './pipeline-config';
 
+// v1.2 Split configuration validation
+export { validateModelsConfig, validateModelConfig, getClientClass, IMPLEMENTATION_MAPPING } from './models-config';
+export { ConfigurationResolver, createConfigurationResolver } from './configuration-resolver';
+
 // Import functions for use in object and convenience function
 import { validatePath } from './path';
 import { validateApiKey } from './api-key/validateApiKey';
 import { validateFilePattern } from './file-pattern';
 import { validatePipelineStep } from './pipeline-step';
 import { validatePipelineConfig } from './pipeline-config';
+import { validateModelsConfig, validateModelConfig } from './models-config';
 
 // Convenience object for grouped imports
 export const Validators = {
@@ -24,7 +29,9 @@ export const Validators = {
     apiKey: validateApiKey,
     filePattern: validateFilePattern,
     pipelineStep: validatePipelineStep,
-    pipelineConfig: validatePipelineConfig
+    pipelineConfig: validatePipelineConfig,
+    modelsConfig: validateModelsConfig,
+    modelConfig: validateModelConfig
 } as const;
 
 /**

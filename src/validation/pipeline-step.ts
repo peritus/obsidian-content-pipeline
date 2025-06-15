@@ -1,42 +1,23 @@
 /**
- * Pipeline step validation utility
+ * Pipeline step validation utility (v1.2)
  * 
- * Validates individual pipeline step configurations for the new object-keyed schema.
+ * Validates individual pipeline step configurations for the new split configuration schema.
+ * Credential validation is handled separately in models-config validation.
  */
 
 import { ErrorFactory } from '../error-handler';
 import { PipelineStep } from '../types';
-import { validatePath } from './path';
-import { validateApiKey } from './api-key/validateApiKey';
 import { validateFilePattern } from './file-pattern';
-
-/**
- * Supported model names for validation
- */
-const SUPPORTED_MODELS = [
-    // OpenAI models
-    'whisper-1',
-    'gpt-4',
-    'gpt-4-turbo',
-    'gpt-4o',
-    'gpt-3.5-turbo',
-    'gpt-3.5-turbo-16k',
-    // Anthropic models  
-    'claude-3-opus',
-    'claude-3-sonnet',
-    'claude-3-haiku',
-    'claude-3.5-sonnet'
-];
-
-/**
- * Valid URL pattern for base URLs
- */
-const URL_PATTERN = /^https?:\/\/[^\s/$.?#].[^\s]*$/;
 
 /**
  * Valid step ID pattern - alphanumeric, hyphens, underscores only
  */
 const STEP_ID_PATTERN = /^[a-z0-9]+([a-z0-9\-_]*[a-z0-9]+)*$/;
+
+/**
+ * Valid model config ID pattern - alphanumeric, hyphens, underscores only
+ */
+const CONFIG_ID_PATTERN = /^[a-z0-9]+([a-z0-9\-_]*[a-z0-9]+)*$/;
 
 /**
  * Validate step ID format
@@ -75,7 +56,7 @@ function validateStepIdFormat(stepId: string): void {
 }
 
 /**
- * Validate a pipeline step configuration
+ * Validate a pipeline step configuration (v1.2)
  * 
  * @param step - The pipeline step to validate
  * @param stepId - The ID of the step (for context in error messages)
@@ -92,8 +73,8 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         );
     }
 
-    // Validate required fields (template removed from requirements)
-    const requiredFields = ['model', 'input', 'output', 'archive', 'include', 'apiKey'];
+    // Validate required fields for v1.2 (model credentials removed)
+    const requiredFields = ['modelConfig', 'input', 'output', 'archive', 'include'];
     const missingFields = requiredFields.filter(field => !(field in step));
     
     if (missingFields.length > 0) {
@@ -105,27 +86,23 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         );
     }
 
-    // Validate model
-    if (!step.model || typeof step.model !== 'string' || step.model.trim().length === 0) {
+    // Validate modelConfig reference
+    if (!step.modelConfig || typeof step.modelConfig !== 'string' || step.modelConfig.trim().length === 0) {
         throw ErrorFactory.validation(
-            `Invalid model in step ${stepId} - model must be a non-empty string`,
-            `Pipeline step "${stepId}" model must be a non-empty string`,
-            { stepId, model: step.model },
-            ['Specify a valid model name', 'Check supported models list']
+            `Invalid modelConfig in step ${stepId} - modelConfig must be a non-empty string`,
+            `Pipeline step "${stepId}" modelConfig must be a non-empty string`,
+            { stepId, modelConfig: step.modelConfig },
+            ['Specify a valid model config ID', 'Reference an existing model configuration']
         );
     }
 
-    const trimmedModel = step.model.trim();
-    if (!SUPPORTED_MODELS.includes(trimmedModel)) {
+    const trimmedModelConfig = step.modelConfig.trim();
+    if (!CONFIG_ID_PATTERN.test(trimmedModelConfig)) {
         throw ErrorFactory.validation(
-            `Unsupported model in step ${stepId}: ${trimmedModel} - unsupported model`,
-            `Pipeline step "${stepId}" uses unsupported model: ${trimmedModel}`,
-            { stepId, model: trimmedModel, supportedModels: SUPPORTED_MODELS },
-            [
-                `Supported models: ${SUPPORTED_MODELS.join(', ')}`,
-                'Use a supported model name',
-                'Check for typos in model name'
-            ]
+            `Invalid modelConfig format in step ${stepId}: ${trimmedModelConfig} - invalid format`,
+            `Pipeline step "${stepId}" modelConfig has invalid format`,
+            { stepId, modelConfig: trimmedModelConfig },
+            ['Use only lowercase letters, numbers, -, and _', 'Start and end with alphanumeric characters', 'Example: "openai-gpt", "anthropic-claude"']
         );
     }
 
@@ -202,53 +179,6 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         }
     });
 
-    // Validate API key (always validate if provided, even if empty)
-    if (step.apiKey !== undefined) {
-        try {
-            validateApiKey(step.apiKey);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw ErrorFactory.validation(
-                `Invalid API key in step ${stepId}: ${errorMessage} - invalid API key format`,
-                `Pipeline step "${stepId}" has invalid API key format`,
-                { stepId, originalError: error },
-                ['Check API key format', 'Get a valid API key from your provider']
-            );
-        }
-    }
-
-    // Validate optional baseUrl
-    if (step.baseUrl) {
-        if (typeof step.baseUrl !== 'string') {
-            throw ErrorFactory.validation(
-                `Invalid baseUrl in step ${stepId}`,
-                `Pipeline step "${stepId}" baseUrl must be a string`,
-                { stepId, baseUrl: step.baseUrl },
-                ['Provide a valid URL string', 'Remove baseUrl if not needed']
-            );
-        }
-
-        const trimmedUrl = step.baseUrl.trim();
-        if (!URL_PATTERN.test(trimmedUrl)) {
-            throw ErrorFactory.validation(
-                `Invalid baseUrl format in step ${stepId}: ${trimmedUrl} - not a valid URL`,
-                `Pipeline step "${stepId}" baseUrl is not a valid URL`,
-                { stepId, baseUrl: trimmedUrl },
-                ['Use a valid HTTP/HTTPS URL', 'Example: https://api.openai.com/v1', 'Remove if using default endpoint']
-            );
-        }
-    }
-
-    // Validate optional organization
-    if (step.organization && typeof step.organization !== 'string') {
-        throw ErrorFactory.validation(
-            `Invalid organization in step ${stepId}`,
-            `Pipeline step "${stepId}" organization must be a string`,
-            { stepId, organization: step.organization },
-            ['Provide a valid organization string', 'Remove organization if not needed']
-        );
-    }
-
     // Validate optional description
     if (step.description !== undefined) {
         if (typeof step.description !== 'string') {
@@ -287,8 +217,6 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
         
         for (const key in step.next) {
             if (step.next.hasOwnProperty(key)) {
-                // Get the descriptor to check if it was originally non-string
-                const descriptor = Object.getOwnPropertyDescriptor(step.next, key);
                 // For runtime detection, we can check common patterns of non-string keys
                 if (key === String(Number(key)) && Number.isInteger(Number(key))) {
                     // This looks like it was originally a number
@@ -308,7 +236,7 @@ export function validatePipelineStep(step: PipelineStep, stepId: string): true {
 
         // Validate each routing entry
         Object.entries(step.next).forEach(([nextStepId, routingPrompt]) => {
-            // Validate step ID format (skip the non-string check since we handled it above)
+            // Validate step ID format
             try {
                 validateStepIdFormat(nextStepId);
             } catch (error) {

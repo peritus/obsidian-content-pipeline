@@ -1,8 +1,9 @@
 /**
- * Pipeline configuration validation utility
+ * Pipeline configuration validation utility (v1.2)
  * 
  * Validates complete pipeline configurations including structure and relationships
- * for the new object-keyed next step schema.
+ * for the new split configuration schema. Cross-reference validation between
+ * models and pipeline configs is handled by ConfigurationResolver.
  */
 
 import { ErrorFactory } from '../error-handler';
@@ -10,7 +11,7 @@ import { PipelineConfiguration } from '../types';
 import { validatePipelineStep } from './pipeline-step';
 
 /**
- * Validate a complete pipeline configuration
+ * Validate a complete pipeline configuration structure
  * 
  * @param config - The pipeline configuration to validate
  * @returns true if valid
@@ -269,9 +270,10 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
 
     // Validate that at least one step accepts audio input (for audio processing pipeline)
     // This validation should come LAST so other validations can be tested
+    // Note: In v1.2, we check input patterns since model info is in separate config
     const audioInputSteps = stepIds.filter(stepId => {
         const step = config[stepId];
-        return step.input.includes('audio') || step.model === 'whisper-1';
+        return step.input.includes('audio');
     });
 
     if (audioInputSteps.length === 0) {
@@ -279,7 +281,7 @@ export function validatePipelineConfig(config: PipelineConfiguration): true {
             'No audio input steps found - no audio input steps',
             'Pipeline should have at least one step that processes audio files',
             { allSteps: stepIds },
-            ['Add a step with audio input pattern', 'Use whisper-1 model for audio transcription', 'Check input patterns']
+            ['Add a step with audio input pattern', 'Use input pattern like "inbox/audio"', 'Check input patterns']
         );
     }
 
