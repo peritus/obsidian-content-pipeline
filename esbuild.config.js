@@ -1,10 +1,10 @@
 const { build, context } = require('esbuild');
-const { copyFileSync, existsSync } = require('fs');
+const { copyFileSync, existsSync, readFileSync, readdirSync } = require('fs');
 const { join } = require('path');
 
 /**
  * Sophisticated esbuild configuration for Obsidian Plugin project
- * Supports environment-based builds, watch mode, and file operations
+ * Supports environment-based builds, watch mode, file operations, and config injection
  */
 
 // Environment configuration
@@ -36,6 +36,68 @@ const EXTERNAL_DEPS = [
   '@lezer/lr'
 ];
 
+/**
+ * Plugin to inject generated configs as virtual modules
+ */
+const configInjectionPlugin = {
+  name: 'config-injection',
+  setup(build) {
+    // Load generated configs
+    const configsDir = join(__dirname, 'build/configs');
+    const modelsPath = join(configsDir, 'models.json');
+    
+    if (!existsSync(modelsPath)) {
+      throw new Error(`Generated models config not found at ${modelsPath}. Run 'npm run build:configs' first.`);
+    }
+
+    if (!existsSync(configsDir)) {
+      throw new Error(`Generated configs directory not found at ${configsDir}. Run 'npm run build:configs' first.`);
+    }
+    
+    // Read shared models config
+    const models = JSON.parse(readFileSync(modelsPath, 'utf8'));
+    
+    // Find and read all pipeline config files
+    const configFiles = readdirSync(configsDir);
+    const pipelineFiles = configFiles.filter(file => file.endsWith('-pipeline.json'));
+    
+    const configs = {};
+    
+    for (const pipelineFile of pipelineFiles) {
+      // Extract config name from filename (e.g., 'default-pipeline.json' -> 'default')
+      const configName = pipelineFile.replace('-pipeline.json', '');
+      const pipelinePath = join(configsDir, pipelineFile);
+      
+      const pipelineConfig = JSON.parse(readFileSync(pipelinePath, 'utf8'));
+      
+      configs[configName] = {
+        models,
+        pipeline: pipelineConfig.pipeline,
+        prompts: pipelineConfig.prompts
+      };
+    }
+    
+    if (buildLoggingEnabled) {
+      console.log('📦 Injecting configs:', Object.keys(configs).join(', '));
+    }
+    
+    // Handle imports of the virtual config module
+    build.onResolve({ filter: /^@\/configs$/ }, (args) => {
+      return {
+        path: args.path,
+        namespace: 'config-injection'
+      };
+    });
+    
+    build.onLoad({ filter: /.*/, namespace: 'config-injection' }, (args) => {
+      return {
+        contents: `export const DEFAULT_CONFIGS = ${JSON.stringify(configs, null, 2)};`,
+        loader: 'js'
+      };
+    });
+  }
+};
+
 // Build configuration
 const buildConfig = {
   entryPoints: ['src/main.ts'],
@@ -47,6 +109,7 @@ const buildConfig = {
   minify: false,
   sourcemap: false,
   external: EXTERNAL_DEPS,
+  plugins: [configInjectionPlugin],
   
   // Custom banner with generation warning and project info
   banner: {

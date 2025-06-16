@@ -1,92 +1,49 @@
 import { ModelsConfig, PipelineConfiguration } from '../types';
+import { DEFAULT_CONFIGS } from '@/configs';
 
 /**
- * Default models configuration for v1.2 split configuration system
+ * Type for generated configuration structure
+ */
+export interface GeneratedConfig {
+    models: ModelsConfig;
+    pipeline: PipelineConfiguration;
+    prompts: Record<string, string>;
+}
+
+export interface GeneratedConfigs {
+    [configName: string]: GeneratedConfig;
+}
+
+/**
+ * Default models configuration loaded from generated configs
  * Contains API credentials and model implementation details (private)
  */
-export const DEFAULT_MODELS_CONFIG: ModelsConfig = {
-    "openai-gpt": {
-        "baseUrl": "https://api.openai.com/v1",
-        "apiKey": "",
-        "implementation": "chatgpt",
-        "model": "gpt-4",
-        "organization": ""
-    },
-    "openai-whisper": {
-        "baseUrl": "https://api.openai.com/v1",
-        "apiKey": "",
-        "implementation": "whisper",
-        "model": "whisper-1",
-        "organization": ""
-    }
-};
+export const DEFAULT_MODELS_CONFIG: ModelsConfig = DEFAULT_CONFIGS.default.models;
 
 /**
- * Default pipeline configuration for v1.2 split configuration system
+ * Default pipeline configuration loaded from generated configs
  * Contains workflow logic without sensitive data (shareable)
  */
-export const DEFAULT_PIPELINE_CONFIG: PipelineConfiguration = {
-    "transcribe": {
-        "modelConfig": "openai-whisper",
-        "input": "inbox/audio",
-        "output": "inbox/transcripts/{filename}-transcript.md",
-        "archive": "inbox/archive/audio",
-        "include": ["transcriptionprompt.md"],
-        "description": "Transcribe audio files to text",
-        "next": {
-            "process-thoughts": "If the document contains personal thoughts, reflections, journal entries, creative ideas, or mentions private topics like children, home, hobbies, or family members Alice, Bob or Charlotte.",
-            "process-tasks": "If the document contains work-related content, meeting notes, action items, project planning, or business discussions.",
-            "process-ideas": "If the document contains innovative concepts, brainstorming sessions, conceptual discussions, or new ideas for development."
-        }
-    },
-    "process-thoughts": {
-        "modelConfig": "openai-gpt",
-        "input": "inbox/transcripts",
-        "output": "inbox/process-thoughts/{filename}-processed.md",
-        "archive": "inbox/archive/transcripts",
-        "include": ["process-thoughts-prompt.md"],
-        "description": "Process personal thoughts and reflections with emotional intelligence",
-        "next": {
-            "summary-personal": "Always route personal thoughts and reflections to personal summary."
-        }
-    },
-    "process-tasks": {
-        "modelConfig": "openai-gpt",
-        "input": "inbox/transcripts",
-        "output": "inbox/process-tasks/{filename}-processed.md",
-        "archive": "inbox/archive/transcripts",
-        "include": ["process-tasks-prompt.md"],
-        "description": "Process work content with focus on action items and project management",
-        "next": {
-            "summary-work": "Always route work content and action items to work summary."
-        }
-    },
-    "process-ideas": {
-        "modelConfig": "openai-gpt",
-        "input": "inbox/transcripts",
-        "output": "inbox/process-ideas/{filename}-processed.md",
-        "archive": "inbox/archive/transcripts",
-        "include": ["process-ideas-prompt.md"],
-        "description": "Process innovative ideas with focus on development and connection",
-        "next": {
-            "summary-personal": "If the document specifically mentions this is private. If it mentions topics like children, home, my hobby flunky ball, my family members Alice, Bob or Charlotte.",
-            "summary-work": "If the document contains business innovations, professional ideas, or work-related concepts."
-        }
-    },
-    "summary-personal": {
-        "modelConfig": "openai-gpt",
-        "input": "inbox/process-thoughts",
-        "output": "inbox/summary-personal/",
-        "archive": "inbox/archive/process-thoughts",
-        "include": ["summary-personal-prompt.md", "inbox/summary-personal/*"],
-        "description": "Create personal summaries and insights"
-    },
-    "summary-work": {
-        "modelConfig": "openai-gpt",
-        "input": "inbox/process-tasks",
-        "output": "inbox/summary-work/",
-        "archive": "inbox/archive/process-tasks",
-        "include": ["summary-work-prompt.md", "inbox/summary-work/*"],
-        "description": "Create work-focused summaries with action items"
-    }
-};
+export const DEFAULT_PIPELINE_CONFIG: PipelineConfiguration = DEFAULT_CONFIGS.default.pipeline;
+
+/**
+ * All available configurations from examples
+ */
+export const AVAILABLE_CONFIGS: GeneratedConfigs = DEFAULT_CONFIGS;
+
+/**
+ * Get a specific configuration by name
+ * @param configName - Name of the configuration (e.g., 'default', 'simple')
+ * @returns The configuration object or undefined if not found
+ */
+export function getConfig(configName: string): GeneratedConfig | undefined {
+    return DEFAULT_CONFIGS[configName];
+}
+
+/**
+ * Get available configuration names
+ * @returns Array of available configuration names
+ */
+export function getAvailableConfigNames(): string[] {
+    return Object.keys(DEFAULT_CONFIGS);
+}

@@ -4,11 +4,12 @@
   "description": "A sophisticated audio inbox management plugin for Obsidian that helps organize and process audio recordings efficiently",
   "main": "main.js",
   "scripts": {
-    "build": "node esbuild.config.js",
-    "build:debug": "OBSIDIAN_AUDIO_INBOX_LOGLEVEL=debug node esbuild.config.js",
-    "build:info": "OBSIDIAN_AUDIO_INBOX_LOGLEVEL=info node esbuild.config.js",
-    "build:warn": "OBSIDIAN_AUDIO_INBOX_LOGLEVEL=warn node esbuild.config.js",
-    "build:error": "OBSIDIAN_AUDIO_INBOX_LOGLEVEL=error node esbuild.config.js",
+    "build:configs": "node build/generate-configs.js",
+    "build": "npm run build:configs && node esbuild.config.js",
+    "build:debug": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=debug node esbuild.config.js",
+    "build:info": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=info node esbuild.config.js",
+    "build:warn": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=warn node esbuild.config.js",
+    "build:error": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=error node esbuild.config.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
@@ -103,7 +104,7 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup.ts"
     ],
-    "moduleNameMapper": {
+    "moduleNameMapping": {
       "^@/(.*)$": "<rootDir>/src/$1",
       "^obsidian$": "<rootDir>/tests/__mocks__/obsidian.ts"
     },

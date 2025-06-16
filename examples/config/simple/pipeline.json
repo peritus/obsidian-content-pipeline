@@ -1,0 +1,25 @@
+{
+  "transcribe": {
+    "modelConfig": "openai-whisper",
+    "input": "inbox/audio",
+    "output": "inbox/transcripts/{filename}-transcript.md",
+    "archive": "inbox/archive/audio",
+    "include": [
+      "prompts/transcriptionprompt.md"
+    ],
+    "description": "Transcribe audio files to text",
+    "next": {
+      "summarize": "Always summarize the transcribed content."
+    }
+  },
+  "summarize": {
+    "modelConfig": "openai-gpt",
+    "input": "inbox/transcripts",
+    "output": "inbox/summaries/{filename}-summary.md",
+    "archive": "inbox/archive/transcripts",
+    "include": [
+      "prompts/summarize-prompt.md"
+    ],
+    "description": "Create concise summaries of transcribed content"
+  }
+}
