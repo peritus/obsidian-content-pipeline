@@ -6,7 +6,7 @@ import { App } from 'obsidian';
 import { ExecutionState } from './execution-state';
 import { FileDiscovery } from '../file-operations';
 import { StepChain } from './StepChain';
-import { createConfigurationValidator } from '../../validation/configuration-validator';
+import { createConfigurationService } from '../configuration-service';
 import { 
     AudioInboxSettings, 
     PipelineConfiguration, 
@@ -93,9 +93,9 @@ export class PipelineExecutor {
     }
 
     private getPipelineConfiguration(): PipelineConfiguration {
-        // Use centralized configuration validator (throwing version for fail-fast behavior)
-        const validator = createConfigurationValidator(this.settings);
-        return validator.getValidatedPipelineConfiguration();
+        // Use centralized configuration service for validated configuration
+        const configService = createConfigurationService(this.settings);
+        return configService.getValidatedPipelineConfiguration();
     }
 
     private createResult(status: ProcessingStatus, error?: string): ProcessingResult {

@@ -8,7 +8,7 @@ import { App, Notice, TFile } from 'obsidian';
 import { AudioInboxSettings, ProcessingStatus } from '../types';
 import { PipelineExecutor } from '../core/pipeline-executor';
 import { FileDiscovery } from '../core/file-operations';
-import { createConfigurationValidator } from '../validation/configuration-validator';
+import { createConfigurationService } from '../core/configuration-service';
 import { createLogger } from '../logger';
 
 const logger = createLogger('CommandHandler');
@@ -28,14 +28,14 @@ export class CommandHandler {
      */
     canFileBeProcessedSync(file: TFile): boolean {
         try {
-            // Check configuration validity first using centralized validator
-            const validator = createConfigurationValidator(this.settings);
-            const configStatus = validator.validateConfigurations();
-            if (!configStatus.isValid) {
+            // Check configuration validity using centralized configuration service
+            const configService = createConfigurationService(this.settings);
+            const validationResult = configService.validateConfigurations();
+            if (!validationResult.isValid) {
                 return false;
             }
 
-            const pipelineConfig = this.settings.parsedPipelineConfig;
+            const pipelineConfig = configService.getSafePipelineConfiguration();
             if (!pipelineConfig) {
                 return false;
             }
@@ -55,14 +55,14 @@ export class CommandHandler {
      */
     async canFileBeProcessed(file: TFile): Promise<boolean> {
         try {
-            // Check configuration validity first using centralized validator
-            const validator = createConfigurationValidator(this.settings);
-            const configStatus = validator.validateConfigurations();
-            if (!configStatus.isValid) {
+            // Check configuration validity using centralized configuration service
+            const configService = createConfigurationService(this.settings);
+            const validationResult = configService.validateConfigurations();
+            if (!validationResult.isValid) {
                 return false;
             }
 
-            const pipelineConfig = this.settings.parsedPipelineConfig;
+            const pipelineConfig = configService.getSafePipelineConfiguration();
             if (!pipelineConfig) {
                 return false;
             }
@@ -84,12 +84,12 @@ export class CommandHandler {
         try {
             logger.info(`Process specific file command triggered for: ${file.path}`);
             
-            // Check if both configurations are available and valid using centralized validator
-            const validator = createConfigurationValidator(this.settings);
-            const configStatus = validator.validateConfigurations();
-            if (!configStatus.isValid) {
-                this.showNotice(`❌ Configuration invalid: ${configStatus.error}. Please check settings.`, 8000);
-                logger.error('Configuration validation failed:', configStatus.error);
+            // Check if both configurations are available and valid using centralized configuration service
+            const configService = createConfigurationService(this.settings);
+            const validationResult = configService.validateConfigurations();
+            if (!validationResult.isValid) {
+                this.showNotice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
+                logger.error('Configuration validation failed:', validationResult.error);
                 return;
             }
 
@@ -137,12 +137,12 @@ export class CommandHandler {
         try {
             logger.info('Process Next File command triggered');
             
-            // Check if both configurations are available and valid using centralized validator
-            const validator = createConfigurationValidator(this.settings);
-            const configStatus = validator.validateConfigurations();
-            if (!configStatus.isValid) {
-                this.showNotice(`❌ Configuration invalid: ${configStatus.error}. Please check settings.`, 8000);
-                logger.error('Configuration validation failed:', configStatus.error);
+            // Check if both configurations are available and valid using centralized configuration service
+            const configService = createConfigurationService(this.settings);
+            const validationResult = configService.validateConfigurations();
+            if (!validationResult.isValid) {
+                this.showNotice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
+                logger.error('Configuration validation failed:', validationResult.error);
                 return;
             }
 
@@ -218,7 +218,8 @@ export class CommandHandler {
      */
     private async findStepForFile(file: TFile): Promise<string | null> {
         try {
-            const pipelineConfig = this.settings.parsedPipelineConfig;
+            const configService = createConfigurationService(this.settings);
+            const pipelineConfig = configService.getSafePipelineConfiguration();
             if (!pipelineConfig) {
                 return null;
             }

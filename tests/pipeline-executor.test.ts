@@ -59,7 +59,7 @@ describe('Pipeline Executor', () => {
             const executorWithoutConfig = new PipelineExecutor(mockApp, settingsWithoutConfig);
             
             await expect(executorWithoutConfig.processNextFile())
-                .rejects.toThrow('Failed to validate configuration');
+                .rejects.toThrow('Configuration validation failed');
         });
 
         it('should validate object-keyed pipeline configuration', () => {

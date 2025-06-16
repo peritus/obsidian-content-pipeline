@@ -5,7 +5,7 @@
 import { App } from 'obsidian';
 import { WhisperStepProcessor } from '../whisper-step';
 import { ChatStepExecutor } from './ChatStepExecutor';
-import { createConfigurationResolver } from '../../../validation/configuration-resolver';
+import { createConfigurationService } from '../../configuration-service';
 import { 
     AudioInboxSettings,
     FileInfo, 
@@ -40,8 +40,8 @@ export class StepExecutor {
         try {
             logger.info(`Executing step: ${stepId} for file: ${fileInfo.path}`);
 
-            // Resolve step configuration using ConfigurationResolver
-            const resolvedStep = await this.resolveStep(stepId);
+            // Resolve step configuration using centralized configuration service
+            const resolvedStep = this.resolveStep(stepId);
 
             // Validate API key exists
             if (!resolvedStep.modelConfig.apiKey || resolvedStep.modelConfig.apiKey.trim() === '') {
@@ -87,36 +87,10 @@ export class StepExecutor {
     }
 
     /**
-     * Resolve pipeline step using ConfigurationResolver
+     * Resolve pipeline step using centralized configuration service
      */
-    private async resolveStep(stepId: string): Promise<ResolvedPipelineStep> {
-        // Validate settings are available
-        if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
-            throw ErrorFactory.configuration(
-                'Configuration not available',
-                'Both models and pipeline configurations are required',
-                { stepId },
-                ['Configure models and pipeline in settings', 'Ensure configurations are saved']
-            );
-        }
-
-        try {
-            // Create resolver and resolve step
-            const resolver = createConfigurationResolver(
-                this.settings.modelsConfig,
-                this.settings.pipelineConfig
-            );
-
-            return resolver.resolveStep(stepId);
-
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw ErrorFactory.configuration(
-                `Failed to resolve step configuration: ${errorMessage}`,
-                `Cannot resolve step "${stepId}" configuration`,
-                { stepId, error: errorMessage },
-                ['Check step exists in pipeline configuration', 'Verify model config reference is valid', 'Validate configuration syntax']
-            );
-        }
+    private resolveStep(stepId: string): ResolvedPipelineStep {
+        const configService = createConfigurationService(this.settings);
+        return configService.resolveStep(stepId);
     }
 }
