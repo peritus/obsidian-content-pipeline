@@ -203,9 +203,9 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
             await outputHandler.save(section, mockStep, mockContext);
 
-            // Verify frontmatter contains correct source path with wiki-link format
+            // Verify frontmatter contains correct source path with quoted wiki-link format
             const writtenContent = writeFileSpy.mock.calls[0][1] as string;
-            expect(writtenContent).toContain('source: [[inbox/archive/transcribe/2024_11_18T11_53_32_01_00-transcript.md]]');
+            expect(writtenContent).toContain('source: "[[inbox/archive/transcribe/2024_11_18T11_53_32_01_00-transcript.md]]"');
             expect(writtenContent).toContain('step: "process-thoughts"');
             expect(writtenContent).toContain('nextStep: "summary-personal"');
 
