@@ -1,10 +1,10 @@
-import { Plugin, Notice } from 'obsidian';
+import { Plugin, Notice, TFile } from 'obsidian';
 import { DEFAULT_SETTINGS, AudioInboxSettingTab } from './settings';
-import { AudioInboxSettings, PipelineConfiguration, ModelsConfig, ProcessingStatus } from './types';
+import { AudioInboxSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
-import { PipelineExecutor } from './core/pipeline-executor';
 import { createConfigurationResolver } from './validation/configuration-resolver';
 import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from './settings/default-config';
+import { CommandHandler } from './commands';
 
 /**
  * Main plugin class for Audio Inbox (v1.2 dual configuration)
@@ -12,6 +12,7 @@ import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from './settings/defau
 export default class AudioInboxPlugin extends Plugin {
     settings!: AudioInboxSettings; // Definite assignment assertion since we load in onload
     private logger = createLogger('Main');
+    private commandHandler!: CommandHandler;
 
     /**
      * Called when the plugin is loaded
@@ -21,6 +22,9 @@ export default class AudioInboxPlugin extends Plugin {
         
         // Load settings
         await this.loadSettings();
+        
+        // Initialize command handler
+        this.commandHandler = new CommandHandler(this.app, this.settings);
         
         // Log initialization info
         this.logger.info('Plugin initialization started');
@@ -40,11 +44,14 @@ export default class AudioInboxPlugin extends Plugin {
             this.showNotice(`Audio Inbox ready! Configuration: ${configStatus}`);
         });
 
+        // Register file menu integration
+        this.registerFileMenuIntegration();
+
         // Register commands
         this.addCommand({
             id: 'process-next-file',
             name: 'Process Next File',
-            callback: () => this.processNextFileCommand()
+            callback: () => this.commandHandler.processNextFile()
         });
 
         // Register settings tab
@@ -61,73 +68,35 @@ export default class AudioInboxPlugin extends Plugin {
     }
 
     /**
-     * Command handler for processing the next available file
+     * Register file menu integration for processing individual files
      */
-    private async processNextFileCommand(): Promise<void> {
-        try {
-            this.logger.info('Process Next File command triggered');
-            
-            // Check if both configurations are available and valid
-            const configStatus = this.validateConfigurations();
-            if (!configStatus.isValid) {
-                this.showNotice(`❌ Configuration invalid: ${configStatus.error}. Please check settings.`, 8000);
-                this.logger.error('Configuration validation failed:', configStatus.error);
-                return;
-            }
+    private registerFileMenuIntegration(): void {
+        this.registerEvent(
+            this.app.workspace.on('file-menu', (menu, file) => {
+                // Only process TFile instances
+                if (!(file instanceof TFile)) return;
 
-            // Show processing started notification
-            this.showNotice('🔄 Processing next file...', 3000);
-            
-            // Create executor and process file
-            const executor = new PipelineExecutor(this.app, this.settings);
-            const result = await executor.processNextFile();
-            
-            // Handle result based on status
-            switch (result.status) {
-                case ProcessingStatus.COMPLETED:
-                    const outputCount = result.outputFiles.length;
-                    this.showNotice(
-                        `✅ Successfully processed: ${result.inputFile.name} → ${outputCount} output file(s)`, 
-                        6000
-                    );
-                    this.logger.info(`File processed successfully: ${result.inputFile.path}`, {
-                        outputFiles: result.outputFiles,
-                        stepId: result.stepId
+                // Check if file can be processed using the synchronous discovery system
+                try {
+                    const canProcess = this.commandHandler.canFileBeProcessedSync(file);
+                    if (!canProcess) return;
+
+                    // Add menu item for processable files
+                    menu.addItem((item) => {
+                        item
+                            .setTitle('Process File with Audio Inbox 🎵')
+                            .setIcon('microphone')
+                            .onClick(async () => {
+                                await this.commandHandler.processSpecificFile(file);
+                            });
                     });
-                    break;
-                    
-                case ProcessingStatus.SKIPPED:
-                    this.showNotice('ℹ️ No files found to process. Place audio files in inbox/audio/ folder.', 6000);
-                    this.logger.info('No files available for processing');
-                    break;
-                    
-                case ProcessingStatus.FAILED:
-                    this.showNotice(`❌ Processing failed: ${result.error || 'Unknown error'}`, 8000);
-                    this.logger.error('File processing failed:', {
-                        error: result.error,
-                        inputFile: result.inputFile?.path,
-                        stepId: result.stepId
-                    });
-                    break;
-                    
-                default:
-                    this.showNotice('⚠️ Processing completed with unknown status', 5000);
-                    this.logger.warn('Unexpected processing status:', result.status);
-            }
-            
-        } catch (error) {
-            this.logger.error('Process Next File command failed:', error);
-            
-            // Show user-friendly error message
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            this.showNotice(`❌ Failed to process file: ${errorMessage}`, 8000);
-            
-            // Log detailed error information
-            this.logger.error('Command execution error details:', {
-                error: errorMessage,
-                stack: error instanceof Error ? error.stack : undefined
-            });
-        }
+                } catch (error) {
+                    this.logger.warn('Error checking if file can be processed for menu:', error);
+                }
+            })
+        );
+
+        this.logger.debug('File menu integration registered');
     }
 
     /**
@@ -266,6 +235,9 @@ export default class AudioInboxPlugin extends Plugin {
             
             // Parse configurations before saving to ensure consistency
             this.parseConfigurations();
+            
+            // Update command handler with new settings
+            this.commandHandler = new CommandHandler(this.app, this.settings);
             
             await this.saveData(this.settings);
             this.logger.info('Settings saved successfully');
