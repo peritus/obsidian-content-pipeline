@@ -24,7 +24,7 @@
       "description": "Create concise summaries of transcribed content"
     }
   },
-  "prompts": {
+  "examplePrompts": {
     "prompts/summarize-prompt.md": "# Content Summarization\n\nPlease create a clear, concise summary of the provided content. Focus on:\n\n- **Main Points**: Identify and highlight the key topics discussed\n- **Key Information**: Extract important details, decisions, or insights\n- **Action Items**: Note any tasks, deadlines, or next steps mentioned\n- **Context**: Provide enough background for future reference\n\nCreate a well-organized summary that captures the essential information in a readable format.",
     "prompts/transcriptionprompt.md": "# Simple Audio Transcription\n\nPlease transcribe this audio content accurately and clearly. Focus on:\n\n- Converting speech to readable text\n- Using proper punctuation and formatting\n- Preserving the speaker's meaning and intent\n- Making the text flow naturally\n\nProvide a clean, well-formatted transcription."
   }

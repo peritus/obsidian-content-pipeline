@@ -89,46 +89,78 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             </div>
         `;
 
-        // Access example prompts from bundled config
-        const defaultConfig = DEFAULT_CONFIGS['default'];
-        const examplePrompts = defaultConfig?.examplePrompts;
+        // Access example prompts from bundled config with error handling
+        try {
+            const defaultConfig = DEFAULT_CONFIGS?.['default'];
+            const examplePrompts = defaultConfig?.examplePrompts;
 
-        if (!examplePrompts) {
-            const errorEl = containerEl.createEl('div');
-            errorEl.style.padding = '15px';
-            errorEl.style.backgroundColor = '#f8d7da';
-            errorEl.style.borderColor = '#f5c6cb';
-            errorEl.style.color = '#721c24';
-            errorEl.style.borderRadius = '6px';
-            errorEl.innerHTML = '❌ <strong>Error:</strong> Example prompts not found in bundled configuration.';
-            return;
+            if (!defaultConfig) {
+                this.showConfigError(containerEl, 'Default configuration not found in bundled configs');
+                return;
+            }
+
+            if (!examplePrompts || typeof examplePrompts !== 'object') {
+                this.showConfigError(containerEl, 'Example prompts not found in default configuration');
+                return;
+            }
+
+            // Validate example prompts structure
+            if (Object.keys(examplePrompts).length === 0) {
+                const warningEl = containerEl.createEl('div');
+                warningEl.style.padding = '15px';
+                warningEl.style.backgroundColor = '#fff3cd';
+                warningEl.style.borderColor = '#ffeaa7';
+                warningEl.style.color = '#856404';
+                warningEl.style.borderRadius = '6px';
+                warningEl.innerHTML = '⚠️ <strong>Warning:</strong> No example prompts found in configuration.';
+                return;
+            }
+
+            // Create container for prompt status and buttons
+            const promptsContainer = containerEl.createEl('div');
+            promptsContainer.style.padding = '15px';
+            promptsContainer.style.backgroundColor = 'var(--background-secondary)';
+            promptsContainer.style.borderRadius = '6px';
+            promptsContainer.style.border = '1px solid var(--background-modifier-border)';
+
+            // Store example prompts data for later use
+            (this as any).examplePrompts = examplePrompts;
+            (this as any).promptsContainer = promptsContainer;
+
+            // Initial render of prompts status
+            this.updatePromptsStatus();
+
+        } catch (error) {
+            console.error('Error accessing example prompts:', error);
+            this.showConfigError(containerEl, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
+    }
 
-        // Validate example prompts structure
-        if (Object.keys(examplePrompts).length === 0) {
-            const warningEl = containerEl.createEl('div');
-            warningEl.style.padding = '15px';
-            warningEl.style.backgroundColor = '#fff3cd';
-            warningEl.style.borderColor = '#ffeaa7';
-            warningEl.style.color = '#856404';
-            warningEl.style.borderRadius = '6px';
-            warningEl.innerHTML = '⚠️ <strong>Warning:</strong> No example prompts found in configuration.';
-            return;
-        }
-
-        // Create container for prompt status and buttons
-        const promptsContainer = containerEl.createEl('div');
-        promptsContainer.style.padding = '15px';
-        promptsContainer.style.backgroundColor = 'var(--background-secondary)';
-        promptsContainer.style.borderRadius = '6px';
-        promptsContainer.style.border = '1px solid var(--background-modifier-border)';
-
-        // Store example prompts data for later use
-        (this as any).examplePrompts = examplePrompts;
-        (this as any).promptsContainer = promptsContainer;
-
-        // Initial render of prompts status
-        this.updatePromptsStatus();
+    /**
+     * Show configuration error with debug information
+     */
+    private showConfigError(containerEl: HTMLElement, message: string): void {
+        const errorEl = containerEl.createEl('div');
+        errorEl.style.padding = '15px';
+        errorEl.style.backgroundColor = '#f8d7da';
+        errorEl.style.borderColor = '#f5c6cb';
+        errorEl.style.color = '#721c24';
+        errorEl.style.borderRadius = '6px';
+        
+        const configDebugInfo = {
+            'DEFAULT_CONFIGS exists': !!DEFAULT_CONFIGS,
+            'DEFAULT_CONFIGS keys': DEFAULT_CONFIGS ? Object.keys(DEFAULT_CONFIGS) : [],
+            'default config exists': !!(DEFAULT_CONFIGS?.['default']),
+            'default config keys': DEFAULT_CONFIGS?.['default'] ? Object.keys(DEFAULT_CONFIGS['default']) : [],
+        };
+        
+        errorEl.innerHTML = `
+            ❌ <strong>Configuration Error:</strong> ${message}
+            <details style="margin-top: 10px;">
+                <summary>Debug Information</summary>
+                <pre style="font-size: 12px; margin-top: 10px; overflow-x: auto;">${JSON.stringify(configDebugInfo, null, 2)}</pre>
+            </details>
+        `;
     }
 
     /**
