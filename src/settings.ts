@@ -73,7 +73,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     }
 
     /**
-     * Render example prompts setup section
+     * Render example prompts setup section with enhanced UI
      */
     private renderExamplePromptsSection(containerEl: HTMLElement): void {
         containerEl.createEl('h3', { text: '📝 Example Prompts Setup' });
@@ -132,7 +132,28 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     }
 
     /**
-     * Update the prompts status display with improved error handling
+     * Extract first few lines from content for preview
+     */
+    private getContentPreview(content: string): string {
+        if (!content) return '';
+        
+        // Split by lines and take first 3 lines
+        const lines = content.split('\n');
+        const previewLines = lines.slice(0, 3);
+        
+        // Join back and limit to reasonable length
+        let preview = previewLines.join('\n');
+        if (preview.length > 200) {
+            preview = preview.substring(0, 200) + '...';
+        } else if (lines.length > 3) {
+            preview += '\n...';
+        }
+        
+        return preview;
+    }
+
+    /**
+     * Update the prompts status display with enhanced UI generation
      */
     private async updatePromptsStatus(): Promise<void> {
         const promptsContainer = (this as any).promptsContainer as HTMLElement;
@@ -151,13 +172,32 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         this.isCheckingPrompts = true;
 
         try {
-            // Show loading state
+            // Show loading state with better styling
             promptsContainer.empty();
             const loadingEl = promptsContainer.createEl('div');
-            loadingEl.style.padding = '20px';
-            loadingEl.style.textAlign = 'center';
-            loadingEl.style.color = 'var(--text-muted)';
-            loadingEl.innerHTML = '🔄 Checking prompt file existence...';
+            loadingEl.style.cssText = `
+                padding: 30px;
+                text-align: center;
+                color: var(--text-muted);
+                background: linear-gradient(90deg, 
+                    var(--background-secondary) 25%, 
+                    var(--background-primary) 50%, 
+                    var(--background-secondary) 75%);
+                background-size: 200% 100%;
+                animation: shimmer 2s infinite;
+                border-radius: 4px;
+            `;
+            loadingEl.innerHTML = '🔄 <strong>Checking prompt file existence...</strong><br><small>Scanning vault for existing prompts</small>';
+
+            // Add shimmer animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shimmer {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+            `;
+            document.head.appendChild(style);
 
             // Check which prompts exist with error handling
             const promptsStatus: PromptStatus[] = [];
@@ -209,131 +249,290 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             const existingPrompts = promptsStatus.filter(p => p.exists);
             const errorPrompts = promptsStatus.filter(p => p.error);
 
-            // Summary with enhanced status information
+            // Enhanced summary with visual status indicators
             const summaryEl = promptsContainer.createEl('div');
-            summaryEl.style.marginBottom = '15px';
-            summaryEl.style.padding = '10px';
-            summaryEl.style.backgroundColor = 'var(--background-primary)';
-            summaryEl.style.borderRadius = '4px';
-            summaryEl.style.border = '1px solid var(--background-modifier-border)';
+            summaryEl.style.cssText = `
+                margin-bottom: 20px;
+                padding: 15px;
+                background: var(--background-primary);
+                border-radius: 8px;
+                border: 2px solid var(--background-modifier-border);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 10px;
+            `;
             
-            let summaryText = `<strong>Status:</strong> ${existingPrompts.length} exist, ${missingPrompts.length} missing`;
-            if (errorPrompts.length > 0) {
-                summaryText += `, ${errorPrompts.length} errors`;
-            }
-            summaryText += ` (Total: ${promptsStatus.length} prompts)`;
-            summaryEl.innerHTML = summaryText;
+            const statusText = summaryEl.createEl('div');
+            statusText.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 5px;">📊 Prompt Status Overview</div>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="width: 12px; height: 12px; background: #28a745; border-radius: 50%; display: inline-block;"></span>
+                        <strong>${existingPrompts.length}</strong> exist
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="width: 12px; height: 12px; background: #ffc107; border-radius: 50%; display: inline-block;"></span>
+                        <strong>${missingPrompts.length}</strong> missing
+                    </span>
+                    ${errorPrompts.length > 0 ? `
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span style="width: 12px; height: 12px; background: #dc3545; border-radius: 50%; display: inline-block;"></span>
+                            <strong>${errorPrompts.length}</strong> errors
+                        </span>
+                    ` : ''}
+                </div>
+            `;
+
+            const totalInfo = summaryEl.createEl('div');
+            totalInfo.style.cssText = 'font-size: 14px; color: var(--text-muted); text-align: right;';
+            totalInfo.textContent = `Total: ${promptsStatus.length} prompts`;
 
             // Show errors if any
             if (errorPrompts.length > 0) {
                 const errorEl = promptsContainer.createEl('div');
-                errorEl.style.marginBottom = '15px';
-                errorEl.style.padding = '10px';
-                errorEl.style.backgroundColor = '#f8d7da';
-                errorEl.style.borderColor = '#f5c6cb';
-                errorEl.style.color = '#721c24';
-                errorEl.style.borderRadius = '4px';
+                errorEl.style.cssText = `
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background-color: #f8d7da;
+                    border: 1px solid #f5c6cb;
+                    color: #721c24;
+                    border-radius: 6px;
+                    border-left: 4px solid #dc3545;
+                `;
                 errorEl.innerHTML = `
                     <strong>⚠️ Errors detected:</strong><br>
-                    ${errorPrompts.map(p => `• ${p.path}: ${p.error}`).join('<br>')}
+                    ${errorPrompts.map(p => `• <code>${p.path}</code>: ${p.error}`).join('<br>')}
                 `;
             }
 
-            // All prompts exist - success state
+            // All prompts exist - enhanced success state
             if (missingPrompts.length === 0 && errorPrompts.length === 0) {
                 const allExistEl = promptsContainer.createEl('div');
-                allExistEl.style.padding = '15px';
-                allExistEl.style.backgroundColor = '#d4edda';
-                allExistEl.style.borderColor = '#c3e6cb';
-                allExistEl.style.color = '#155724';
-                allExistEl.style.borderRadius = '4px';
-                allExistEl.style.textAlign = 'center';
-                allExistEl.innerHTML = '✅ <strong>All example prompts already exist in your vault!</strong>';
+                allExistEl.style.cssText = `
+                    padding: 25px;
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    border: 2px solid #28a745;
+                    color: #155724;
+                    border-radius: 8px;
+                    text-align: center;
+                    margin-bottom: 15px;
+                `;
+                allExistEl.innerHTML = `
+                    <div style="font-size: 18px; margin-bottom: 10px;">🎉</div>
+                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px;">All Example Prompts Ready!</div>
+                    <div style="font-size: 14px; opacity: 0.8;">All ${existingPrompts.length} example prompts already exist in your vault.</div>
+                `;
                 
-                // Add check again button even when all exist
-                const checkAgainBtn = promptsContainer.createEl('button', { text: 'Check Again' });
-                checkAgainBtn.style.marginTop = '10px';
-                checkAgainBtn.style.display = 'block';
-                checkAgainBtn.style.margin = '10px auto 0 auto';
+                // Add check again button with enhanced styling
+                const checkAgainBtn = promptsContainer.createEl('button', { text: '🔄 Check Again' });
+                checkAgainBtn.style.cssText = `
+                    display: block;
+                    margin: 0 auto;
+                    padding: 8px 16px;
+                    background: var(--interactive-accent);
+                    color: var(--text-on-accent);
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 500;
+                `;
                 checkAgainBtn.onclick = () => this.updatePromptsStatus();
                 
                 return;
             }
 
-            // Batch action buttons for missing prompts
+            // Enhanced batch action buttons for missing prompts
             if (missingPrompts.length > 0) {
                 const batchActionsEl = promptsContainer.createEl('div');
-                batchActionsEl.style.marginBottom = '15px';
-                batchActionsEl.style.display = 'flex';
-                batchActionsEl.style.gap = '10px';
-                batchActionsEl.style.flexWrap = 'wrap';
+                batchActionsEl.style.cssText = `
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background: var(--background-primary);
+                    border-radius: 6px;
+                    border: 1px solid var(--background-modifier-border);
+                `;
 
-                const createAllBtn = batchActionsEl.createEl('button', { 
-                    text: `Create All Missing Prompts (${missingPrompts.length})` 
+                const batchLabel = batchActionsEl.createEl('div');
+                batchLabel.style.cssText = 'font-weight: bold; margin-bottom: 10px; color: var(--text-normal);';
+                batchLabel.textContent = '⚡ Quick Actions';
+
+                const buttonContainer = batchActionsEl.createEl('div');
+                buttonContainer.style.cssText = 'display: flex; gap: 12px; flex-wrap: wrap;';
+
+                const createAllBtn = buttonContainer.createEl('button', { 
+                    text: `📝 Create All Missing Prompts (${missingPrompts.length})` 
                 });
-                createAllBtn.style.backgroundColor = 'var(--interactive-accent)';
-                createAllBtn.style.color = 'var(--text-on-accent)';
+                createAllBtn.style.cssText = `
+                    padding: 10px 16px;
+                    background: var(--interactive-accent);
+                    color: var(--text-on-accent);
+                    border: none;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-size: 14px;
+                `;
                 createAllBtn.onclick = () => this.createAllMissingPrompts(missingPrompts);
 
-                const checkAgainBtn = batchActionsEl.createEl('button', { text: 'Check Again' });
+                const checkAgainBtn = buttonContainer.createEl('button', { text: '🔄 Check Again' });
+                checkAgainBtn.style.cssText = `
+                    padding: 10px 16px;
+                    background: var(--background-secondary);
+                    color: var(--text-normal);
+                    border: 1px solid var(--background-modifier-border);
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                `;
                 checkAgainBtn.onclick = () => this.updatePromptsStatus();
 
-                // Individual prompt entries with enhanced display
+                // Enhanced individual prompt entries
+                const promptsListLabel = promptsContainer.createEl('div');
+                promptsListLabel.style.cssText = `
+                    font-weight: bold; 
+                    margin-bottom: 15px; 
+                    color: var(--text-normal);
+                    font-size: 16px;
+                `;
+                promptsListLabel.textContent = '📋 Missing Prompts';
+
                 for (const prompt of missingPrompts) {
                     const promptEl = promptsContainer.createEl('div');
-                    promptEl.style.padding = '12px';
-                    promptEl.style.marginBottom = '10px';
-                    promptEl.style.border = '1px solid var(--background-modifier-border)';
-                    promptEl.style.borderRadius = '6px';
-                    promptEl.style.backgroundColor = 'var(--background-primary)';
+                    promptEl.style.cssText = `
+                        margin-bottom: 15px;
+                        border: 1px solid var(--background-modifier-border);
+                        border-radius: 8px;
+                        overflow: hidden;
+                        background: var(--background-primary);
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    `;
 
-                    const pathEl = promptEl.createEl('div');
-                    pathEl.style.fontWeight = 'bold';
-                    pathEl.style.marginBottom = '8px';
-                    pathEl.style.color = 'var(--text-accent)';
+                    // Header with file path and status
+                    const headerEl = promptEl.createEl('div');
+                    headerEl.style.cssText = `
+                        padding: 12px 15px;
+                        background: var(--background-secondary);
+                        border-bottom: 1px solid var(--background-modifier-border);
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    `;
+
+                    const pathEl = headerEl.createEl('div');
+                    pathEl.style.cssText = `
+                        font-weight: bold;
+                        color: var(--text-accent);
+                        font-family: var(--font-monospace);
+                        font-size: 14px;
+                    `;
                     pathEl.textContent = prompt.path;
 
-                    const previewEl = promptEl.createEl('div');
-                    previewEl.style.fontSize = '13px';
-                    previewEl.style.color = 'var(--text-muted)';
-                    previewEl.style.marginBottom = '10px';
-                    previewEl.style.lineHeight = '1.4';
-                    previewEl.style.fontFamily = 'var(--font-monospace)';
-                    previewEl.style.backgroundColor = 'var(--background-secondary)';
-                    previewEl.style.padding = '8px';
-                    previewEl.style.borderRadius = '4px';
+                    const statusBadge = headerEl.createEl('span');
+                    statusBadge.style.cssText = `
+                        background: #ffc107;
+                        color: #856404;
+                        padding: 4px 8px;
+                        border-radius: 12px;
+                        font-size: 12px;
+                        font-weight: 600;
+                    `;
+                    statusBadge.textContent = 'MISSING';
+
+                    // Content preview section
+                    const contentEl = promptEl.createEl('div');
+                    contentEl.style.cssText = 'padding: 15px;';
+
+                    const previewLabel = contentEl.createEl('div');
+                    previewLabel.style.cssText = `
+                        font-size: 13px;
+                        color: var(--text-muted);
+                        margin-bottom: 8px;
+                        font-weight: 500;
+                    `;
+                    previewLabel.textContent = '📄 Content Preview:';
                     
-                    const preview = prompt.content.substring(0, 150);
-                    previewEl.textContent = preview + (prompt.content.length > 150 ? '...' : '');
+                    const previewEl = contentEl.createEl('div');
+                    previewEl.style.cssText = `
+                        font-size: 13px;
+                        color: var(--text-muted);
+                        line-height: 1.5;
+                        font-family: var(--font-monospace);
+                        background: var(--background-secondary);
+                        padding: 12px;
+                        border-radius: 6px;
+                        border-left: 3px solid var(--interactive-accent);
+                        white-space: pre-line;
+                        margin-bottom: 15px;
+                        max-height: 120px;
+                        overflow-y: auto;
+                    `;
+                    previewEl.textContent = this.getContentPreview(prompt.content);
 
-                    const buttonContainer = promptEl.createEl('div');
-                    buttonContainer.style.display = 'flex';
-                    buttonContainer.style.gap = '8px';
-                    buttonContainer.style.alignItems = 'center';
+                    // Action buttons section
+                    const actionsEl = contentEl.createEl('div');
+                    actionsEl.style.cssText = `
+                        display: flex;
+                        gap: 12px;
+                        align-items: center;
+                        justify-content: space-between;
+                        flex-wrap: wrap;
+                    `;
 
-                    const createBtn = buttonContainer.createEl('button', { 
-                        text: `Create ${prompt.path.split('/').pop()}` 
+                    const createBtn = actionsEl.createEl('button', { 
+                        text: `Create example prompt: ${prompt.path}` 
                     });
-                    createBtn.style.backgroundColor = 'var(--interactive-accent)';
-                    createBtn.style.color = 'var(--text-on-accent)';
+                    createBtn.style.cssText = `
+                        padding: 10px 16px;
+                        background: var(--interactive-accent);
+                        color: var(--text-on-accent);
+                        border: none;
+                        border-radius: 6px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        font-size: 14px;
+                        flex: 1;
+                        min-width: 200px;
+                    `;
                     createBtn.onclick = () => this.createSinglePrompt(prompt);
 
-                    const sizeInfo = buttonContainer.createEl('span');
-                    sizeInfo.style.fontSize = '12px';
-                    sizeInfo.style.color = 'var(--text-muted)';
-                    sizeInfo.textContent = `(${prompt.content.length} characters)`;
+                    const metaInfo = actionsEl.createEl('div');
+                    metaInfo.style.cssText = `
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                        font-size: 12px;
+                        color: var(--text-muted);
+                        text-align: right;
+                    `;
+                    
+                    const sizeInfo = metaInfo.createEl('span');
+                    sizeInfo.textContent = `${prompt.content.length} characters`;
+                    
+                    const linesInfo = metaInfo.createEl('span');
+                    linesInfo.textContent = `${prompt.content.split('\n').length} lines`;
                 }
             }
         } catch (error) {
-            // Handle overall errors
+            // Handle overall errors with enhanced error display
             promptsContainer.empty();
             const errorEl = promptsContainer.createEl('div');
-            errorEl.style.padding = '15px';
-            errorEl.style.backgroundColor = '#f8d7da';
-            errorEl.style.borderColor = '#f5c6cb';
-            errorEl.style.color = '#721c24';
-            errorEl.style.borderRadius = '6px';
-            errorEl.innerHTML = `❌ <strong>Error checking prompts:</strong> ${error instanceof Error ? error.message : String(error)}`;
+            errorEl.style.cssText = `
+                padding: 20px;
+                background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+                border: 2px solid #dc3545;
+                color: #721c24;
+                border-radius: 8px;
+                text-align: center;
+            `;
+            errorEl.innerHTML = `
+                <div style="font-size: 18px; margin-bottom: 10px;">⚠️</div>
+                <div style="font-weight: bold; margin-bottom: 8px;">Error Checking Prompts</div>
+                <div style="font-size: 14px; opacity: 0.8;">${error instanceof Error ? error.message : String(error)}</div>
+            `;
             
             console.error('Error in updatePromptsStatus:', error);
         } finally {
