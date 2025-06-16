@@ -73,7 +73,7 @@ const configInjectionPlugin = {
       configs[configName] = {
         models,
         pipeline: pipelineConfig.pipeline,
-        prompts: pipelineConfig.prompts
+        examplePrompts: pipelineConfig.examplePrompts
       };
     }
     
