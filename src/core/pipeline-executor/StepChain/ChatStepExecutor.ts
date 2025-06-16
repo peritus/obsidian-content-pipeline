@@ -7,7 +7,6 @@ import { YamlProcessor } from '../../yaml-processor';
 import { ChatClient } from '../../../api/chat-client';
 import { FileOperations, FileUtils } from '../../file-operations';
 import { PathUtils } from '../../path-resolver';
-import { ArchiveHandler } from './ArchiveHandler';
 import { OutputHandler } from './OutputHandler';
 import { 
     ResolvedPipelineStep,
@@ -26,14 +25,12 @@ export class ChatStepExecutor {
     private app: App;
     private yamlProcessor: YamlProcessor;
     private fileOps: FileOperations;
-    private archiveHandler: ArchiveHandler;
     private outputHandler: OutputHandler;
 
     constructor(app: App) {
         this.app = app;
         this.yamlProcessor = new YamlProcessor(app);
         this.fileOps = new FileOperations(app);
-        this.archiveHandler = new ArchiveHandler(app);
         this.outputHandler = new OutputHandler(app);
     }
 
@@ -81,17 +78,21 @@ export class ChatStepExecutor {
                 temperature: 0.1
             });
 
-            // Archive input file first - create legacy step object for ArchiveHandler compatibility
-            const archiveStepCompat: PipelineStep = {
-                modelConfig: stepId, // Not used by ArchiveHandler but needed for interface
-                input: resolvedStep.input,
-                output: resolvedStep.output,
-                archive: resolvedStep.archive,
-                include: resolvedStep.include,
-                next: resolvedStep.next,
-                description: resolvedStep.description
-            };
-            const archivePath = await this.archiveHandler.archive(fileInfo, archiveStepCompat, stepId);
+            // Archive input file using FileOperations directly
+            let archivePath: string;
+            try {
+                const pathContext = FileUtils.createProcessingContext(fileInfo, stepId);
+                const archiveResult = await this.fileOps.archiveFile(
+                    fileInfo.path, 
+                    resolvedStep.archive, 
+                    pathContext
+                );
+                archivePath = archiveResult.archivePath;
+                logger.debug(`File archived: ${fileInfo.path} → ${archivePath}`);
+            } catch (error) {
+                logger.warn(`Failed to archive file: ${fileInfo.path}`, error);
+                archivePath = fileInfo.path; // Return original path if archiving fails
+            }
             context.archivePath = archivePath;
 
             // Save output files with direct content output - create legacy step object for OutputHandler compatibility  
