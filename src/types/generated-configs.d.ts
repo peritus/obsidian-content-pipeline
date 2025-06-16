@@ -6,7 +6,7 @@ declare module '@/configs' {
     interface GeneratedConfig {
         models: ModelsConfig;
         pipeline: PipelineConfiguration;
-        prompts: Record<string, string>;
+        examplePrompts: Record<string, string>;
     }
     
     interface GeneratedConfigs {

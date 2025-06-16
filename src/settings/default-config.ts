@@ -7,7 +7,7 @@ import { DEFAULT_CONFIGS } from '@/configs';
 export interface GeneratedConfig {
     models: ModelsConfig;
     pipeline: PipelineConfiguration;
-    prompts: Record<string, string>;
+    examplePrompts: Record<string, string>;
 }
 
 export interface GeneratedConfigs {
