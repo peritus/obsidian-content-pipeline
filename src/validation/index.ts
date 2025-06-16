@@ -15,6 +15,10 @@ export { validatePipelineConfig } from './pipeline-config';
 export { validateModelsConfig, validateModelConfig, getClientClass, IMPLEMENTATION_MAPPING } from './models-config';
 export { ConfigurationResolver, createConfigurationResolver } from './configuration-resolver';
 
+// Centralized configuration validation service
+export { ConfigurationValidator, createConfigurationValidator } from './configuration-validator';
+export type { ConfigurationValidationResult } from './configuration-validator';
+
 // Import functions for use in object and convenience function
 import { validatePath } from './path';
 import { validateApiKey } from './api-key/validateApiKey';

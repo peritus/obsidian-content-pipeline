@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, AudioInboxSettingTab } from './settings';
 import { AudioInboxSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
 import { createConfigurationResolver } from './validation/configuration-resolver';
+import { createConfigurationValidator } from './validation/configuration-validator';
 import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from './settings/default-config';
 import { CommandHandler } from './commands';
 
@@ -170,59 +171,11 @@ export default class AudioInboxPlugin extends Plugin {
     }
 
     /**
-     * Validate current configurations
-     */
-    private validateConfigurations(): { isValid: boolean; error?: string } {
-        if (!this.settings.parsedModelsConfig) {
-            return { isValid: false, error: 'Models configuration not parsed' };
-        }
-        
-        if (!this.settings.parsedPipelineConfig) {
-            return { isValid: false, error: 'Pipeline configuration not parsed' };
-        }
-        
-        try {
-            const resolver = createConfigurationResolver(
-                this.settings.modelsConfig,
-                this.settings.pipelineConfig
-            );
-            
-            const validationResult = resolver.validate();
-            
-            if (!validationResult.isValid) {
-                const errorSections = [];
-                if (validationResult.modelsErrors.length > 0) {
-                    errorSections.push(`Models: ${validationResult.modelsErrors.length} errors`);
-                }
-                if (validationResult.pipelineErrors.length > 0) {
-                    errorSections.push(`Pipeline: ${validationResult.pipelineErrors.length} errors`);
-                }
-                if (validationResult.crossRefErrors.length > 0) {
-                    errorSections.push(`Cross-ref: ${validationResult.crossRefErrors.length} errors`);
-                }
-                
-                return { isValid: false, error: errorSections.join(', ') };
-            }
-            
-            return { isValid: true };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return { isValid: false, error: errorMessage };
-        }
-    }
-
-    /**
-     * Get configuration status for display
+     * Get configuration status for display using centralized validator
      */
     private getConfigurationStatus(): string {
-        const validationResult = this.validateConfigurations();
-        
-        if (validationResult.isValid) {
-            const stepCount = this.settings.parsedPipelineConfig ? Object.keys(this.settings.parsedPipelineConfig).length : 0;
-            return `Valid (${stepCount} steps)`;
-        } else {
-            return `Invalid (${validationResult.error})`;
-        }
+        const validator = createConfigurationValidator(this.settings);
+        return validator.getConfigurationStatus();
     }
 
     /**

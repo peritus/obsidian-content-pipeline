@@ -6,7 +6,7 @@ import { App } from 'obsidian';
 import { ExecutionState } from './execution-state';
 import { FileDiscovery } from '../file-operations';
 import { StepChain } from './StepChain';
-import { createConfigurationResolver } from '../../validation/configuration-resolver';
+import { createConfigurationValidator } from '../../validation/configuration-validator';
 import { 
     AudioInboxSettings, 
     PipelineConfiguration, 
@@ -14,7 +14,6 @@ import {
     ProcessingResult, 
     ProcessingStatus
 } from '../../types';
-import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('PipelineExecutor');
@@ -42,12 +41,7 @@ export class PipelineExecutor {
         const { continueOnError = false } = options;
 
         if (this.executionState.isProcessing()) {
-            throw ErrorFactory.pipeline(
-                'Pipeline execution already in progress',
-                'Another file is currently being processed',
-                { activeFiles: this.executionState.getActiveFiles() },
-                ['Wait for current processing to complete']
-            );
+            throw new Error('Pipeline execution already in progress');
         }
 
         try {
@@ -99,60 +93,9 @@ export class PipelineExecutor {
     }
 
     private getPipelineConfiguration(): PipelineConfiguration {
-        // Validate that dual configuration is available
-        if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
-            throw ErrorFactory.configuration(
-                'Dual configuration not available',
-                'Both models and pipeline configurations are required',
-                { hasModels: !!this.settings.modelsConfig, hasPipeline: !!this.settings.pipelineConfig },
-                ['Configure both models and pipeline in settings', 'Ensure configurations are saved']
-            );
-        }
-
-        // Use ConfigurationResolver to validate configuration is resolvable
-        try {
-            const resolver = createConfigurationResolver(
-                this.settings.modelsConfig,
-                this.settings.pipelineConfig
-            );
-            
-            const validationResult = resolver.validate();
-            if (!validationResult.isValid) {
-                const errorSummary = [
-                    ...validationResult.modelsErrors,
-                    ...validationResult.pipelineErrors,
-                    ...validationResult.crossRefErrors
-                ].join('; ');
-                
-                throw ErrorFactory.configuration(
-                    `Configuration validation failed: ${errorSummary}`,
-                    'Pipeline configuration contains validation errors',
-                    { validationResult },
-                    ['Fix configuration errors in settings', 'Validate configuration before processing']
-                );
-            }
-
-            // Return parsed pipeline configuration (FileDiscovery still expects this format)
-            if (!this.settings.parsedPipelineConfig) {
-                throw ErrorFactory.configuration(
-                    'Parsed pipeline configuration not available',
-                    'Pipeline configuration is not parsed',
-                    {},
-                    ['Reload plugin', 'Re-save configuration in settings']
-                );
-            }
-
-            return this.settings.parsedPipelineConfig;
-
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw ErrorFactory.configuration(
-                `Failed to validate configuration: ${errorMessage}`,
-                'Cannot validate dual configuration for pipeline execution',
-                { error: errorMessage },
-                ['Check configuration syntax', 'Verify model config references', 'Reload plugin']
-            );
-        }
+        // Use centralized configuration validator (throwing version for fail-fast behavior)
+        const validator = createConfigurationValidator(this.settings);
+        return validator.getValidatedPipelineConfiguration();
     }
 
     private createResult(status: ProcessingStatus, error?: string): ProcessingResult {

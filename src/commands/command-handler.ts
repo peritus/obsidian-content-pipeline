@@ -8,7 +8,7 @@ import { App, Notice, TFile } from 'obsidian';
 import { AudioInboxSettings, ProcessingStatus } from '../types';
 import { PipelineExecutor } from '../core/pipeline-executor';
 import { FileDiscovery } from '../core/file-operations';
-import { createConfigurationResolver } from '../validation/configuration-resolver';
+import { createConfigurationValidator } from '../validation/configuration-validator';
 import { createLogger } from '../logger';
 
 const logger = createLogger('CommandHandler');
@@ -28,8 +28,9 @@ export class CommandHandler {
      */
     canFileBeProcessedSync(file: TFile): boolean {
         try {
-            // Check configuration validity first
-            const configStatus = this.validateConfigurations();
+            // Check configuration validity first using centralized validator
+            const validator = createConfigurationValidator(this.settings);
+            const configStatus = validator.validateConfigurations();
             if (!configStatus.isValid) {
                 return false;
             }
@@ -54,8 +55,9 @@ export class CommandHandler {
      */
     async canFileBeProcessed(file: TFile): Promise<boolean> {
         try {
-            // Check configuration validity first
-            const configStatus = this.validateConfigurations();
+            // Check configuration validity first using centralized validator
+            const validator = createConfigurationValidator(this.settings);
+            const configStatus = validator.validateConfigurations();
             if (!configStatus.isValid) {
                 return false;
             }
@@ -82,8 +84,9 @@ export class CommandHandler {
         try {
             logger.info(`Process specific file command triggered for: ${file.path}`);
             
-            // Check if both configurations are available and valid
-            const configStatus = this.validateConfigurations();
+            // Check if both configurations are available and valid using centralized validator
+            const validator = createConfigurationValidator(this.settings);
+            const configStatus = validator.validateConfigurations();
             if (!configStatus.isValid) {
                 this.showNotice(`❌ Configuration invalid: ${configStatus.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', configStatus.error);
@@ -134,8 +137,9 @@ export class CommandHandler {
         try {
             logger.info('Process Next File command triggered');
             
-            // Check if both configurations are available and valid
-            const configStatus = this.validateConfigurations();
+            // Check if both configurations are available and valid using centralized validator
+            const validator = createConfigurationValidator(this.settings);
+            const configStatus = validator.validateConfigurations();
             if (!configStatus.isValid) {
                 this.showNotice(`❌ Configuration invalid: ${configStatus.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', configStatus.error);
@@ -242,48 +246,6 @@ export class CommandHandler {
             lastModified: new Date(stat?.mtime || Date.now()),
             mimeType: undefined // Could be enhanced to detect MIME type
         };
-    }
-
-    /**
-     * Validate current configurations
-     */
-    private validateConfigurations(): { isValid: boolean; error?: string } {
-        if (!this.settings.parsedModelsConfig) {
-            return { isValid: false, error: 'Models configuration not parsed' };
-        }
-        
-        if (!this.settings.parsedPipelineConfig) {
-            return { isValid: false, error: 'Pipeline configuration not parsed' };
-        }
-        
-        try {
-            const resolver = createConfigurationResolver(
-                this.settings.modelsConfig,
-                this.settings.pipelineConfig
-            );
-            
-            const validationResult = resolver.validate();
-            
-            if (!validationResult.isValid) {
-                const errorSections = [];
-                if (validationResult.modelsErrors.length > 0) {
-                    errorSections.push(`Models: ${validationResult.modelsErrors.length} errors`);
-                }
-                if (validationResult.pipelineErrors.length > 0) {
-                    errorSections.push(`Pipeline: ${validationResult.pipelineErrors.length} errors`);
-                }
-                if (validationResult.crossRefErrors.length > 0) {
-                    errorSections.push(`Cross-ref: ${validationResult.crossRefErrors.length} errors`);
-                }
-                
-                return { isValid: false, error: errorSections.join(', ') };
-            }
-            
-            return { isValid: true };
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            return { isValid: false, error: errorMessage };
-        }
     }
 
     /**
