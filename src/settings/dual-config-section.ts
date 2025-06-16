@@ -2,7 +2,7 @@
  * Dual configuration section for v1.2 split configuration system
  * 
  * Provides two separate textareas for models (private) and pipeline (shareable) configurations
- * with real-time validation, cross-reference checking, and export/import functionality.
+ * with real-time validation, cross-reference checking, auto-save functionality, and export/import.
  */
 
 import { Setting, TextAreaComponent, DropdownComponent } from 'obsidian';
@@ -48,6 +48,9 @@ export class DualConfigSection {
                 <li><strong>Models Configuration:</strong> Private API credentials and model settings (never shared)</li>
                 <li><strong>Pipeline Configuration:</strong> Workflow logic that can be safely exported and shared</li>
             </ul>
+            <div style="margin-top: 10px; padding: 10px; background-color: var(--background-secondary); border-radius: 4px; font-size: 14px; color: var(--text-muted);">
+                💾 <strong>Auto-save enabled:</strong> Changes are automatically saved as you type after validation completes.
+            </div>
         `;
 
         // Create validation status display
@@ -62,7 +65,7 @@ export class DualConfigSection {
         // Create pipeline visualization
         this.renderPipelineVisualization(containerEl);
 
-        // Create control buttons
+        // Create control buttons (without save button)
         this.renderControlButtons(containerEl);
 
         // Configuration help
@@ -202,7 +205,7 @@ export class DualConfigSection {
     }
 
     /**
-     * Render control buttons section
+     * Render control buttons section (without save button)
      */
     private renderControlButtons(containerEl: HTMLElement): void {
         const buttonContainer = containerEl.createEl('div');
@@ -211,12 +214,6 @@ export class DualConfigSection {
         buttonContainer.style.display = 'flex';
         buttonContainer.style.gap = '10px';
         buttonContainer.style.flexWrap = 'wrap';
-
-        // Save configuration button
-        const saveBtn = buttonContainer.createEl('button', { text: 'Save Configuration' });
-        saveBtn.style.backgroundColor = 'var(--interactive-accent)';
-        saveBtn.style.color = 'var(--text-on-accent)';
-        saveBtn.onclick = () => this.saveConfiguration();
 
         // Validate configuration button
         const validateBtn = buttonContainer.createEl('button', { text: 'Validate Configuration' });
@@ -228,41 +225,81 @@ export class DualConfigSection {
     }
 
     /**
-     * Handle models configuration changes with debouncing
+     * Handle models configuration changes with debouncing and auto-save
      */
     private handleModelsConfigChange(value: string): void {
         // Update settings immediately
         this.plugin.settings.modelsConfig = value;
         
-        // Debounce validation
+        // Debounce validation and auto-save
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
         
-        this.debounceTimer = setTimeout(() => {
-            this.performValidation();
+        this.debounceTimer = setTimeout(async () => {
+            await this.performValidationAndAutoSave();
         }, 300);
     }
 
     /**
-     * Handle pipeline configuration changes with debouncing
+     * Handle pipeline configuration changes with debouncing and auto-save
      */
     private handlePipelineConfigChange(value: string): void {
         // Update settings immediately
         this.plugin.settings.pipelineConfig = value;
         
-        // Debounce validation
+        // Debounce validation and auto-save
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
         
-        this.debounceTimer = setTimeout(() => {
-            this.performValidation();
+        this.debounceTimer = setTimeout(async () => {
+            await this.performValidationAndAutoSave();
         }, 300);
     }
 
     /**
-     * Perform comprehensive validation of both configurations
+     * Perform validation and auto-save if configuration is valid
+     */
+    private async performValidationAndAutoSave(): Promise<void> {
+        const validationResult = this.validator.validate(
+            this.plugin.settings.modelsConfig,
+            this.plugin.settings.pipelineConfig,
+            false
+        );
+
+        // Update validation status display
+        this.updateValidationStatus(validationResult);
+
+        // Update pipeline visualization
+        this.updatePipelineVisualization(validationResult);
+
+        // Auto-save if configuration is valid
+        if (validationResult.isValid) {
+            try {
+                // Update parsed configurations
+                this.plugin.settings.parsedModelsConfig = JSON.parse(this.plugin.settings.modelsConfig);
+                this.plugin.settings.parsedPipelineConfig = JSON.parse(this.plugin.settings.pipelineConfig);
+                this.plugin.settings.lastSaved = new Date().toISOString();
+
+                // Save settings to disk
+                await this.plugin.saveSettings();
+                
+                // Update validation status to show auto-save success
+                this.updateValidationStatusWithAutoSave(validationResult, true);
+            } catch (error) {
+                // Update validation status to show auto-save failure
+                this.updateValidationStatusWithAutoSave(validationResult, false, error);
+            }
+        } else {
+            // Clear parsed configurations if invalid
+            this.plugin.settings.parsedModelsConfig = undefined;
+            this.plugin.settings.parsedPipelineConfig = undefined;
+        }
+    }
+
+    /**
+     * Perform comprehensive validation of both configurations (without auto-save)
      */
     private async performValidation(showNotice: boolean = false): Promise<void> {
         const validationResult = this.validator.validate(
@@ -290,37 +327,6 @@ export class DualConfigSection {
         } else {
             this.plugin.settings.parsedModelsConfig = undefined;
             this.plugin.settings.parsedPipelineConfig = undefined;
-        }
-    }
-
-    /**
-     * Save configuration
-     */
-    private async saveConfiguration(): Promise<void> {
-        const validationResult = this.validator.validate(
-            this.plugin.settings.modelsConfig,
-            this.plugin.settings.pipelineConfig,
-            false
-        );
-
-        if (!validationResult.isValid) {
-            this.validator.showValidationError(validationResult);
-            return;
-        }
-
-        try {
-            // Update parsed configurations
-            this.plugin.settings.parsedModelsConfig = JSON.parse(this.plugin.settings.modelsConfig);
-            this.plugin.settings.parsedPipelineConfig = JSON.parse(this.plugin.settings.pipelineConfig);
-            this.plugin.settings.lastSaved = new Date().toISOString();
-
-            // Save settings
-            await this.plugin.saveSettings();
-            
-            this.validator.showSuccessNotice('Configuration saved successfully!');
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            this.validator.showErrorNotice(`Failed to save configuration: ${errorMessage}`);
         }
     }
 
@@ -499,6 +505,32 @@ export class DualConfigSection {
             }
             
             this.validationStatusEl.innerHTML = `❌ <strong>Configuration Invalid:</strong> ${errorSections.join(' | ')}`;
+        }
+    }
+
+    /**
+     * Update validation status display with auto-save information
+     */
+    private updateValidationStatusWithAutoSave(validationResult: any, saveSuccess: boolean, error?: any): void {
+        if (!this.validationStatusEl) return;
+
+        if (validationResult.isValid) {
+            this.validationStatusEl.style.backgroundColor = '#d4edda';
+            this.validationStatusEl.style.borderColor = '#c3e6cb';
+            this.validationStatusEl.style.color = '#155724';
+            
+            const entryPointsText = validationResult.entryPoints.length > 0 
+                ? ` | Entry points: ${validationResult.entryPoints.join(', ')}`
+                : '';
+            
+            const autoSaveText = saveSuccess 
+                ? ' | 💾 Auto-saved'
+                : ` | ❌ Auto-save failed: ${error instanceof Error ? error.message : String(error)}`;
+            
+            this.validationStatusEl.innerHTML = `✅ <strong>Configuration Valid</strong>${entryPointsText}${autoSaveText}`;
+        } else {
+            // Invalid configuration, use the standard invalid display
+            this.updateValidationStatus(validationResult);
         }
     }
 

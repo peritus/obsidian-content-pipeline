@@ -58,7 +58,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     }
 
     /**
-     * Render getting started section with v1.2 instructions
+     * Render getting started section with v1.2 instructions and auto-save
      */
     private renderGettingStarted(containerEl: HTMLElement): void {
         containerEl.createEl('h3', { text: 'Getting Started' });
@@ -68,7 +68,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             <ol>
                 <li><strong>Load Default Configurations:</strong> Click the "Load Default" buttons for both Models and Pipeline configurations</li>
                 <li><strong>Add API Keys:</strong> Replace empty API key fields in the Models Configuration with your OpenAI API key</li>
-                <li><strong>Save Configuration:</strong> Click "Save Configuration" to validate and save your settings</li>
+                <li><strong>Auto-Save:</strong> Changes are automatically saved as you type after validation completes successfully</li>
                 <li><strong>Create Folders:</strong> Click "Create Initial Folders" to set up the inbox structure</li>
                 <li><strong>Add Audio Files:</strong> Place audio files in <code>inbox/audio/</code> folder</li>
                 <li><strong>Process Files:</strong> Use the "Process Next File" command from the command palette or ribbon icon</li>
@@ -87,6 +87,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             <div style="margin-top: 15px; padding: 15px; background-color: var(--background-secondary); border-radius: 6px;">
                 <h4 style="margin-top: 0;">🎯 Key Features</h4>
                 <ul style="margin-bottom: 0;">
+                    <li><strong>Auto-Save:</strong> Changes automatically saved to memory and disk after successful validation</li>
                     <li><strong>Real-time Validation:</strong> Both configurations validated with detailed error reporting</li>
                     <li><strong>Pipeline Visualization:</strong> Visual overview of your processing workflow</li>
                     <li><strong>Export/Import:</strong> Share pipeline configurations safely without exposing credentials</li>
