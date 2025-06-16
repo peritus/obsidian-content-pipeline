@@ -109,16 +109,33 @@ export class ChatStepExecutor {
             const outputFiles: string[] = [];
             let nextStep: string | undefined;
 
-            // Handle multi-file vs single-file responses
+            // Determine if output is a directory pattern
+            const isDirectoryOutput = this.isDirectoryOutput(resolvedStep.output);
+
+            // Handle different response types and output patterns
             if (parsedResponse.isMultiFile) {
-                const savedFiles = await this.outputHandler.saveMultiple(parsedResponse.sections, outputStepCompat, context);
-                outputFiles.push(...Object.values(savedFiles));
+                // Multi-file response: always use appropriate method based on output pattern
+                if (isDirectoryOutput) {
+                    const savedFiles = await this.outputHandler.saveToDirectory(parsedResponse.sections, outputStepCompat, context);
+                    outputFiles.push(...Object.values(savedFiles));
+                } else {
+                    const savedFiles = await this.outputHandler.saveMultiple(parsedResponse.sections, outputStepCompat, context);
+                    outputFiles.push(...Object.values(savedFiles));
+                }
                 
                 // Get nextStep from first section that has it
                 nextStep = parsedResponse.sections.find(section => section.nextStep)?.nextStep;
             } else if (parsedResponse.sections.length > 0) {
-                const outputPath = await this.outputHandler.save(parsedResponse.sections[0], outputStepCompat, context);
-                outputFiles.push(outputPath);
+                // Single-file response: check if output pattern is directory
+                if (isDirectoryOutput) {
+                    // Even for single-file responses, use saveToDirectory if output is a directory pattern
+                    const savedFiles = await this.outputHandler.saveToDirectory(parsedResponse.sections, outputStepCompat, context);
+                    outputFiles.push(...Object.values(savedFiles));
+                } else {
+                    // Regular file output pattern
+                    const outputPath = await this.outputHandler.save(parsedResponse.sections[0], outputStepCompat, context);
+                    outputFiles.push(outputPath);
+                }
                 nextStep = parsedResponse.sections[0].nextStep;
             }
 
@@ -147,6 +164,14 @@ export class ChatStepExecutor {
             logger.error(`Chat processing failed: ${fileInfo?.name || 'unknown file'}`, error);
             throw error;
         }
+    }
+
+    /**
+     * Check if an output pattern represents a directory
+     */
+    private isDirectoryOutput(outputPattern: string): boolean {
+        // Directory patterns either end with '/' or don't contain {filename} variable
+        return outputPattern.endsWith('/') || !outputPattern.includes('{filename}');
     }
 
     /**

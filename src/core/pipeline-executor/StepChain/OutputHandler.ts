@@ -170,14 +170,29 @@ export class OutputHandler {
                 const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
 
                 if (isDirectoryOutput) {
-                    // For directory outputs, combine directory with section filename
-                    const directoryPath = PathResolver.resolvePath(step.output, {
-                        timestamp: context.timestamp,
-                        date: context.date,
-                        stepId: context.stepId
-                    }).resolvedPath;
+                    // For directory outputs, handle specially to preserve directory nature
+                    let directoryPath: string;
                     
-                    outputPath = PathUtils.join(directoryPath, section.filename);
+                    if (step.output.endsWith('/')) {
+                        // Pattern like "inbox/summary-personal/" - remove trailing slash before resolving
+                        const directoryPattern = step.output.slice(0, -1);
+                        directoryPath = PathResolver.resolvePath(directoryPattern, {
+                            timestamp: context.timestamp,
+                            date: context.date,
+                            stepId: context.stepId
+                        }).resolvedPath;
+                    } else {
+                        // Pattern without filename variable, like "inbox/summary-personal"
+                        directoryPath = PathResolver.resolvePath(step.output, {
+                            timestamp: context.timestamp,
+                            date: context.date,
+                            stepId: context.stepId
+                        }).resolvedPath;
+                    }
+                    
+                    // Ensure we have a valid filename from LLM response
+                    const filename = section.filename || `${effectiveFilename}.md`;
+                    outputPath = PathUtils.join(directoryPath, filename);
                 } else {
                     // For file pattern outputs, use the effective filename as the basis
                     const pathContext = {
