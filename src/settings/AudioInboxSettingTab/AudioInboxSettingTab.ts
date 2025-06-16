@@ -3,7 +3,7 @@ import AudioInboxPlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { DualConfigSection } from '../dual-config-section';
 import { FolderSetupSection } from '../folder-setup-section';
-import { ExamplePromptsManager } from './example-prompts-manager';
+import { ExamplePromptsManager } from './ExamplePromptsManager';
 import { GettingStartedRenderer } from './getting-started-renderer';
 
 /**
