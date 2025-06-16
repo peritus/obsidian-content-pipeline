@@ -5,7 +5,8 @@
  * Updated for dual configuration system with models and pipeline configs.
  */
 
-import { PipelineExecutor, ExecutionState, FileDiscovery, StepChain } from '../src/core/pipeline-executor';
+import { PipelineExecutor, ExecutionState, StepChain } from '../src/core/pipeline-executor';
+import { FileDiscovery } from '../src/core/file-operations';
 import { createMockPipelineConfig, createMockPipelineStep, createComplexPipelineConfig, cleanup } from './setup';
 import { App } from 'obsidian';
 import { AudioInboxSettings, ProcessingStatus } from '../src/types';

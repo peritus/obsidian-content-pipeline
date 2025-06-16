@@ -7,7 +7,7 @@
 import { App, Notice, TFile } from 'obsidian';
 import { AudioInboxSettings, ProcessingStatus } from '../types';
 import { PipelineExecutor } from '../core/pipeline-executor';
-import { FileDiscovery } from '../core/pipeline-executor/file-discovery';
+import { FileDiscovery } from '../core/file-operations';
 import { createConfigurationResolver } from '../validation/configuration-resolver';
 import { createLogger } from '../logger';
 

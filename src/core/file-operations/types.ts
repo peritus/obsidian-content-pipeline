@@ -3,6 +3,7 @@
  */
 
 import { TFile, TFolder } from 'obsidian';
+import { FileInfo } from '../../types';
 
 /**
  * Options for file operations
@@ -50,6 +51,14 @@ export interface FileDiscoveryOptions {
     sortBy?: 'name' | 'modified' | 'created' | 'size';
     /** Sort direction */
     sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Result of file discovery for pipeline processing
+ */
+export interface FileDiscoveryResult {
+    file: FileInfo;
+    stepId: string;
 }
 
 /**

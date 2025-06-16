@@ -16,6 +16,7 @@ export type {
     FileOperationOptions,
     FileOperationResult,
     FileDiscoveryOptions,
+    FileDiscoveryResult,
     ArchiveResult,
     FolderStructureResult
 } from './types';

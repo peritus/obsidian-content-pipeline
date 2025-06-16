@@ -4,7 +4,7 @@
 
 import { App } from 'obsidian';
 import { ExecutionState } from './execution-state';
-import { FileDiscovery } from './file-discovery';
+import { FileDiscovery } from '../file-operations';
 import { StepChain } from './StepChain';
 import { createConfigurationResolver } from '../../validation/configuration-resolver';
 import { 
