@@ -82,10 +82,16 @@ export default class AudioInboxPlugin extends Plugin {
                     const canProcess = this.commandHandler.canFileBeProcessedSync(file);
                     if (!canProcess) return;
 
+                    // Get the step that would process this file for dynamic title
+                    const stepId = this.getStepForFile(file);
+                    const menuTitle = stepId 
+                        ? `Apply [${stepId}] to this file.`
+                        : 'Process File with Audio Inbox 🎵';
+
                     // Add menu item for processable files
                     menu.addItem((item) => {
                         item
-                            .setTitle('Process File with Audio Inbox 🎵')
+                            .setTitle(menuTitle)
                             .setIcon('microphone')
                             .onClick(async () => {
                                 await this.commandHandler.processSpecificFile(file);
@@ -98,6 +104,23 @@ export default class AudioInboxPlugin extends Plugin {
         );
 
         this.logger.debug('File menu integration registered');
+    }
+
+    /**
+     * Get the step that would process a specific file (synchronous)
+     */
+    private getStepForFile(file: TFile): string | null {
+        try {
+            const pipelineConfig = this.getPipelineConfiguration();
+            if (!pipelineConfig) return null;
+
+            const { FileDiscovery } = require('./core/file-operations');
+            const fileDiscovery = new FileDiscovery(this.app);
+            return fileDiscovery.findStepForFileSync(file, pipelineConfig);
+        } catch (error) {
+            this.logger.warn('Error finding step for file:', error);
+            return null;
+        }
     }
 
     /**
