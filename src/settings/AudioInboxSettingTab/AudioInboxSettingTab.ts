@@ -3,7 +3,7 @@ import AudioInboxPlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { ModelsConfigSection } from '../ModelsConfigSection';
 import { PipelineConfigSection } from '../PipelineConfigSection';
-import { ImportExportManager } from '../ImportExportManager';
+import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
 import { PipelineVisualization } from '../PipelineVisualization';
 import { FolderSetupSection } from '../folder-setup-section';
 import { ExamplePromptsManager } from './ExamplePromptsManager';
@@ -33,6 +33,12 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         this.fileOps = new FileOperations(app);
         this.examplePromptsManager = new ExamplePromptsManager(app);
 
+        // Create import/export callbacks
+        const importExportCallbacks: ImportExportCallbacks = {
+            onPipelineImport: (config) => this.handlePipelineImport(config),
+            onExamplePromptsImport: (prompts) => this.handleExamplePromptsImport(prompts)
+        };
+
         // Initialize components
         this.modelsSection = new ModelsConfigSection(plugin, (value) => this.handleModelsConfigChange(value));
         this.pipelineSection = new PipelineConfigSection(
@@ -41,10 +47,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
             () => this.exportPipelineConfig(),
             () => this.importPipelineConfig()
         );
-        this.importExportManager = new ImportExportManager((config) => {
-            this.pipelineSection.setValue(config);
-            this.handlePipelineConfigChange(config);
-        });
+        this.importExportManager = new ImportExportManager(importExportCallbacks);
         this.pipelineVisualization = new PipelineVisualization();
     }
 
@@ -59,6 +62,8 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         this.renderValidationStatus(containerEl);
 
         // Example Prompts Setup Section (moved above configuration sections)
+        // Initialize with imported prompts if available
+        this.examplePromptsManager.setImportedPrompts(this.plugin.settings.importedExamplePrompts);
         this.examplePromptsManager.render(containerEl);
 
         // Configuration sections
@@ -80,6 +85,47 @@ export class AudioInboxSettingTab extends PluginSettingTab {
 
         // Initial validation
         this.validateAndUpdate();
+    }
+
+    /**
+     * Handle pipeline configuration import
+     */
+    private handlePipelineImport(config: string): void {
+        this.pipelineSection.setValue(config);
+        this.handlePipelineConfigChange(config);
+    }
+
+    /**
+     * Handle example prompts import
+     */
+    private async handleExamplePromptsImport(prompts: Record<string, string>): Promise<void> {
+        // Store imported prompts in settings
+        this.plugin.settings.importedExamplePrompts = prompts;
+        
+        // Update the example prompts manager
+        this.examplePromptsManager.setImportedPrompts(prompts);
+        
+        // Save settings immediately to persist the imported prompts
+        try {
+            await this.plugin.saveSettings();
+        } catch (error) {
+            console.error('Failed to save imported example prompts:', error);
+            new Notice('Warning: Failed to save imported example prompts', 5000);
+        }
+    }
+
+    /**
+     * Clear imported example prompts (e.g., when loading default config)
+     */
+    private async clearImportedExamplePrompts(): Promise<void> {
+        this.plugin.settings.importedExamplePrompts = undefined;
+        this.examplePromptsManager.clearImportedPrompts();
+        
+        try {
+            await this.plugin.saveSettings();
+        } catch (error) {
+            console.error('Failed to clear imported example prompts:', error);
+        }
     }
 
     /**
@@ -112,6 +158,14 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         // Create initial folders button
         const createFoldersBtn = buttonContainer.createEl('button', { text: 'Create Initial Folders' });
         createFoldersBtn.onclick = () => this.createInitialFolders();
+
+        // Clear imported prompts button (only shown if imported prompts exist)
+        if (this.plugin.settings.importedExamplePrompts) {
+            const clearPromptsBtn = buttonContainer.createEl('button', { text: 'Clear Imported Prompts' });
+            clearPromptsBtn.onclick = () => this.clearImportedExamplePrompts();
+            clearPromptsBtn.style.backgroundColor = 'var(--interactive-accent)';
+            clearPromptsBtn.style.color = 'var(--text-on-accent)';
+        }
     }
 
     /**
@@ -225,10 +279,14 @@ export class AudioInboxSettingTab extends PluginSettingTab {
                 ? ` | Entry points: ${validationResult.entryPoints.join(', ')}`
                 : '';
             
+            const importedPromptsText = this.plugin.settings.importedExamplePrompts 
+                ? ` | ${Object.keys(this.plugin.settings.importedExamplePrompts).length} imported prompts`
+                : '';
+            
             this.statusEl.innerHTML = `
                 <div style="font-weight: bold; margin-bottom: 5px;">✅ Configuration Valid</div>
                 <div style="font-size: 13px; opacity: 0.9;">
-                    Ready for processing${entryPointsText}
+                    Ready for processing${entryPointsText}${importedPromptsText}
                 </div>
             `;
         } else {

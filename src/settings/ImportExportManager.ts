@@ -5,11 +5,16 @@
 import { Notice } from 'obsidian';
 import { createConfigurationResolver } from '../validation/configuration-resolver';
 
-export class ImportExportManager {
-    private onImportCallback: (config: string) => void;
+export interface ImportExportCallbacks {
+    onPipelineImport: (config: string) => void;
+    onExamplePromptsImport: (prompts: Record<string, string>) => void;
+}
 
-    constructor(onImportCallback: (config: string) => void) {
-        this.onImportCallback = onImportCallback;
+export class ImportExportManager {
+    private callbacks: ImportExportCallbacks;
+
+    constructor(callbacks: ImportExportCallbacks) {
+        this.callbacks = callbacks;
     }
 
     /**
@@ -66,7 +71,7 @@ export class ImportExportManager {
     }
 
     /**
-     * Import pipeline configuration
+     * Import pipeline configuration with support for bundled example prompts
      */
     importPipelineConfig(): void {
         const input = document.createElement('input');
@@ -83,15 +88,28 @@ export class ImportExportManager {
                     const content = e.target?.result as string;
                     const importData = JSON.parse(content);
                     
-                    // Only support the correct "pipeline" field format
+                    // Validate the import file structure
                     if (!importData.pipeline) {
                         throw new Error('Invalid import file - missing "pipeline" section. Expected format: { "pipeline": {...} }');
                     }
 
-                    const configStr = JSON.stringify(importData.pipeline, null, 2);
-                    this.onImportCallback(configStr);
+                    // Import the pipeline configuration
+                    const pipelineConfigStr = JSON.stringify(importData.pipeline, null, 2);
+                    this.callbacks.onPipelineImport(pipelineConfigStr);
+
+                    // Import example prompts if they exist
+                    if (importData.examplePrompts && typeof importData.examplePrompts === 'object') {
+                        const promptCount = Object.keys(importData.examplePrompts).length;
+                        if (promptCount > 0) {
+                            this.callbacks.onExamplePromptsImport(importData.examplePrompts);
+                            new Notice(`Pipeline configuration imported with ${promptCount} example prompts!`, 4000);
+                        } else {
+                            new Notice('Pipeline configuration imported successfully!', 3000);
+                        }
+                    } else {
+                        new Notice('Pipeline configuration imported successfully!', 3000);
+                    }
                     
-                    new Notice('Pipeline configuration imported successfully!', 3000);
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
                     new Notice(`Failed to import configuration: ${errorMessage}`, 6000);

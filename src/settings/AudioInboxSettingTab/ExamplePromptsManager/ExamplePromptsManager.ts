@@ -7,10 +7,11 @@ import { IndividualPromptRenderer } from './IndividualPromptRenderer';
 import { ErrorRenderer } from './ErrorRenderer';
 
 /**
- * Manages the simplified prompts setup section
+ * Manages the simplified prompts setup section with support for imported example prompts
  */
 export class ExamplePromptsManager {
     private examplePrompts?: Record<string, string>;
+    private importedPrompts?: Record<string, string>;
     private fileOps: PromptFileOperations;
     private statusChecker: PromptStatusChecker;
     private promptCreator: PromptCreator;
@@ -22,6 +23,28 @@ export class ExamplePromptsManager {
         this.statusChecker = new PromptStatusChecker(this.fileOps);
         this.promptCreator = new PromptCreator(this.fileOps);
         this.individualRenderer = new IndividualPromptRenderer(this.fileOps);
+    }
+
+    /**
+     * Set imported example prompts (called when configuration is imported)
+     */
+    setImportedPrompts(prompts: Record<string, string> | undefined): void {
+        this.importedPrompts = prompts;
+        // Re-render if we have a container
+        if (this.promptsContainer) {
+            this.updatePromptsStatus();
+        }
+    }
+
+    /**
+     * Clear imported prompts (called when default configuration is loaded)
+     */
+    clearImportedPrompts(): void {
+        this.importedPrompts = undefined;
+        // Re-render if we have a container
+        if (this.promptsContainer) {
+            this.updatePromptsStatus();
+        }
     }
 
     /**
@@ -52,9 +75,15 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Get and validate example prompts from config
+     * Get and validate example prompts, prioritizing imported prompts over default config
      */
     private getExamplePrompts(): Record<string, string> | null {
+        // First priority: imported prompts
+        if (this.importedPrompts && Object.keys(this.importedPrompts).length > 0) {
+            return this.importedPrompts;
+        }
+
+        // Second priority: default configuration
         const defaultConfig = DEFAULT_CONFIGS?.['default'];
         const examplePrompts = defaultConfig?.examplePrompts;
 
@@ -80,12 +109,14 @@ export class ExamplePromptsManager {
      * Update the prompts status display in the reserved container
      */
     private async updatePromptsStatus(): Promise<void> {
-        if (!this.examplePrompts || !this.promptsContainer) {
+        // Get the current prompts (imported or default)
+        const currentPrompts = this.getExamplePrompts();
+        if (!currentPrompts || !this.promptsContainer) {
             return;
         }
 
         try {
-            const promptsStatus = await this.statusChecker.checkPromptsStatus(this.examplePrompts);
+            const promptsStatus = await this.statusChecker.checkPromptsStatus(currentPrompts);
             const { missing, errors } = this.statusChecker.categorizePrompts(promptsStatus);
 
             // Clear the container
@@ -93,11 +124,21 @@ export class ExamplePromptsManager {
 
             // Only populate the container if there are missing prompts or errors
             if (missing.length > 0 || errors.length > 0) {
-                // Create the heading
-                this.promptsContainer.createEl('h3', { text: 'Prompts' });
+                // Create the heading with indicator if using imported prompts
+                const headingText = this.importedPrompts ? 'Prompts (imported)' : 'Prompts';
+                this.promptsContainer.createEl('h3', { text: headingText });
                 
                 // Create a content section within the container
                 const contentSection = this.promptsContainer.createEl('div');
+
+                // Show info about imported prompts if applicable
+                if (this.importedPrompts) {
+                    const infoEl = contentSection.createEl('p');
+                    infoEl.style.fontSize = '13px';
+                    infoEl.style.color = 'var(--text-muted)';
+                    infoEl.style.marginBottom = '10px';
+                    infoEl.textContent = `Using ${Object.keys(this.importedPrompts).length} example prompts from imported configuration.`;
+                }
 
                 // Render error prompts if any
                 ErrorRenderer.renderErrorPrompts(contentSection, errors);
@@ -114,7 +155,8 @@ export class ExamplePromptsManager {
         } catch (error) {
             // If there's an error checking status, show error in the container
             this.promptsContainer.empty();
-            this.promptsContainer.createEl('h3', { text: 'Prompts' });
+            const headingText = this.importedPrompts ? 'Prompts (imported)' : 'Prompts';
+            this.promptsContainer.createEl('h3', { text: headingText });
             ErrorRenderer.handleOverallError(this.promptsContainer, error);
         }
     }

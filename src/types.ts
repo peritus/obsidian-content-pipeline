@@ -533,6 +533,8 @@ export interface AudioInboxSettings {
     parsedModelsConfig?: ModelsConfig;
     /** Parsed pipeline configuration (computed from pipelineConfig) */
     parsedPipelineConfig?: PipelineConfiguration;
+    /** Example prompts imported from configuration files */
+    importedExamplePrompts?: Record<string, string>;
     /** Enable debug mode for additional diagnostics in UI */
     debugMode: boolean;
     /** Plugin version (for migration purposes) */
