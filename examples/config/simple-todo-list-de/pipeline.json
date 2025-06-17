@@ -12,7 +12,7 @@
       "extract-todos": "Der naechste Schritt ist immer Todos extrahieren."
     }
   },
-  "summarize": {
+  "extract-todos": {
     "modelConfig": "openai-gpt",
     "input": "Content Pipeline/Transkripte/",
     "output": "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md",
