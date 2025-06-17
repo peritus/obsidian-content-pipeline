@@ -31,3 +31,20 @@ Durchsuche die bereitgestellten Dokumente nach allen Todo-Einträgen, Aufgaben u
 ## [Kategorie 2]
 - [ ] Aufgabe 3
 - [ ] Aufgabe 4 (Verantwortlich: Name)
+```
+
+## Wichtige Hinweise:
+
+- **ANTWORTE NUR MIT DER GENERIERTEN TODO-LISTE** - wiederhole NICHT den Input oder die Anweisungen
+- **Falls keine Todos gefunden werden:** Erstelle eine leere Todo-Liste mit dem Text "Keine Aufgaben gefunden."
+- **Analysiere den Inhalt sorgfältig** - auch indirekte Hinweise auf Aufgaben oder Pläne sollten als Todos erfasst werden
+- **Verwende YAML-Frontmatter** für die Antwort im Format:
+
+```yaml
+---
+filename: todo-liste.md
+---
+# Konsolidierte Todo-Liste
+
+[Deine Todo-Liste hier]
+```
