@@ -2,15 +2,10 @@
  * Pipeline visualization component - handles rendering and updating pipeline visualization
  */
 
-import { DualConfigurationValidator } from '../dual-configuration-validator';
+import { createConfigurationResolver } from '../validation/configuration-resolver';
 
 export class PipelineVisualization {
     private pipelineVisualizationEl: HTMLElement | null = null;
-    private validator: DualConfigurationValidator;
-
-    constructor(validator: DualConfigurationValidator) {
-        this.validator = validator;
-    }
 
     /**
      * Render pipeline visualization section
@@ -31,16 +26,18 @@ export class PipelineVisualization {
     /**
      * Update pipeline visualization
      */
-    update(validationResult: any, modelsConfig: string, pipelineConfig: string): void {
+    update(modelsConfig: string, pipelineConfig: string): void {
         if (!this.pipelineVisualizationEl) return;
 
-        if (!validationResult.isValid) {
-            this.pipelineVisualizationEl.innerHTML = '<em>Configuration must be valid to show pipeline visualization</em>';
-            return;
-        }
-
         try {
-            const resolver = this.validator.getConfigurationResolver(modelsConfig, pipelineConfig);
+            const resolver = createConfigurationResolver(modelsConfig, pipelineConfig);
+            const validationResult = resolver.validate();
+
+            if (!validationResult.isValid) {
+                this.pipelineVisualizationEl.innerHTML = '<em>Configuration must be valid to show pipeline visualization</em>';
+                return;
+            }
+
             const parsedPipelineConfig = JSON.parse(pipelineConfig);
             const stepIds = Object.keys(parsedPipelineConfig);
             

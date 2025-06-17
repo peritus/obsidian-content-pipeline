@@ -2,14 +2,13 @@
  * Import/Export manager for pipeline configuration
  */
 
-import { DualConfigurationValidator } from '../dual-configuration-validator';
+import { Notice } from 'obsidian';
+import { createConfigurationResolver } from '../validation/configuration-resolver';
 
 export class ImportExportManager {
-    private validator: DualConfigurationValidator;
     private onImportCallback: (config: string) => void;
 
-    constructor(validator: DualConfigurationValidator, onImportCallback: (config: string) => void) {
-        this.validator = validator;
+    constructor(onImportCallback: (config: string) => void) {
         this.onImportCallback = onImportCallback;
     }
 
@@ -18,14 +17,28 @@ export class ImportExportManager {
      */
     exportPipelineConfig(modelsConfig: string, pipelineConfig: string): void {
         try {
-            const validationResult = this.validator.validate(modelsConfig, pipelineConfig, false);
+            const resolver = createConfigurationResolver(modelsConfig, pipelineConfig);
+            const validationResult = resolver.validate();
 
             if (!validationResult.isValid) {
-                this.validator.showValidationError(validationResult);
+                const errorSections = [];
+                if (validationResult.modelsErrors.length > 0) {
+                    errorSections.push(`Models: ${validationResult.modelsErrors.join('; ')}`);
+                }
+                if (validationResult.pipelineErrors.length > 0) {
+                    errorSections.push(`Pipeline: ${validationResult.pipelineErrors.join('; ')}`);
+                }
+                if (validationResult.crossRefErrors.length > 0) {
+                    errorSections.push(`Cross-reference: ${validationResult.crossRefErrors.join('; ')}`);
+                }
+                
+                const message = errorSections.length > 0 
+                    ? `❌ Configuration errors: ${errorSections.join(' | ')}`
+                    : '❌ Configuration validation failed';
+                    
+                new Notice(message, 8000);
                 return;
             }
-
-            const resolver = this.validator.getConfigurationResolver(modelsConfig, pipelineConfig);
 
             const exportData = {
                 version: '1.2',
@@ -45,10 +58,10 @@ export class ImportExportManager {
             link.click();
             document.body.removeChild(link);
             
-            this.validator.showSuccessNotice('Pipeline configuration exported successfully!');
+            new Notice('Pipeline configuration exported successfully!', 3000);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            this.validator.showErrorNotice(`Failed to export configuration: ${errorMessage}`);
+            new Notice(`Failed to export configuration: ${errorMessage}`, 6000);
         }
     }
 
@@ -78,10 +91,10 @@ export class ImportExportManager {
                     const configStr = JSON.stringify(importData.config, null, 2);
                     this.onImportCallback(configStr);
                     
-                    this.validator.showSuccessNotice('Pipeline configuration imported successfully!');
+                    new Notice('Pipeline configuration imported successfully!', 3000);
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
-                    this.validator.showErrorNotice(`Failed to import configuration: ${errorMessage}`);
+                    new Notice(`Failed to import configuration: ${errorMessage}`, 6000);
                 }
             };
             

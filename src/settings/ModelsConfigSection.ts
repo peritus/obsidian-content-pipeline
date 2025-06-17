@@ -3,9 +3,9 @@
  */
 
 import { Setting, TextAreaComponent } from 'obsidian';
-import AudioInboxPlugin from '../../main';
-import { TextareaStyler } from '../textarea-styler';
-import { DEFAULT_MODELS_CONFIG } from '../default-config';
+import AudioInboxPlugin from '../main';
+import { TextareaStyler } from './textarea-styler';
+import { DEFAULT_MODELS_CONFIG } from './default-config';
 
 export class ModelsConfigSection {
     private plugin: AudioInboxPlugin;

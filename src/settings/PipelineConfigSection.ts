@@ -3,9 +3,9 @@
  */
 
 import { Setting, TextAreaComponent } from 'obsidian';
-import AudioInboxPlugin from '../../main';
-import { TextareaStyler } from '../textarea-styler';
-import { DEFAULT_PIPELINE_CONFIG } from '../default-config';
+import AudioInboxPlugin from '../main';
+import { TextareaStyler } from './textarea-styler';
+import { DEFAULT_PIPELINE_CONFIG } from './default-config';
 
 export class PipelineConfigSection {
     private plugin: AudioInboxPlugin;
