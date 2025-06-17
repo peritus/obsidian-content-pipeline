@@ -46,8 +46,9 @@ export class YamlFormatter {
         try {
             const sections: YamlRequestSection[] = [];
 
-            // Create input section
-            const inputContent = await this.readFileContent(fileInfo.path);
+            // Create input section - strip frontmatter to prevent doubling
+            const rawInputContent = await this.readFileContent(fileInfo.path);
+            const inputContent = FileUtils.stripFrontmatter(rawInputContent);
             const inputSection: YamlRequestSection = {
                 role: FileRole.INPUT,
                 filename: fileInfo.name,
