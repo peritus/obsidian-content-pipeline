@@ -44,7 +44,7 @@ export class ImportExportManager {
                 version: '1.2',
                 exported: new Date().toISOString(),
                 description: 'Audio Inbox Pipeline Configuration',
-                config: resolver.exportPipelineConfig()
+                pipeline: resolver.exportPipelineConfig()
             };
 
             const dataStr = JSON.stringify(exportData, null, 2);
@@ -83,12 +83,12 @@ export class ImportExportManager {
                     const content = e.target?.result as string;
                     const importData = JSON.parse(content);
                     
-                    // Validate import structure
-                    if (!importData.config) {
-                        throw new Error('Invalid import file - missing config section');
+                    // Only support the correct "pipeline" field format
+                    if (!importData.pipeline) {
+                        throw new Error('Invalid import file - missing "pipeline" section. Expected format: { "pipeline": {...} }');
                     }
 
-                    const configStr = JSON.stringify(importData.config, null, 2);
+                    const configStr = JSON.stringify(importData.pipeline, null, 2);
                     this.onImportCallback(configStr);
                     
                     new Notice('Pipeline configuration imported successfully!', 3000);
