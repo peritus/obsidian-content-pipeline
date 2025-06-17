@@ -115,14 +115,6 @@ export class WhisperStepProcessor {
 source: "[[${archivePath}]]"
 processed: "${timestamp}"
 step: "${stepId}"
-pipeline: "audio-processing"
----
-
-# Transcript: ${PathUtils.getBasename(fileInfo.path)}
-
-**Original Audio:** [[${archivePath}]]
-**Processed:** ${timestamp}
-
 ---
 
 ${text}`;
