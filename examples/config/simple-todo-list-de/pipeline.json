@@ -15,11 +15,12 @@
   "extract-todos": {
     "modelConfig": "openai-gpt",
     "input": "Content Pipeline/Transkripte/",
-    "output": "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md",
+    "output": "Content Pipeline/Zusammenfassung/",
     "archive": "Content Pipeline/Archiv/Transkripte/",
     "include": [
-      "Content Pipeline/Aufgaben-Zusammenfassen.md"
+      "Content Pipeline/Aufgaben-Zusammenfassen.md",
+      "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md"
     ],
-    "description": "Fasst mehrere Todo-Eintraege zu einer geoordneten Todo-Liste zusammen."
+    "description": "Fasst mehrere Todo-Eintraege zu einer konsolidierten Todo-Liste zusammen."
   }
 }
