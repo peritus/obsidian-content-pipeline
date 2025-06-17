@@ -8,6 +8,10 @@ main.js.map
 
 node_modules/
 
+# Build
+# =====
+build/
+
 # Jest testing
 # ============
 coverage/
