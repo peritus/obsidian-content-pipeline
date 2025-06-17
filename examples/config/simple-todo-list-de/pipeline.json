@@ -1,0 +1,25 @@
+{
+  "transcribe": {
+    "modelConfig": "openai-whisper",
+    "input": "Content Pipeline/Eingang/Audio/",
+    "archive": "Content Pipeline/Archiv/Audio/",
+    "output": "Content Pipeline/Transkripte/{filename}.md",
+    "include": [
+      "Content Pipeline/Transkription-Prompt.md"
+    ],
+    "description": "Transkribiert Audio-Dateien zu einfachen Todo-Eintraegen.",
+    "next": {
+      "extract-todos": "Der naechste Schritt ist immer Todos extrahieren."
+    }
+  },
+  "summarize": {
+    "modelConfig": "openai-gpt",
+    "input": "Content Pipeline/Transkripte/",
+    "output": "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md",
+    "archive": "Content Pipeline/Archiv/Transkripte/",
+    "include": [
+      "Content Pipeline/Aufgaben-Zusammenfassen.md"
+    ],
+    "description": "Fasst mehrere Todo-Eintraege zu einer geoordneten Todo-Liste zusammen."
+  }
+}
