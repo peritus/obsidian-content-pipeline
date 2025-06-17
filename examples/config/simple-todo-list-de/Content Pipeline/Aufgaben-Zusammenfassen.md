@@ -25,15 +25,16 @@ Durchsuche die bereitgestellten Dokumente nach allen Todo-Einträgen, Aufgaben u
 ## Ausgabeformat:
 
 ```markdown
-# Konsolidierte Todo-Liste
-
 ## [Kategorie 1]
+
 - [ ] Aufgabe 1 (Details/Deadline)
 - [ ] Aufgabe 2
 
 ## [Kategorie 2]
+
 - [ ] Aufgabe 3
 - [ ] Aufgabe 4 (Verantwortlich: Name)
+
 ```
 
 ## Wichtige Hinweise:
