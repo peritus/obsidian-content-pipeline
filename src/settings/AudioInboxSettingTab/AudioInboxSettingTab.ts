@@ -58,6 +58,9 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         // Validation status display
         this.renderValidationStatus(containerEl);
 
+        // Example Prompts Setup Section (moved above configuration sections)
+        this.examplePromptsManager.render(containerEl);
+
         // Configuration sections
         this.modelsSection.render(containerEl);
         this.pipelineSection.render(containerEl);
@@ -67,9 +70,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
 
         // Control buttons
         this.renderControlButtons(containerEl);
-
-        // Example Prompts Setup Section
-        this.examplePromptsManager.render(containerEl);
 
         // Folder Setup Section
         const folderSection = new FolderSetupSection(this.plugin, this.fileOps);

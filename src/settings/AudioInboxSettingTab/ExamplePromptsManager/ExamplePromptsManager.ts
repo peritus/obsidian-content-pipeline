@@ -3,22 +3,19 @@ import { PromptFileOperations } from '../prompt-file-operations';
 import { DEFAULT_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
 import { PromptCreator } from './PromptCreator';
-import { StatusRenderer } from './StatusRenderer';
-import { BatchActionsRenderer } from './BatchActionsRenderer';
 import { IndividualPromptRenderer } from './IndividualPromptRenderer';
 import { ErrorRenderer } from './ErrorRenderer';
 
 /**
- * Manages the example prompts setup section with enhanced UI
+ * Manages the simplified prompts setup section
  */
 export class ExamplePromptsManager {
-    private isCheckingPrompts = false;
-    private promptsContainer?: HTMLElement;
     private examplePrompts?: Record<string, string>;
     private fileOps: PromptFileOperations;
     private statusChecker: PromptStatusChecker;
     private promptCreator: PromptCreator;
     private individualRenderer: IndividualPromptRenderer;
+    private promptsContainer?: HTMLElement;
 
     constructor(private app: App) {
         this.fileOps = new PromptFileOperations(app);
@@ -28,41 +25,30 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Render example prompts setup section with enhanced UI
+     * Render simplified prompts setup section synchronously
+     * Creates a placeholder container that will be populated async
      */
     render(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: '📝 Example Prompts Setup' });
-        
-        this.renderDescription(containerEl);
-        
         try {
             const examplePrompts = this.getExamplePrompts();
             if (!examplePrompts) return;
 
-            this.setupPromptsContainer(containerEl);
             this.examplePrompts = examplePrompts;
+            
+            // Create a container immediately to reserve the position
+            this.promptsContainer = containerEl.createEl('div');
+            this.promptsContainer.style.marginBottom = '20px';
+            
+            // Populate the container asynchronously but in the correct position
             this.updatePromptsStatus();
 
         } catch (error) {
             console.error('Error accessing example prompts:', error);
-            ErrorRenderer.showConfigError(containerEl, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
+            // Create a container for error display
+            this.promptsContainer = containerEl.createEl('div');
+            this.promptsContainer.style.marginBottom = '20px';
+            ErrorRenderer.showConfigError(this.promptsContainer, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
-    }
-
-    /**
-     * Render description section
-     */
-    private renderDescription(containerEl: HTMLElement): void {
-        const descEl = containerEl.createEl('div');
-        descEl.addClass('example-prompts-description');
-        descEl.innerHTML = `
-            <p style="margin-bottom: 10px;">
-                Set up example prompt files in your vault to get started quickly. These prompts work with the default pipeline configuration.
-            </p>
-            <div style="padding: 10px; background-color: var(--background-secondary); border-radius: 4px; font-size: 14px; color: var(--text-muted);">
-                💡 <strong>Note:</strong> Only missing files are shown. Existing prompts in your vault will not be overwritten.
-            </div>
-        `;
     }
 
     /**
@@ -73,17 +59,17 @@ export class ExamplePromptsManager {
         const examplePrompts = defaultConfig?.examplePrompts;
 
         if (!defaultConfig) {
-            ErrorRenderer.showConfigError(document.body, 'Default configuration not found in bundled configs');
+            console.error('Default configuration not found in bundled configs');
             return null;
         }
 
         if (!examplePrompts || typeof examplePrompts !== 'object') {
-            ErrorRenderer.showConfigError(document.body, 'Example prompts not found in default configuration');
+            console.error('Example prompts not found in default configuration');
             return null;
         }
 
         if (Object.keys(examplePrompts).length === 0) {
-            ErrorRenderer.showNoPromptsWarning(document.body);
+            console.warn('No example prompts found in default configuration');
             return null;
         }
 
@@ -91,81 +77,57 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Setup the main container for prompts
-     */
-    private setupPromptsContainer(containerEl: HTMLElement): void {
-        this.promptsContainer = containerEl.createEl('div');
-        this.promptsContainer.addClass('example-prompts-container');
-    }
-
-    /**
-     * Update the prompts status display
+     * Update the prompts status display in the reserved container
      */
     private async updatePromptsStatus(): Promise<void> {
-        if (!this.promptsContainer || !this.examplePrompts || this.isCheckingPrompts) {
+        if (!this.examplePrompts || !this.promptsContainer) {
             return;
         }
 
-        this.isCheckingPrompts = true;
-
         try {
-            StatusRenderer.renderLoadingState(this.promptsContainer);
-            
             const promptsStatus = await this.statusChecker.checkPromptsStatus(this.examplePrompts);
-            const { missing, existing, errors } = this.statusChecker.categorizePrompts(promptsStatus);
+            const { missing, errors } = this.statusChecker.categorizePrompts(promptsStatus);
 
+            // Clear the container
             this.promptsContainer.empty();
 
-            StatusRenderer.renderStatusSummary(this.promptsContainer, missing, existing, errors);
-            ErrorRenderer.renderErrorPrompts(this.promptsContainer, errors);
-            
-            if (missing.length === 0 && errors.length === 0) {
-                this.renderAllExistState(existing);
-            } else if (missing.length > 0) {
-                this.renderMissingPrompts(missing);
+            // Only populate the container if there are missing prompts or errors
+            if (missing.length > 0 || errors.length > 0) {
+                // Create the heading
+                this.promptsContainer.createEl('h3', { text: 'Prompts' });
+                
+                // Create a content section within the container
+                const contentSection = this.promptsContainer.createEl('div');
+
+                // Render error prompts if any
+                ErrorRenderer.renderErrorPrompts(contentSection, errors);
+                
+                // Render missing prompts if any
+                if (missing.length > 0) {
+                    this.renderMissingPrompts(contentSection, missing);
+                }
+            } else {
+                // If no prompts to show, hide the container completely
+                this.promptsContainer.style.display = 'none';
             }
 
         } catch (error) {
+            // If there's an error checking status, show error in the container
+            this.promptsContainer.empty();
+            this.promptsContainer.createEl('h3', { text: 'Prompts' });
             ErrorRenderer.handleOverallError(this.promptsContainer, error);
-        } finally {
-            this.isCheckingPrompts = false;
         }
-    }
-
-    /**
-     * Render state when all prompts exist
-     */
-    private renderAllExistState(existingPrompts: any[]): void {
-        if (!this.promptsContainer) return;
-        StatusRenderer.renderAllExistState(this.promptsContainer, existingPrompts, () => this.updatePromptsStatus());
     }
 
     /**
      * Render missing prompts section
      */
-    private renderMissingPrompts(missingPrompts: any[]): void {
-        if (!this.promptsContainer) return;
-        
-        BatchActionsRenderer.renderBatchActions(
-            this.promptsContainer, 
-            missingPrompts, 
-            () => this.createAllMissingPrompts(missingPrompts),
-            () => this.updatePromptsStatus()
-        );
-        
+    private renderMissingPrompts(contentEl: HTMLElement, missingPrompts: any[]): void {
         this.individualRenderer.renderIndividualPrompts(
-            this.promptsContainer, 
+            contentEl, 
             missingPrompts, 
             (prompt) => this.createSinglePrompt(prompt)
         );
-    }
-
-    /**
-     * Create all missing prompts
-     */
-    private async createAllMissingPrompts(missingPrompts: any[]): Promise<void> {
-        await this.promptCreator.createAllMissingPrompts(missingPrompts);
-        await this.updatePromptsStatus();
     }
 
     /**
@@ -173,6 +135,7 @@ export class ExamplePromptsManager {
      */
     private async createSinglePrompt(prompt: any): Promise<void> {
         await this.promptCreator.createSinglePrompt(prompt);
-        await this.updatePromptsStatus();
+        // Re-render the status in the same container
+        this.updatePromptsStatus();
     }
 }
