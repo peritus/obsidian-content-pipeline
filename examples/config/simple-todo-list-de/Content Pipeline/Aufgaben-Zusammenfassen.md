@@ -1,57 +1,52 @@
-# Todo-Konsolidierung aus Dokumenten
+# Todo-Konsolidierung und Gruppierung
 
-Durchsuche die bereitgestellten Dokumente nach allen Todo-Einträgen, Aufgaben und offenen Punkten. Erstelle daraus eine konsolidierte Liste im Markdown-Format.
+Konsolidiere die bereitgestellten Todo-Listen durch Gruppierung und Duplikats-Entfernung.
 
-**WICHTIG: Falls bereits eine Todo-Liste vorhanden ist, füge neue Todos zu dieser Liste hinzu und entferne Duplikate.**
+**WICHTIG: Falls bereits eine konsolidierte Todo-Liste vorhanden ist, füge neue Todos hinzu und entferne Duplikate.**
 
 ## Aufgaben:
 
 1. **Prüfe bestehende Liste:** Falls bereits eine Todo-Liste vorhanden ist, verwende diese als Basis
-2. **Identifiziere neue Todos:** Finde alle neuen Aufgaben im aktuellen Dokument:
-   - Explizite Todos (TODO, To-Do, Aufgabe)
-   - Action Items und offene Punkte
-   - Unerledigte Schritte in Anleitungen
-   - Geplante Aktivitäten und Termine
 
-3. **Konsolidiere:** Füge neue Todos zur bestehenden Liste hinzu, entferne Duplikate
-4. **Kategorisiere und organisiere:** Gruppiere ähnliche Aufgaben thematisch
-5. **Formatiere als Markdown-Checkliste:**
-   - Verwende das Format: `- [ ] Aufgabenbeschreibung`
-   - Füge bei Bedarf Kategorien als Überschriften hinzu
-   - Ergänze wichtige Details (Deadlines, Prioritäten, Verantwortliche)
+2. **Sammle alle neuen Todos:** Gehe durch alle bereitgestellten Dokumente und sammle alle Todo-Einträge
 
-6. **Priorisiere:** Ordne nach Wichtigkeit oder Dringlichkeit
+3. **Entferne Duplikate:** Vergleiche Todos und entferne identische oder sehr ähnliche Einträge
+
+4. **Gruppiere thematisch:** Organisiere Todos unter passenden Kategorien:
+   - Arbeitsbereich/Projekt
+   - Zeitrahmen (heute, diese Woche, später)
+   - Verantwortlichkeit
+   - Thematische Bereiche
+
+5. **Formatiere als strukturierte Markdown-Liste**
 
 ## Ausgabeformat:
 
 ```markdown
+
 ## [Kategorie 1]
 
-- [ ] Aufgabe 1 (Details/Deadline)
-- [ ] Aufgabe 2
+- [ ] Todo 1
+- [ ] Todo 2
 
 ## [Kategorie 2]
 
-- [ ] Aufgabe 3
-- [ ] Aufgabe 4 (Verantwortlich: Name)
+- [ ] Todo 3
+- [ ] Todo 4
 
 ```
 
 ## Wichtige Hinweise:
 
-- **ANTWORTE NUR MIT DER GENERIERTEN TODO-LISTE** - wiederhole NICHT den Input oder die Anweisungen
-- **Falls keine Todos gefunden werden:** 
-  - Wenn eine bestehende Liste vorhanden ist: Gib die bestehende Liste unverändert zurück
-  - Wenn keine bestehende Liste vorhanden ist: Erstelle eine leere Todo-Liste mit dem Text "Keine Aufgaben gefunden."
-- **Analysiere den Inhalt sorgfältig** - auch indirekte Hinweise auf Aufgaben oder Pläne sollten als Todos erfasst werden
-- **Duplikate vermeiden:** Vergleiche neue Todos mit bestehenden und füge nur wirklich neue hinzu
-- **Verwende YAML-Frontmatter** für die Antwort im Format:
+- **NUR GRUPPIEREN UND KONSOLIDIEREN** - ändere nicht die Formulierung der Todos
+- **ANTWORTE NUR MIT DER KONSOLIDIERTEN TODO-LISTE** - wiederhole NICHT den Input
+- **Falls keine neuen Todos:** Gib die bestehende Liste unverändert zurück
+- **Falls keine bestehende Liste:** Gruppiere alle gefundenen Todos
+- **Duplikate vermeiden:** Vergleiche sorgfältig und behalte nur einzigartige Todos
 
 ```yaml
 ---
 filename: Aufgaben-Liste.md
 ---
-# Konsolidierte Todo-Liste
-
-[Deine Todo-Liste hier - bestehende Todos beibehalten und neue hinzufügen]
+[Gruppierte und konsolidierte Todos hier]
 ```
