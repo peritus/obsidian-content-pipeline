@@ -6,7 +6,6 @@ export {
     PromptFileOperations,
     PromptStatus,
     NotificationManager,
-    GettingStartedRenderer,
     DEFAULT_MODELS_CONFIG, 
     DEFAULT_PIPELINE_CONFIG 
 } from './settings/AudioInboxSettingTab';

@@ -7,7 +7,6 @@ import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManag
 import { PipelineVisualization } from '../PipelineVisualization';
 import { FolderSetupSection } from '../folder-setup-section';
 import { ExamplePromptsManager } from './ExamplePromptsManager';
-import { GettingStartedRenderer } from './getting-started-renderer';
 import { createConfigurationResolver } from '../../validation/configuration-resolver';
 import { ConfigValidationResult } from '../../types';
 
@@ -79,9 +78,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         // Folder Setup Section
         const folderSection = new FolderSetupSection(this.plugin, this.fileOps);
         folderSection.render(containerEl);
-
-        // Getting Started Section
-        GettingStartedRenderer.render(containerEl);
 
         // Initial validation
         this.validateAndUpdate();

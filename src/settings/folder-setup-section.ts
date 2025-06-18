@@ -44,36 +44,7 @@ export class FolderSetupSection {
             .setName('Create Inbox Folders')
             .setDesc('Create folder structure based on your pipeline configuration')
             .addButton(button => button
-                .setButtonText('Create All Folders')
-                .setCta()
-                .onClick(async () => {
-                    button.setDisabled(true);
-                    button.setButtonText('Creating...');
-                    
-                    try {
-                        // Get pipeline configuration
-                        const pipelineConfig = this.plugin.settings.parsedPipelineConfig;
-                        if (!pipelineConfig) {
-                            throw new Error('No pipeline configuration found. Please configure your pipeline first.');
-                        }
-
-                        const result = await this.fileOps.createCompleteStructure(pipelineConfig);
-                        
-                        if (result.success) {
-                            new Notice(`✅ Created ${result.foldersCreated} folders successfully!`, 5000);
-                        } else {
-                            new Notice(`⚠️ Partial success: Created ${result.foldersCreated} folders, ${result.errors.length} errors`, 8000);
-                        }
-                        
-                    } catch (error) {
-                        new Notice(`❌ Failed to create folders: ${error instanceof Error ? error.message : String(error)}`, 8000);
-                    } finally {
-                        button.setDisabled(false);
-                        button.setButtonText('Create All Folders');
-                    }
-                }))
-            .addButton(button => button
-                .setButtonText('Create Entry Points Only')
+                .setButtonText('Create Entry Point Folders')
                 .onClick(async () => {
                     button.setDisabled(true);
                     button.setButtonText('Creating...');
