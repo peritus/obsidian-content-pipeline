@@ -1,5 +1,3 @@
-# Einfache Audio-Transkription
-
 Bitte transkribieren Sie diesen Audioinhalt genau und klar. Konzentrieren Sie sich auf:
 
 - Umwandlung von Sprache in lesbaren Text

@@ -1,5 +1,3 @@
-# Todo-Extraktion aus Transkript
-
 Extrahiere alle Todo-Einträge, Aufgaben und offene Punkte aus diesem Transkript.
 
 ## Aufgabe:
@@ -29,7 +27,7 @@ Erstelle eine einfache Liste ohne Gruppierung:
 - **Behalte die ursprüngliche Formulierung bei** und füge nur wichtige Details in Klammern hinzu
 - **Verwende YAML-Frontmatter:**
 
-```yaml
+```
 ---
 filename: [Wählen Sie einen beschreibenden Dateinamen basierend auf dem Inhalt, wie "Wochenend Einkaufsliste.md" oder "Projekt Meeting Aufgaben.md"]
 ---
