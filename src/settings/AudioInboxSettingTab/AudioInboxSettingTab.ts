@@ -54,9 +54,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        // Header
-        containerEl.createEl('h2', { text: 'Audio Inbox Settings' });
-
         // Validation status display
         this.renderValidationStatus(containerEl);
 
