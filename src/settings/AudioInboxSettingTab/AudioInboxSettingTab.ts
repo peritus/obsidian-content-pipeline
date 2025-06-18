@@ -24,7 +24,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     private pipelineSection: PipelineConfigSection;
     private importExportManager: ImportExportManager;
     private pipelineVisualization: PipelineVisualization;
-    private statusEl: HTMLElement | null = null;
 
     constructor(app: App, plugin: AudioInboxPlugin) {
         super(app, plugin);
@@ -53,9 +52,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     display(): void {
         const { containerEl } = this;
         containerEl.empty();
-
-        // Validation status display
-        this.renderValidationStatus(containerEl);
 
         // Example Prompts Setup Section (moved above configuration sections)
         // Initialize with imported prompts if available
@@ -122,18 +118,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     }
 
     /**
-     * Render validation status section (inlined from ValidationStatusDisplay)
-     */
-    private renderValidationStatus(containerEl: HTMLElement): void {
-        this.statusEl = containerEl.createEl('div');
-        this.statusEl.style.marginBottom = '15px';
-        this.statusEl.style.padding = '15px';
-        this.statusEl.style.borderRadius = '6px';
-        this.statusEl.style.border = '1px solid var(--background-modifier-border)';
-        this.statusEl.style.fontSize = '14px';
-    }
-
-    /**
      * Render control buttons section (inlined from ControlButtons)
      */
     private renderControlButtons(containerEl: HTMLElement): void {
@@ -195,7 +179,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
      */
     private async performValidationAndAutoSave(): Promise<void> {
         const validationResult = this.validateConfigurations();
-        this.updateValidationDisplay(validationResult);
         this.pipelineVisualization.update(
             this.plugin.settings.modelsConfig,
             this.plugin.settings.pipelineConfig
@@ -213,7 +196,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
      */
     private validateAndUpdate(showNotice: boolean = false): void {
         const validationResult = this.validateConfigurations();
-        this.updateValidationDisplay(validationResult);
         this.pipelineVisualization.update(
             this.plugin.settings.modelsConfig,
             this.plugin.settings.pipelineConfig
@@ -254,68 +236,6 @@ export class AudioInboxSettingTab extends PluginSettingTab {
                 warnings: [],
                 entryPoints: []
             };
-        }
-    }
-
-    /**
-     * Update validation status display (inlined logic)
-     */
-    private updateValidationDisplay(validationResult: ConfigValidationResult): void {
-        if (!this.statusEl) return;
-
-        if (validationResult.isValid) {
-            this.statusEl.style.backgroundColor = '#d4edda';
-            this.statusEl.style.borderColor = '#c3e6cb';
-            this.statusEl.style.color = '#155724';
-            
-            const entryPointsText = validationResult.entryPoints.length > 0 
-                ? ` | Entry points: ${validationResult.entryPoints.join(', ')}`
-                : '';
-            
-            const importedPromptsText = this.plugin.settings.importedExamplePrompts 
-                ? ` | ${Object.keys(this.plugin.settings.importedExamplePrompts).length} imported prompts`
-                : '';
-            
-            this.statusEl.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 5px;">✅ Configuration Valid</div>
-                <div style="font-size: 13px; opacity: 0.9;">
-                    Ready for processing${entryPointsText}${importedPromptsText}
-                </div>
-            `;
-        } else {
-            this.statusEl.style.backgroundColor = '#f8d7da';
-            this.statusEl.style.borderColor = '#f5c6cb';
-            this.statusEl.style.color = '#721c24';
-            
-            const errorDetails = [];
-            if (validationResult.modelsErrors.length > 0) {
-                errorDetails.push(`Models: ${validationResult.modelsErrors.length} error(s)`);
-            }
-            if (validationResult.pipelineErrors.length > 0) {
-                errorDetails.push(`Pipeline: ${validationResult.pipelineErrors.length} error(s)`);
-            }
-            if (validationResult.crossRefErrors.length > 0) {
-                errorDetails.push(`References: ${validationResult.crossRefErrors.length} error(s)`);
-            }
-            
-            const allErrors = [
-                ...validationResult.modelsErrors,
-                ...validationResult.pipelineErrors,
-                ...validationResult.crossRefErrors
-            ];
-            
-            this.statusEl.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 8px;">❌ Configuration Invalid</div>
-                <div style="font-size: 13px; margin-bottom: 8px;">
-                    ${errorDetails.join(' | ')}
-                </div>
-                <details style="font-size: 12px;">
-                    <summary style="cursor: pointer; margin-bottom: 5px;">Show detailed errors</summary>
-                    <ul style="margin: 5px 0 0 15px; padding: 0;">
-                        ${allErrors.map(error => `<li style="margin-bottom: 3px;">${error}</li>`).join('')}
-                    </ul>
-                </details>
-            `;
         }
     }
 
