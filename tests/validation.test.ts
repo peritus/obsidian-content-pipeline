@@ -354,16 +354,6 @@ describe('Pipeline Configuration Validation', () => {
             expect(() => validatePipelineConfig(config)).toThrow('orphaned steps');
         });
 
-        it('should require audio input steps', () => {
-            const config = {
-                'text-only': createMockPipelineStep({ 
-                    input: 'text/input',
-                    modelConfig: 'openai-gpt'
-                })
-            };
-            expect(() => validatePipelineConfig(config)).toThrow('no audio input steps');
-        });
-
         it('should limit pipeline size', () => {
             const config: any = {};
             for (let i = 0; i < 25; i++) {

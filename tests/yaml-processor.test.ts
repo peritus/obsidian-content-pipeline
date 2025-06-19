@@ -183,7 +183,7 @@ describe('YAML Formatter', () => {
             );
 
             // Should have input section + include sections
-            const sections = request.split('---').filter(s => s.trim().length > 0);
+            const sections = request.split('---').filter((s: string) => s.trim().length > 0);
             expect(sections.length).toBeGreaterThanOrEqual(3);
             
             expect(request).toContain('role: input');
