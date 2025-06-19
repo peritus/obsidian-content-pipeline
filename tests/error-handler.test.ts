@@ -8,10 +8,7 @@ import {
     AudioInboxError, 
     ErrorFactory, 
     ErrorHandler, 
-    errorHandler,
-    createUserFriendlyMessage,
-    wrapAsync,
-    wrapSync
+    errorHandler
 } from '../src/error-handler';
 import { ErrorType, NotificationType } from '../src/types';
 import { mockNotice, cleanup } from './setup';

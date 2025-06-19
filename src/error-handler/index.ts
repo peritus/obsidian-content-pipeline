@@ -5,14 +5,10 @@
  * technical logging, and proper error categorization.
  */
 
-// Re-export all components for backwards compatibility
+// Re-export core error handling components
 export { AudioInboxError } from './AudioInboxError';
 export { ErrorHandler } from './ErrorHandler';
 export { ErrorFactory } from './ErrorFactory';
-export { RecoveryStrategies } from './RecoveryStrategies';
-export { handleAsync, isAudioInboxError } from './utils';
-export { createUserFriendlyMessage } from './error-message-formatter';
-export { wrapAsync, wrapSync } from './function-wrappers';
 
 // Import classes to create singleton instances
 import { ErrorHandler } from './ErrorHandler';
