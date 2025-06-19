@@ -15,15 +15,8 @@ export function generateChatRequestId(): string {
 /**
  * Check if model is supported by the chat API
  */
-export function isSupportedChatModel(model: string): boolean {
+function isSupportedChatModel(model: string): boolean {
     return CHAT_LIMITS.supportedModels.includes(model as any);
-}
-
-/**
- * Get list of supported chat models
- */
-export function getSupportedChatModels(): string[] {
-    return [...CHAT_LIMITS.supportedModels];
 }
 
 /**
@@ -120,7 +113,7 @@ export function shouldRetryChatError(error: Error): boolean {
 /**
  * Estimate token count for request (rough approximation)
  */
-export function estimateTokenCount(text: string): number {
+function estimateTokenCount(text: string): number {
     // Rough approximation: 1 token ≈ 4 characters for English text
     return Math.ceil(text.length / 4);
 }

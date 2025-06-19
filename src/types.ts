@@ -68,18 +68,6 @@ export interface PipelineConfiguration {
     [stepId: string]: PipelineStep;
 }
 
-/**
- * Pipeline validation result
- */
-export interface PipelineValidationResult {
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-    entryPoints: string[];
-    orphanedSteps: string[];
-    circularReferences: string[];
-}
-
 // =============================================================================
 // CONFIGURATION RESOLUTION TYPES (v1.2)
 // =============================================================================
@@ -274,46 +262,6 @@ export interface StepRoutingInfo {
 }
 
 // =============================================================================
-// VALIDATION TYPES
-// =============================================================================
-
-/**
- * Generic validation result
- */
-export interface ValidationResult {
-    /** Whether the validation passed */
-    isValid: boolean;
-    /** Validation errors (blocking issues) */
-    errors: string[];
-    /** Validation warnings (non-blocking issues) */
-    warnings: string[];
-    /** Additional context for debugging */
-    context?: any;
-}
-
-/**
- * Configuration validation context
- */
-export interface ValidationContext {
-    /** Vault path for resolving relative paths */
-    vaultPath: string;
-    /** Validation options */
-    options: ValidationOptions;
-}
-
-/**
- * Validation options
- */
-export interface ValidationOptions {
-    /** Whether to perform strict validation */
-    strict: boolean;
-    /** Whether to check file existence */
-    checkFileExistence: boolean;
-    /** Whether to validate API credentials */
-    validateCredentials: boolean;
-}
-
-// =============================================================================
 // ERROR HANDLING TYPES
 // =============================================================================
 
@@ -405,79 +353,6 @@ export interface LoggerConfig {
     prettyFormat: boolean;
 }
 
-// =============================================================================
-// API INTEGRATION TYPES
-// =============================================================================
-
-/**
- * API client configuration
- */
-export interface ApiConfig {
-    /** API key for authentication */
-    apiKey: string;
-    /** Base URL for API endpoints */
-    baseUrl: string;
-    /** Organization ID (if applicable) */
-    organization?: string;
-    /** Request timeout in milliseconds */
-    timeout?: number;
-    /** Maximum retry attempts */
-    maxRetries?: number;
-}
-
-/**
- * API request metadata
- */
-export interface ApiRequest {
-    /** Request ID for tracking */
-    id: string;
-    /** Model being used */
-    model: string;
-    /** Request timestamp */
-    timestamp: Date;
-    /** Request payload size */
-    payloadSize: number;
-    /** Step that made the request */
-    stepId: string;
-}
-
-/**
- * API response metadata
- */
-export interface ApiResponse {
-    /** Request ID this response is for */
-    requestId: string;
-    /** Response status code */
-    status: number;
-    /** Response timestamp */
-    timestamp: Date;
-    /** Response payload size */
-    payloadSize: number;
-    /** Processing duration in milliseconds */
-    duration: number;
-    /** Whether the response was successful */
-    success: boolean;
-    /** Error message (if failed) */
-    error?: string;
-}
-
-// =============================================================================
-// FOLDER STRUCTURE TYPES
-// =============================================================================
-
-/**
- * Complete folder structure for the plugin
- */
-export interface FolderStructure {
-    inbox: {
-        audio: string[];
-        transcripts: string[];
-        archive: {
-            [stepId: string]: string[];
-        };
-    };
-}
-
 /**
  * Path pattern resolution context
  */
@@ -528,39 +403,4 @@ export interface AudioInboxSettings {
  */
 export function isValidModelImplementation(value: any): value is ModelImplementation {
     return ['whisper', 'chatgpt', 'claude'].includes(value);
-}
-
-/**
- * Type guard for validating log levels
- */
-export function isValidLogLevel(value: any): value is LogLevel {
-    return Object.values(LogLevel).includes(value);
-}
-
-/**
- * Type guard for validating notification types
- */
-export function isValidNotificationType(value: any): value is NotificationType {
-    return Object.values(NotificationType).includes(value);
-}
-
-/**
- * Type guard for validating file roles
- */
-export function isValidFileRole(value: any): value is FileRole {
-    return Object.values(FileRole).includes(value);
-}
-
-/**
- * Type guard for validating processing status
- */
-export function isValidProcessingStatus(value: any): value is ProcessingStatus {
-    return Object.values(ProcessingStatus).includes(value);
-}
-
-/**
- * Type guard for validating error types
- */
-export function isValidErrorType(value: any): value is ErrorType {
-    return Object.values(ErrorType).includes(value);
 }

@@ -31,16 +31,9 @@ export function getMimeType(filename: string): string {
 /**
  * Check if file type is supported by Whisper API
  */
-export function isSupportedAudioFile(filename: string): boolean {
+function isSupportedAudioFile(filename: string): boolean {
     const extension = filename.toLowerCase().split('.').pop();
     return WHISPER_LIMITS.supportedFormats.includes(extension as any);
-}
-
-/**
- * Get list of supported audio file extensions
- */
-export function getSupportedExtensions(): string[] {
-    return [...WHISPER_LIMITS.supportedExtensions];
 }
 
 /**

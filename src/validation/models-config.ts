@@ -22,7 +22,7 @@ const CONFIG_ID_PATTERN = /^[a-z0-9]+([a-z0-9\-_]*[a-z0-9]+)*$/;
 /**
  * Implementation to client class mapping
  */
-export const IMPLEMENTATION_MAPPING = {
+const IMPLEMENTATION_MAPPING = {
     whisper: 'WhisperClient',
     chatgpt: 'ChatGPTClient', 
     claude: 'ClaudeClient'
@@ -136,7 +136,7 @@ export function validateModelsConfig(config: ModelsConfig): true {
  * @returns true if valid
  * @throws AudioInboxError if invalid
  */
-export function validateModelConfig(config: ModelConfig, configId: string): true {
+function validateModelConfig(config: ModelConfig, configId: string): true {
     if (!config || typeof config !== 'object' || Array.isArray(config)) {
         throw ErrorFactory.validation(
             `Invalid model config for ${configId} - config missing or invalid`,

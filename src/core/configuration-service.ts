@@ -18,12 +18,12 @@ import { createLogger } from '../logger';
 
 const logger = createLogger('ConfigurationService');
 
-export interface ConfigurationValidationResult {
+interface ConfigurationValidationResult {
     isValid: boolean;
     error?: string;
 }
 
-export class ConfigurationService {
+class ConfigurationService {
     private settings: AudioInboxSettings;
 
     constructor(settings: AudioInboxSettings) {

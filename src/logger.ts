@@ -56,7 +56,7 @@ const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
 /**
  * Logger class with build-time configuration
  */
-export class Logger {
+class Logger {
     private readonly component: string;
     private readonly config: LoggerConfig;
 
@@ -228,68 +228,3 @@ export function createLogger(component: string): Logger {
 export function getBuildLogLevel(): LogLevel {
     return LOGGER_CONFIG.level;
 }
-
-/**
- * Check if logging is enabled for a specific level
- */
-export function isLogLevelEnabled(level: LogLevel): boolean {
-    const currentLevelValue = LOG_LEVEL_HIERARCHY[LOGGER_CONFIG.level];
-    const checkLevelValue = LOG_LEVEL_HIERARCHY[level];
-    return checkLevelValue <= currentLevelValue;
-}
-
-/**
- * Utility function to conditionally execute code only when logging is enabled
- * This helps with performance by avoiding expensive operations when they won't be logged
- */
-export function ifLogging<T>(level: LogLevel, fn: () => T): T | undefined {
-    if (isLogLevelEnabled(level)) {
-        return fn();
-    }
-    return undefined;
-}
-
-/**
- * Default logger instance for general plugin use
- */
-export const logger = createLogger('AudioInbox');
-
-/**
- * Log level utilities for external use
- */
-export const LogLevelUtils = {
-    /**
-     * Convert log level to numeric value
-     */
-    toNumber(level: LogLevel): number {
-        return LOG_LEVEL_HIERARCHY[level];
-    },
-
-    /**
-     * Compare two log levels
-     */
-    compare(a: LogLevel, b: LogLevel): number {
-        return LOG_LEVEL_HIERARCHY[a] - LOG_LEVEL_HIERARCHY[b];
-    },
-
-    /**
-     * Check if level A includes level B (A >= B)
-     */
-    includes(a: LogLevel, b: LogLevel): boolean {
-        return LOG_LEVEL_HIERARCHY[a] >= LOG_LEVEL_HIERARCHY[b];
-    },
-
-    /**
-     * Get all log levels
-     */
-    getAllLevels(): LogLevel[] {
-        return Object.values(LogLevel);
-    },
-
-    /**
-     * Get build-time configured level
-     */
-    getBuildLevel(): LogLevel {
-        return LOGGER_CONFIG.level;
-    }
-};

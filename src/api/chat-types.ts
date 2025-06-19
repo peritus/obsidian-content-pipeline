@@ -32,22 +32,7 @@ export interface ChatResult {
     };
 }
 
-export interface ChatRequestMetrics {
-    requestId: string;
-    model: string;
-    requestSize: number;
-    duration: number;
-    success: boolean;
-    error?: string;
-    retryCount: number;
-    usage?: {
-        promptTokens: number;
-        completionTokens: number;
-        totalTokens: number;
-    };
-}
-
-export interface OpenAIMessage {
+interface OpenAIMessage {
     role: 'system' | 'user' | 'assistant';
     content: string;
 }

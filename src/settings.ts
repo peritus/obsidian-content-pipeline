@@ -1,10 +1,2 @@
 // Re-export from modular structure to maintain existing import paths
-export { 
-    AudioInboxSettingTab, 
-    DEFAULT_SETTINGS,
-    ExamplePromptsManager,
-    PromptFileOperations,
-    PromptStatus,
-    DEFAULT_MODELS_CONFIG, 
-    DEFAULT_PIPELINE_CONFIG 
-} from './settings/AudioInboxSettingTab';
+export { AudioInboxSettingTab, DEFAULT_SETTINGS } from "./settings/AudioInboxSettingTab";

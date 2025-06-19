@@ -12,7 +12,7 @@ import { createLogger } from '../logger';
 
 const logger = createLogger('ConfigurationValidator');
 
-export interface ConfigurationValidationResult {
+interface ConfigurationValidationResult {
     isValid: boolean;
     error?: string;
     modelsErrors?: string[];
@@ -20,7 +20,7 @@ export interface ConfigurationValidationResult {
     crossRefErrors?: string[];
 }
 
-export class ConfigurationValidator {
+class ConfigurationValidator {
     private settings: AudioInboxSettings;
 
     constructor(settings: AudioInboxSettings) {

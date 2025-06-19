@@ -11,17 +11,15 @@ import {
     PipelineConfiguration, 
     ResolvedPipelineStep, 
     ConfigValidationResult, 
-    ModelConfig,
     PipelineStep 
 } from '../types';
 import { validateModelsConfig } from './models-config';
-import { validatePipelineConfig } from './pipeline-config';
 import { getClientClass } from './models-config';
 
 /**
  * Configuration resolver for managing dual configuration system
  */
-export class ConfigurationResolver {
+class ConfigurationResolver {
     private modelsConfig: ModelsConfig;
     private pipelineConfig: PipelineConfiguration;
 

@@ -25,16 +25,6 @@ export interface TranscriptionResult {
     requestId: string;
 }
 
-export interface WhisperRequestMetrics {
-    requestId: string;
-    filename: string;
-    fileSize: number;
-    duration: number;
-    success: boolean;
-    error?: string;
-    retryCount: number;
-}
-
 export const DEFAULT_WHISPER_CONFIG = {
     baseUrl: 'https://api.openai.com/v1',
     timeout: 30000,

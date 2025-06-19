@@ -15,19 +15,19 @@ const logger = createLogger('PathResolver');
 /**
  * Supported variables for path resolution
  */
-export const SUPPORTED_PATH_VARIABLES = Object.freeze([
+const SUPPORTED_PATH_VARIABLES = Object.freeze([
     'filename', 
     'timestamp',
     'date',
     'stepId'
 ] as const);
 
-export type PathVariable = typeof SUPPORTED_PATH_VARIABLES[number];
+type PathVariable = typeof SUPPORTED_PATH_VARIABLES[number];
 
 /**
  * Result of path resolution
  */
-export interface PathResolutionResult {
+interface PathResolutionResult {
     /** The resolved path */
     resolvedPath: string;
     /** Variables that were substituted */
@@ -41,7 +41,7 @@ export interface PathResolutionResult {
 /**
  * Options for path resolution
  */
-export interface PathResolutionOptions {
+interface PathResolutionOptions {
     /** Whether to throw on missing variables (default: false) */
     throwOnMissing?: boolean;
     /** Whether to validate the final path (default: true) */
@@ -456,8 +456,3 @@ export const PathUtils = {
     isDirectory: (path: string) => PathResolver.isDirectory(path),
     ensureDirectory: (path: string) => PathResolver.ensureDirectory(path)
 };
-
-/**
- * Default export for convenience
- */
-export default PathResolver;

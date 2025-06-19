@@ -18,7 +18,7 @@ import { createLogger } from '../../logger';
 
 const logger = createLogger('PipelineExecutor');
 
-export interface ExecutionOptions {
+interface ExecutionOptions {
     continueOnError?: boolean;
     maxFiles?: number;
 }
