@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --ci --coverage --watchAll=false",
-    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand"
+    "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "eliminate_dead_code": "tsr 'src/main\\.ts$' --recursive --include-d-ts --project tsconfig.json --write"
   },
   "keywords": [
     "obsidian",
