@@ -4,7 +4,7 @@ import { DEFAULT_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
 import { PromptCreator } from './PromptCreator';
 import { IndividualPromptRenderer } from './IndividualPromptRenderer';
-import { ErrorRenderer } from './ErrorRenderer';
+import { PromptStatus } from '../prompt-file-operations';
 
 /**
  * Manages the simplified prompts setup section with support for imported example prompts
@@ -70,12 +70,13 @@ export class ExamplePromptsManager {
             // Create a container for error display
             this.promptsContainer = containerEl.createEl('div');
             this.promptsContainer.style.marginBottom = '20px';
-            ErrorRenderer.showConfigError(this.promptsContainer, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
+            this.showSimpleError(this.promptsContainer, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
     /**
-     * Get and validate example prompts, prioritizing imported prompts over default config
+     * Get example prompts, prioritizing imported prompts over default config
+     * Assumes configuration is always complete and valid
      */
     private getExamplePrompts(): Record<string, string> | null {
         // First priority: imported prompts
@@ -83,26 +84,11 @@ export class ExamplePromptsManager {
             return this.importedPrompts;
         }
 
-        // Second priority: default configuration
+        // Second priority: default configuration (assumed to always be complete)
         const defaultConfig = DEFAULT_CONFIGS?.['default'];
         const examplePrompts = defaultConfig?.examplePrompts;
 
-        if (!defaultConfig) {
-            console.error('Default configuration not found in bundled configs');
-            return null;
-        }
-
-        if (!examplePrompts || typeof examplePrompts !== 'object') {
-            console.error('Example prompts not found in default configuration');
-            return null;
-        }
-
-        if (Object.keys(examplePrompts).length === 0) {
-            console.warn('No example prompts found in default configuration');
-            return null;
-        }
-
-        return examplePrompts;
+        return examplePrompts || null;
     }
 
     /**
@@ -141,7 +127,7 @@ export class ExamplePromptsManager {
                 }
 
                 // Render error prompts if any
-                ErrorRenderer.renderErrorPrompts(contentSection, errors);
+                this.renderErrorPrompts(contentSection, errors);
                 
                 // Render missing prompts if any
                 if (missing.length > 0) {
@@ -157,7 +143,7 @@ export class ExamplePromptsManager {
             this.promptsContainer.empty();
             const headingText = this.importedPrompts ? 'Prompts (imported)' : 'Prompts';
             this.promptsContainer.createEl('h3', { text: headingText });
-            ErrorRenderer.handleOverallError(this.promptsContainer, error);
+            this.handleOverallError(this.promptsContainer, error);
         }
     }
 
@@ -179,5 +165,54 @@ export class ExamplePromptsManager {
         await this.promptCreator.createSinglePrompt(prompt);
         // Re-render the status in the same container
         this.updatePromptsStatus();
+    }
+
+    /**
+     * Simplified error display for basic errors
+     */
+    private showSimpleError(containerEl: HTMLElement, message: string): void {
+        const errorEl = containerEl.createEl('div');
+        errorEl.style.color = 'var(--text-error)';
+        errorEl.style.padding = '10px';
+        errorEl.style.border = '1px solid var(--background-modifier-error)';
+        errorEl.style.borderRadius = '4px';
+        errorEl.style.backgroundColor = 'var(--background-modifier-error)';
+        errorEl.innerHTML = `❌ <strong>Error:</strong> ${message}`;
+    }
+
+    /**
+     * Render error prompts section (inlined from ErrorRenderer)
+     */
+    private renderErrorPrompts(containerEl: HTMLElement, errorPrompts: PromptStatus[]): void {
+        if (errorPrompts.length === 0) return;
+
+        const errorEl = containerEl.createEl('div');
+        errorEl.style.color = 'var(--text-warning)';
+        errorEl.style.padding = '10px';
+        errorEl.style.border = '1px solid var(--background-modifier-border)';
+        errorEl.style.borderRadius = '4px';
+        errorEl.style.marginBottom = '10px';
+        errorEl.innerHTML = `
+            <strong>⚠️ Errors detected:</strong><br>
+            ${errorPrompts.map(p => `• <code>${p.path}</code>: ${p.error}`).join('<br>')}
+        `;
+    }
+
+    /**
+     * Handle overall errors (inlined from ErrorRenderer)
+     */
+    private handleOverallError(containerEl: HTMLElement, error: unknown): void {
+        containerEl.empty();
+        const errorEl = containerEl.createEl('div');
+        errorEl.style.color = 'var(--text-error)';
+        errorEl.style.padding = '15px';
+        errorEl.style.textAlign = 'center';
+        errorEl.innerHTML = `
+            <div style="font-size: 18px; margin-bottom: 10px;">⚠️</div>
+            <div style="font-weight: bold; margin-bottom: 8px;">Error Checking Prompts</div>
+            <div style="font-size: 14px; opacity: 0.8;">${error instanceof Error ? error.message : String(error)}</div>
+        `;
+        
+        console.error('Error in updatePromptsStatus:', error);
     }
 }
