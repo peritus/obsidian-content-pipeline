@@ -8,7 +8,7 @@ import { FileDiscovery } from '../file-operations';
 import { StepChain } from './StepChain';
 import { createConfigurationService } from '../configuration-service';
 import { 
-    AudioInboxSettings, 
+    ContentPipelineSettings, 
     PipelineConfiguration, 
     FileInfo, 
     ProcessingResult, 
@@ -24,12 +24,12 @@ interface ExecutionOptions {
 }
 
 export class PipelineExecutor {
-    private settings: AudioInboxSettings;
+    private settings: ContentPipelineSettings;
     private executionState: ExecutionState;
     private fileDiscovery: FileDiscovery;
     private stepChain: StepChain;
 
-    constructor(app: App, settings: AudioInboxSettings) {
+    constructor(app: App, settings: ContentPipelineSettings) {
         this.settings = settings;
         this.executionState = new ExecutionState();
         this.fileDiscovery = new FileDiscovery(app);

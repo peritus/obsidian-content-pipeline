@@ -5,7 +5,7 @@
  */
 
 import { 
-    AudioInboxError, 
+    ContentPipelineError, 
     ErrorFactory, 
     ErrorHandler, 
     errorHandler
@@ -13,13 +13,13 @@ import {
 import { ErrorType, NotificationType } from '../src/types';
 import { mockNotice, cleanup } from './setup';
 
-describe('AudioInboxError', () => {
+describe('ContentPipelineError', () => {
     afterEach(() => {
         cleanup();
     });
 
     it('should create error with all properties', () => {
-        const error = new AudioInboxError(
+        const error = new ContentPipelineError(
             ErrorType.CONFIGURATION,
             'Technical message',
             'User-friendly message',
@@ -32,11 +32,11 @@ describe('AudioInboxError', () => {
         expect(error.userMessage).toBe('User-friendly message');
         expect(error.context).toEqual({ test: true });
         expect(error.suggestions).toEqual(['Suggestion 1', 'Suggestion 2']);
-        expect(error.name).toBe('AudioInboxError');
+        expect(error.name).toBe('ContentPipelineError');
     });
 
     it('should convert to ErrorInfo object', () => {
-        const error = new AudioInboxError(
+        const error = new ContentPipelineError(
             ErrorType.VALIDATION,
             'Test message',
             'User message'
@@ -51,9 +51,9 @@ describe('AudioInboxError', () => {
     });
 
     it('should determine severity based on error type', () => {
-        const configError = new AudioInboxError(ErrorType.CONFIGURATION, 'msg', 'user msg');
-        const fsError = new AudioInboxError(ErrorType.FILE_SYSTEM, 'msg', 'user msg');
-        const validationError = new AudioInboxError(ErrorType.VALIDATION, 'msg', 'user msg');
+        const configError = new ContentPipelineError(ErrorType.CONFIGURATION, 'msg', 'user msg');
+        const fsError = new ContentPipelineError(ErrorType.FILE_SYSTEM, 'msg', 'user msg');
+        const validationError = new ContentPipelineError(ErrorType.VALIDATION, 'msg', 'user msg');
 
         expect(configError.getSeverity()).toBe(NotificationType.ERROR);
         expect(fsError.getSeverity()).toBe(NotificationType.WARNING);
@@ -116,7 +116,7 @@ describe('ErrorHandler', () => {
         expect(instance1).toBe(errorHandler);
     });
 
-    it('should handle AudioInboxError instances', () => {
+    it('should handle ContentPipelineError instances', () => {
         const error = ErrorFactory.validation('Test error', 'User error');
         
         // This should not throw

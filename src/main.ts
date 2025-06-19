@@ -1,6 +1,6 @@
 import { Plugin, Notice, TFile } from 'obsidian';
-import { DEFAULT_SETTINGS, AudioInboxSettingTab } from './settings';
-import { AudioInboxSettings, PipelineConfiguration, ModelsConfig } from './types';
+import { DEFAULT_SETTINGS, SettingsTab } from './settings';
+import { ContentPipelineSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
 import { createConfigurationResolver } from './validation/configuration-resolver';
 import { createConfigurationValidator } from './validation/configuration-validator';
@@ -8,10 +8,10 @@ import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from './settings/defau
 import { CommandHandler } from './commands';
 
 /**
- * Main plugin class for Audio Inbox (v1.2 dual configuration)
+ * Main plugin class for Content Pipeline (v1.2 dual configuration)
  */
-export default class AudioInboxPlugin extends Plugin {
-    settings!: AudioInboxSettings; // Definite assignment assertion since we load in onload
+export default class ContentPipelinePlugin extends Plugin {
+    settings!: ContentPipelineSettings; // Definite assignment assertion since we load in onload
     private logger = createLogger('Main');
     private commandHandler!: CommandHandler;
 
@@ -19,7 +19,7 @@ export default class AudioInboxPlugin extends Plugin {
      * Called when the plugin is loaded
      */
     async onload() {
-        this.logger.info('Audio Inbox Plugin v1.2 loaded!');
+        this.logger.info('Content Pipeline Plugin v1.2 loaded!');
         
         // Load settings
         await this.loadSettings();
@@ -39,10 +39,10 @@ export default class AudioInboxPlugin extends Plugin {
         this.logger.debug('Build-time log level:', getBuildLogLevel());
         
         // Add ribbon icon
-        this.addRibbonIcon('microphone', 'Audio Inbox', () => {
-            this.logger.info('Audio Inbox ribbon clicked');
+        this.addRibbonIcon('microphone', 'Content Pipeline', () => {
+            this.logger.info('Content Pipeline ribbon clicked');
             const configStatus = this.getConfigurationStatus();
-            new Notice(`Audio Inbox ready! Configuration: ${configStatus}`);
+            new Notice(`Content Pipeline ready! Configuration: ${configStatus}`);
         });
 
         // Register file menu integration
@@ -56,16 +56,16 @@ export default class AudioInboxPlugin extends Plugin {
         });
 
         // Register settings tab
-        this.addSettingTab(new AudioInboxSettingTab(this.app, this));
+        this.addSettingTab(new SettingsTab(this.app, this));
 
-        this.logger.info('Audio Inbox Plugin v1.2 initialization complete');
+        this.logger.info('Content Pipeline Plugin v1.2 initialization complete');
     }
 
     /**
      * Called when the plugin is unloaded
      */
     onunload() {
-        this.logger.info('Audio Inbox Plugin unloaded');
+        this.logger.info('Content Pipeline Plugin unloaded');
     }
 
     /**
@@ -86,7 +86,7 @@ export default class AudioInboxPlugin extends Plugin {
                     const stepId = this.getStepForFile(file);
                     const menuTitle = stepId 
                         ? `Apply [${stepId}] to this file.`
-                        : 'Process File with Audio Inbox 🎵';
+                        : 'Process File with Content Pipeline 🎵';
 
                     // Add menu item for processable files
                     menu.addItem((item) => {

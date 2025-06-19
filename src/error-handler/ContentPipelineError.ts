@@ -1,13 +1,13 @@
 /**
- * Custom error class for Audio Inbox plugin
+ * Custom error class for Content Pipeline plugin
  */
 
 import { ErrorType, ErrorInfo, NotificationType } from '../types';
 
 /**
- * Custom error class for Audio Inbox plugin
+ * Custom error class for Content Pipeline plugin
  */
-export class AudioInboxError extends Error {
+export class ContentPipelineError extends Error {
     public readonly type: ErrorType;
     public readonly context?: any;
     public readonly userMessage: string;
@@ -21,7 +21,7 @@ export class AudioInboxError extends Error {
         suggestions?: string[]
     ) {
         super(message);
-        this.name = 'AudioInboxError';
+        this.name = 'ContentPipelineError';
         this.type = type;
         this.userMessage = userMessage;
         this.context = context;
@@ -29,7 +29,7 @@ export class AudioInboxError extends Error {
 
         // Maintain proper stack trace for V8
         if (Error.captureStackTrace) {
-            Error.captureStackTrace(this, AudioInboxError);
+            Error.captureStackTrace(this, ContentPipelineError);
         }
     }
 

@@ -42,7 +42,7 @@ const SUPPORTED_MODELS_BY_IMPLEMENTATION: Record<ModelImplementation, string[]> 
  * 
  * @param config - The models configuration to validate
  * @returns true if valid
- * @throws AudioInboxError if invalid
+ * @throws ContentPipelineError if invalid
  */
 export function validateModelsConfig(config: ModelsConfig): true {
     if (!config || typeof config !== 'object' || Array.isArray(config)) {
@@ -134,7 +134,7 @@ export function validateModelsConfig(config: ModelsConfig): true {
  * @param config - The model configuration to validate
  * @param configId - The ID of the config (for context in error messages)
  * @returns true if valid
- * @throws AudioInboxError if invalid
+ * @throws ContentPipelineError if invalid
  */
 function validateModelConfig(config: ModelConfig, configId: string): true {
     if (!config || typeof config !== 'object' || Array.isArray(config)) {

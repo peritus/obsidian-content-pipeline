@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Notice } from 'obsidian';
-import AudioInboxPlugin from '../../main';
+import ContentPipelinePlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { ModelsConfigSection } from '../ModelsConfigSection';
 import { PipelineConfigSection } from '../PipelineConfigSection';
@@ -11,10 +11,10 @@ import { createConfigurationResolver } from '../../validation/configuration-reso
 import { ConfigValidationResult } from '../../types';
 
 /**
- * Settings tab for the Audio Inbox plugin
+ * Settings tab for the Content Pipeline plugin
  */
-export class AudioInboxSettingTab extends PluginSettingTab {
-    plugin: AudioInboxPlugin;
+export class SettingsTab extends PluginSettingTab {
+    plugin: ContentPipelinePlugin;
     private fileOps: FileOperations;
     private examplePromptsManager: ExamplePromptsManager;
     private debounceTimer: NodeJS.Timeout | null = null;
@@ -25,7 +25,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
     private importExportManager: ImportExportManager;
     private pipelineVisualization: PipelineVisualization;
 
-    constructor(app: App, plugin: AudioInboxPlugin) {
+    constructor(app: App, plugin: ContentPipelinePlugin) {
         super(app, plugin);
         this.plugin = plugin;
         this.fileOps = new FileOperations(app);
@@ -121,7 +121,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
      * Render control buttons section (inlined from ControlButtons)
      */
     private renderControlButtons(containerEl: HTMLElement): void {
-        const buttonContainer = containerEl.createEl('div', { cls: 'audio-inbox-button-container' });
+        const buttonContainer = containerEl.createEl('div', { cls: 'content-pipeline-button-container' });
 
         // Validate configuration button
         const validateBtn = buttonContainer.createEl('button', { text: 'Validate Configuration' });
@@ -135,7 +135,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
         if (this.plugin.settings.importedExamplePrompts) {
             const clearPromptsBtn = buttonContainer.createEl('button', { 
                 text: 'Clear Imported Prompts',
-                cls: 'audio-inbox-accent-button'
+                cls: 'content-pipeline-accent-button'
             });
             clearPromptsBtn.onclick = () => this.clearImportedExamplePrompts();
         }

@@ -1,5 +1,5 @@
 /**
- * Path Resolution System for Audio Inbox Plugin
+ * Path Resolution System for Content Pipeline Plugin
  * 
  * This module handles pattern-based path resolution with variable substitution,
  * ensuring all paths are vault-relative and properly validated.

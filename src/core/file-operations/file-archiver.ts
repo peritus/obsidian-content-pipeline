@@ -80,7 +80,7 @@ export class FileArchiver {
             };
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'AudioInboxError') {
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
                 throw error; // Re-throw our custom errors
             }
 

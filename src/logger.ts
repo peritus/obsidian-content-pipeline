@@ -1,8 +1,8 @@
 /**
- * Logging system for Audio Inbox plugin
+ * Logging system for Content Pipeline plugin
  * 
  * This logging system is controlled entirely at build-time via the
- * OBSIDIAN_AUDIO_INBOX_LOGLEVEL environment variable. No runtime
+ * OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL environment variable. No runtime
  * configuration is needed or used.
  */
 
@@ -14,7 +14,7 @@ import { LogLevel, LogEntry, LoggerConfig } from './types';
  */
 declare const process: {
     env: {
-        OBSIDIAN_AUDIO_INBOX_LOGLEVEL: string;
+        OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL: string;
     };
 };
 
@@ -22,7 +22,7 @@ declare const process: {
  * Parse log level from build-time environment variable
  */
 function getBuildTimeLogLevel(): LogLevel {
-    const envLevel = process.env.OBSIDIAN_AUDIO_INBOX_LOGLEVEL?.toLowerCase();
+    const envLevel = process.env.OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL?.toLowerCase();
     
     switch (envLevel) {
         case 'error': return LogLevel.ERROR;

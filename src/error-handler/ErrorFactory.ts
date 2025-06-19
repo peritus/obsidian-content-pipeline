@@ -3,7 +3,7 @@
  */
 
 import { ErrorType } from '../types';
-import { AudioInboxError } from './AudioInboxError';
+import { ContentPipelineError } from './ContentPipelineError';
 
 /**
  * Factory functions for creating specific error types
@@ -17,8 +17,8 @@ export const ErrorFactory = {
         userMessage: string, 
         context?: any,
         suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.CONFIGURATION, 
             message, 
             userMessage,
@@ -35,8 +35,8 @@ export const ErrorFactory = {
         userMessage: string, 
         context?: any,
         suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.FILE_SYSTEM, 
             message, 
             userMessage,
@@ -53,8 +53,8 @@ export const ErrorFactory = {
         userMessage: string, 
         context?: any,
         suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.API, 
             message, 
             userMessage,
@@ -71,8 +71,8 @@ export const ErrorFactory = {
         userMessage: string, 
         context?: any,
         suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.PIPELINE, 
             message, 
             userMessage,
@@ -89,8 +89,8 @@ export const ErrorFactory = {
         userMessage: string, 
         context?: any,
         suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.VALIDATION, 
             message, 
             userMessage,
@@ -107,8 +107,8 @@ export const ErrorFactory = {
         userMessage: string, 
         context?: any,
         suggestions?: string[]
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.PARSING, 
             message, 
             userMessage,
@@ -128,8 +128,8 @@ export const ErrorFactory = {
         stepId: string,
         invalidNextStep: string,
         context?: any
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.PIPELINE,
             `Invalid next step reference in step ${stepId}: ${invalidNextStep}`,
             `Step "${stepId}" references an invalid next step "${invalidNextStep}"`,
@@ -149,8 +149,8 @@ export const ErrorFactory = {
         stepId: string,
         nextStepId: string,
         context?: any
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.VALIDATION,
             `Invalid routing prompt in step ${stepId} for next step ${nextStepId}`,
             `Step "${stepId}" has an invalid routing prompt for "${nextStepId}"`,
@@ -170,8 +170,8 @@ export const ErrorFactory = {
         stepId: string,
         nextValue: any,
         context?: any
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.VALIDATION,
             `Invalid next step format in step ${stepId}`,
             `Step "${stepId}" has an incorrectly formatted "next" field`,
@@ -192,8 +192,8 @@ export const ErrorFactory = {
         invalidNextStep: string,
         availableSteps: string[],
         context?: any
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.PARSING,
             `Response contains invalid nextStep: ${invalidNextStep}`,
             `File "${filename}" response specified an unknown next step "${invalidNextStep}"`,
@@ -212,8 +212,8 @@ export const ErrorFactory = {
     circularReference(
         circularPath: string[],
         context?: any
-    ): AudioInboxError {
-        return new AudioInboxError(
+    ): ContentPipelineError {
+        return new ContentPipelineError(
             ErrorType.PIPELINE,
             `Circular reference detected in pipeline: ${circularPath.join(' → ')}`,
             'Your pipeline configuration contains a circular reference',

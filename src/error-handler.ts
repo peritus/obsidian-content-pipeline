@@ -1,5 +1,5 @@
 /**
- * Error handling framework for Audio Inbox plugin
+ * Error handling framework for Content Pipeline plugin
  * 
  * This framework provides centralized error handling with user notifications,
  * technical logging, and proper error categorization.

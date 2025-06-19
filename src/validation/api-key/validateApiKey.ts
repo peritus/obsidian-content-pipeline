@@ -14,7 +14,7 @@ import { validateFormat } from './format-validation';
  * 
  * @param apiKey - The API key to validate
  * @returns true if valid
- * @throws AudioInboxError if invalid
+ * @throws ContentPipelineError if invalid
  */
 export function validateApiKey(apiKey: string): true {
     // Run all validation checks in sequence

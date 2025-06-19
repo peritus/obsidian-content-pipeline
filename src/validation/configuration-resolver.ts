@@ -33,7 +33,7 @@ class ConfigurationResolver {
      * 
      * @param stepId - The step ID to resolve
      * @returns Resolved pipeline step with model config
-     * @throws AudioInboxError if step or model config not found
+     * @throws ContentPipelineError if step or model config not found
      */
     resolveStep(stepId: string): ResolvedPipelineStep {
         // Get pipeline step
@@ -75,7 +75,7 @@ class ConfigurationResolver {
      * 
      * @param stepId - The step ID to get client class for
      * @returns Client class name for the step's model implementation
-     * @throws AudioInboxError if step or model config not found
+     * @throws ContentPipelineError if step or model config not found
      */
     getClientClass(stepId: string): string {
         const resolvedStep = this.resolveStep(stepId);
@@ -175,7 +175,7 @@ class ConfigurationResolver {
     /**
      * Validate pipeline structure without cross-reference checks
      * 
-     * @throws AudioInboxError if pipeline structure is invalid
+     * @throws ContentPipelineError if pipeline structure is invalid
      */
     private validatePipelineStructure(): void {
         if (!this.pipelineConfig || typeof this.pipelineConfig !== 'object') {
@@ -225,7 +225,7 @@ class ConfigurationResolver {
     /**
      * Validate cross-references between models and pipeline configurations
      * 
-     * @throws AudioInboxError if cross-references are invalid
+     * @throws ContentPipelineError if cross-references are invalid
      */
     private validateCrossReferences(): void {
         const stepIds = Object.keys(this.pipelineConfig);
@@ -264,7 +264,7 @@ class ConfigurationResolver {
      * 
      * @param step - Pipeline step to validate
      * @param stepId - Step ID for error context
-     * @throws AudioInboxError if step structure is invalid
+     * @throws ContentPipelineError if step structure is invalid
      */
     private validatePipelineStepStructure(step: PipelineStep, stepId: string): void {
         if (!step || typeof step !== 'object') {
@@ -317,7 +317,7 @@ class ConfigurationResolver {
  * @param modelsConfigText - JSON string of models configuration
  * @param pipelineConfigText - JSON string of pipeline configuration
  * @returns Configuration resolver instance
- * @throws AudioInboxError if JSON parsing fails
+ * @throws ContentPipelineError if JSON parsing fails
  */
 export function createConfigurationResolver(
     modelsConfigText: string, 

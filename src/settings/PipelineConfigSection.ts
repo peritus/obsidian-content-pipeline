@@ -3,19 +3,19 @@
  */
 
 import { Setting, TextAreaComponent } from 'obsidian';
-import AudioInboxPlugin from '../main';
+import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
 import { DEFAULT_PIPELINE_CONFIG } from './default-config';
 
 export class PipelineConfigSection {
-    private plugin: AudioInboxPlugin;
+    private plugin: ContentPipelinePlugin;
     private pipelineTextarea: TextAreaComponent | null = null;
     private onChangeCallback: (value: string) => void;
     private onExportCallback: () => void;
     private onImportCallback: () => void;
 
     constructor(
-        plugin: AudioInboxPlugin, 
+        plugin: ContentPipelinePlugin, 
         onChangeCallback: (value: string) => void,
         onExportCallback: () => void,
         onImportCallback: () => void
@@ -31,11 +31,11 @@ export class PipelineConfigSection {
      */
     render(containerEl: HTMLElement): void {
         // Pipeline configuration header
-        const pipelineHeaderEl = containerEl.createEl('div', { cls: 'audio-inbox-section-header' });
+        const pipelineHeaderEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header' });
         
         const pipelineHeader = pipelineHeaderEl.createEl('h4', { text: '🔄 Pipeline Configuration (Shareable)' });
         
-        const pipelineDesc = pipelineHeaderEl.createEl('div', { cls: 'audio-inbox-section-description' });
+        const pipelineDesc = pipelineHeaderEl.createEl('div', { cls: 'content-pipeline-section-description' });
         pipelineDesc.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
 
         // Pipeline configuration textarea
@@ -66,11 +66,11 @@ export class PipelineConfigSection {
      * Render the action buttons for pipeline configuration
      */
     private renderActionButtons(containerEl: HTMLElement): void {
-        const pipelineButtonContainer = containerEl.createEl('div', { cls: 'audio-inbox-config-button-container' });
+        const pipelineButtonContainer = containerEl.createEl('div', { cls: 'content-pipeline-config-button-container' });
         
         const loadDefaultPipelineBtn = pipelineButtonContainer.createEl('button', { 
             text: 'Load Default Pipeline Config',
-            cls: 'audio-inbox-config-button'
+            cls: 'content-pipeline-config-button'
         });
         loadDefaultPipelineBtn.onclick = () => {
             const defaultConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
@@ -82,7 +82,7 @@ export class PipelineConfigSection {
 
         const exportBtn = pipelineButtonContainer.createEl('button', { 
             text: 'Export Pipeline Config',
-            cls: 'audio-inbox-config-button'
+            cls: 'content-pipeline-config-button'
         });
         exportBtn.onclick = this.onExportCallback;
 

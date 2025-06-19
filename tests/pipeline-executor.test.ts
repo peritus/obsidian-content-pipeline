@@ -9,13 +9,13 @@ import { PipelineExecutor, ExecutionState, StepChain } from '../src/core/pipelin
 import { FileDiscovery } from '../src/core/file-operations';
 import { createMockPipelineConfig, createMockPipelineStep, createComplexPipelineConfig, cleanup } from './setup';
 import { App } from 'obsidian';
-import { AudioInboxSettings, ProcessingStatus } from '../src/types';
+import { ContentPipelineSettings, ProcessingStatus } from '../src/types';
 
 // Mock app for testing
 const mockApp = {} as App;
 
 // Mock settings with dual configuration for v1.2 schema
-const mockSettings: AudioInboxSettings = {
+const mockSettings: ContentPipelineSettings = {
     modelsConfig: '{"test-model": {"baseUrl": "https://api.openai.com/v1", "apiKey": "test-key", "implementation": "chatgpt", "model": "gpt-4"}}',
     pipelineConfig: '{}',
     parsedPipelineConfig: createMockPipelineConfig(),
@@ -51,7 +51,7 @@ describe('Pipeline Executor', () => {
 
     describe('Configuration Validation', () => {
         it('should throw error when configuration validation fails', async () => {
-            const settingsWithoutConfig: AudioInboxSettings = {
+            const settingsWithoutConfig: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: undefined
             };
@@ -64,7 +64,7 @@ describe('Pipeline Executor', () => {
 
         it('should validate object-keyed pipeline configuration', () => {
             const complexConfig = createComplexPipelineConfig();
-            const settingsWithComplexConfig: AudioInboxSettings = {
+            const settingsWithComplexConfig: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: complexConfig
             };
@@ -94,7 +94,7 @@ describe('Pipeline Executor', () => {
                 })
             };
 
-            const settingsWithRouting: AudioInboxSettings = {
+            const settingsWithRouting: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: routingConfig
             };
@@ -112,7 +112,7 @@ describe('Pipeline Executor', () => {
                 })
             };
 
-            const settingsWithFinalStep: AudioInboxSettings = {
+            const settingsWithFinalStep: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: finalStepConfig
             };
@@ -125,7 +125,7 @@ describe('Pipeline Executor', () => {
     describe('Entry Point Detection', () => {
         it('should identify entry points correctly in object-keyed configuration', () => {
             const complexConfig = createComplexPipelineConfig();
-            const settingsWithComplexConfig: AudioInboxSettings = {
+            const settingsWithComplexConfig: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: complexConfig
             };
@@ -156,7 +156,7 @@ describe('Pipeline Executor', () => {
                 })
             };
 
-            const settingsWithMultiEntry: AudioInboxSettings = {
+            const settingsWithMultiEntry: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: multiEntryConfig
             };
@@ -335,7 +335,7 @@ describe('Step Chain', () => {
                 })
             };
 
-            const settingsWithSingleStep: AudioInboxSettings = {
+            const settingsWithSingleStep: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: singleStepConfig
             };
@@ -346,7 +346,7 @@ describe('Step Chain', () => {
 
         it('should handle step chain with routing decisions', async () => {
             const routingConfig = createComplexPipelineConfig();
-            const settingsWithRouting: AudioInboxSettings = {
+            const settingsWithRouting: ContentPipelineSettings = {
                 ...mockSettings,
                 parsedPipelineConfig: routingConfig
             };

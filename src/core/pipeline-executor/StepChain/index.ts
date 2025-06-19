@@ -6,7 +6,7 @@ import { App } from 'obsidian';
 import { StepExecutor } from './StepExecutor';
 import { ChainExecutor } from './ChainExecutor';
 import { 
-    AudioInboxSettings,
+    ContentPipelineSettings,
     FileInfo, 
     ProcessingResult
 } from '../../../types';
@@ -18,7 +18,7 @@ export class StepChain {
     private stepExecutor: StepExecutor;
     private chainExecutor: ChainExecutor;
 
-    constructor(app: App, settings: AudioInboxSettings) {
+    constructor(app: App, settings: ContentPipelineSettings) {
         this.stepExecutor = new StepExecutor(app, settings);
         this.chainExecutor = new ChainExecutor(app, this.stepExecutor);
         logger.debug('StepChain initialized with dual configuration support');

@@ -1,2 +1,2 @@
 // Re-export from modular structure to maintain existing import paths
-export { AudioInboxSettingTab, DEFAULT_SETTINGS } from "./settings/AudioInboxSettingTab";
+export { SettingsTab, DEFAULT_SETTINGS } from "./settings/SettingsTab";

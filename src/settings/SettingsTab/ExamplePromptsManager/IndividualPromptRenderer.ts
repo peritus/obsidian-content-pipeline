@@ -19,24 +19,24 @@ export class IndividualPromptRenderer {
      * Render a single simplified prompt entry with horizontal layout and static fine print
      */
     private renderIndividualPrompt(containerEl: HTMLElement, prompt: PromptStatus, onCreate: (prompt: PromptStatus) => void): void {
-        const promptEl = containerEl.createEl('div', { cls: 'audio-inbox-prompt-item' });
+        const promptEl = containerEl.createEl('div', { cls: 'content-pipeline-prompt-item' });
 
         // Top row: filename and button
-        const topRow = promptEl.createEl('div', { cls: 'audio-inbox-prompt-top-row' });
+        const topRow = promptEl.createEl('div', { cls: 'content-pipeline-prompt-top-row' });
 
         // Left side: filename
-        const filenameEl = topRow.createEl('div', { cls: 'audio-inbox-prompt-filename' });
+        const filenameEl = topRow.createEl('div', { cls: 'content-pipeline-prompt-filename' });
         filenameEl.textContent = prompt.path;
 
         // Right side: button
         const createBtn = topRow.createEl('button', { 
             text: 'Create example',
-            cls: 'audio-inbox-prompt-create-button'
+            cls: 'content-pipeline-prompt-create-button'
         });
         createBtn.onclick = () => onCreate(prompt);
 
         // Bottom row: static fine print without filename duplication
-        const finePrintEl = promptEl.createEl('small', { cls: 'audio-inbox-prompt-fine-print' });
+        const finePrintEl = promptEl.createEl('small', { cls: 'content-pipeline-prompt-fine-print' });
         finePrintEl.textContent = 'Prompt file not found';
     }
 }

@@ -6,7 +6,7 @@
  */
 
 import { 
-    AudioInboxSettings, 
+    ContentPipelineSettings, 
     PipelineConfiguration, 
     ModelsConfig,
     ResolvedPipelineStep 
@@ -24,9 +24,9 @@ interface ConfigurationValidationResult {
 }
 
 class ConfigurationService {
-    private settings: AudioInboxSettings;
+    private settings: ContentPipelineSettings;
 
-    constructor(settings: AudioInboxSettings) {
+    constructor(settings: ContentPipelineSettings) {
         this.settings = settings;
     }
 
@@ -181,6 +181,6 @@ class ConfigurationService {
 /**
  * Factory function to create a ConfigurationService instance
  */
-export function createConfigurationService(settings: AudioInboxSettings): ConfigurationService {
+export function createConfigurationService(settings: ContentPipelineSettings): ConfigurationService {
     return new ConfigurationService(settings);
 }

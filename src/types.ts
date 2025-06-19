@@ -1,5 +1,5 @@
 /**
- * Comprehensive type definitions for the Audio Inbox plugin
+ * Comprehensive type definitions for the Content Pipeline plugin
  * 
  * This file contains all TypeScript interfaces and types used throughout the plugin,
  * providing type safety and clear contracts for all data structures.
@@ -373,9 +373,9 @@ export interface PathContext {
 
 /**
  * Complete plugin settings interface for dual configuration system
- * NOTE: Log level is now controlled at build-time via OBSIDIAN_AUDIO_INBOX_LOGLEVEL
+ * NOTE: Log level is now controlled at build-time via OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL
  */
-export interface AudioInboxSettings {
+export interface ContentPipelineSettings {
     /** JSON string containing the models configuration (private) */
     modelsConfig: string;
     /** JSON string containing the pipeline configuration (shareable) */

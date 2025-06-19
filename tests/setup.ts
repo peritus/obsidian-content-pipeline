@@ -22,7 +22,7 @@ global.console = {
 
 // Set up test environment variables
 process.env.NODE_ENV = 'test';
-process.env.OBSIDIAN_AUDIO_INBOX_LOGLEVEL = 'error'; // Minimize logging during tests
+process.env.OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL = 'error'; // Minimize logging during tests
 
 // Global test utilities
 declare global {

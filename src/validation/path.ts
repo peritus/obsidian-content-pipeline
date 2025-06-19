@@ -13,7 +13,7 @@ import { ErrorFactory } from '../error-handler';
  * @param context - Context for error reporting (e.g., "template path", "input directory")
  * @param allowGlobs - Whether to allow glob patterns (* characters) - defaults to false
  * @returns true if valid
- * @throws AudioInboxError if invalid
+ * @throws ContentPipelineError if invalid
  */
 export function validatePath(path: string, context: string, allowGlobs: boolean = false): true {
     // Check if path is empty or only whitespace

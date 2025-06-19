@@ -13,11 +13,11 @@ export class PipelineVisualization {
     render(containerEl: HTMLElement): void {
         const vizHeader = containerEl.createEl('h4', { 
             text: '📊 Pipeline Visualization',
-            cls: 'audio-inbox-viz-header'
+            cls: 'content-pipeline-viz-header'
         });
 
         this.pipelineVisualizationEl = containerEl.createEl('div', {
-            cls: 'audio-inbox-viz-container'
+            cls: 'content-pipeline-viz-container'
         });
     }
 
@@ -39,11 +39,11 @@ export class PipelineVisualization {
             const parsedPipelineConfig = JSON.parse(pipelineConfig);
             const stepIds = Object.keys(parsedPipelineConfig);
             
-            let html = '<div class="audio-inbox-viz-overview"><strong>Pipeline Overview:</strong></div>';
+            let html = '<div class="content-pipeline-viz-overview"><strong>Pipeline Overview:</strong></div>';
             
             // Entry points
             if (validationResult.entryPoints.length > 0) {
-                html += `<div class="audio-inbox-viz-entry-points"><strong>Entry Points:</strong> ${validationResult.entryPoints.join(', ')}</div>`;
+                html += `<div class="content-pipeline-viz-entry-points"><strong>Entry Points:</strong> ${validationResult.entryPoints.join(', ')}</div>`;
             }
             
             // Steps table
@@ -59,7 +59,7 @@ export class PipelineVisualization {
      * Generate the steps table HTML
      */
     private generateStepsTable(pipelineConfig: any, stepIds: string[]): string {
-        let html = '<table class="audio-inbox-viz-table">';
+        let html = '<table class="content-pipeline-viz-table">';
         html += '<tr>';
         html += '<th>Step</th>';
         html += '<th>Model</th>';

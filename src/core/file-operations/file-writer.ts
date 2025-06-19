@@ -86,7 +86,7 @@ export class FileWriter {
             };
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'AudioInboxError') {
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
                 throw error; // Re-throw our custom errors
             }
 
@@ -121,7 +121,7 @@ export class FileWriter {
             return true;
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'AudioInboxError') {
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
                 throw error;
             }
 

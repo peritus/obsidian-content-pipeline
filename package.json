@@ -1,15 +1,15 @@
 {
-  "name": "obsidian-audio-inbox",
+  "name": "obsidian-content-pipeline",
   "version": "1.0.0",
-  "description": "A sophisticated audio inbox management plugin for Obsidian that helps organize and process audio recordings efficiently",
+  "description": "A sophisticated content pipeline plugin for Obsidian for advanced content processing workflows",
   "main": "main.js",
   "scripts": {
     "build:configs": "node build/generate-configs.js",
     "build": "npm run build:configs && node esbuild.config.js",
-    "build:debug": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=debug node esbuild.config.js",
-    "build:info": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=info node esbuild.config.js",
-    "build:warn": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=warn node esbuild.config.js",
-    "build:error": "npm run build:configs && OBSIDIAN_AUDIO_INBOX_LOGLEVEL=error node esbuild.config.js",
+    "build:debug": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=debug node esbuild.config.js",
+    "build:info": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=info node esbuild.config.js",
+    "build:warn": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=warn node esbuild.config.js",
+    "build:error": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=error node esbuild.config.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
@@ -23,15 +23,16 @@
   "keywords": [
     "obsidian",
     "obsidian-plugin",
-    "audio",
-    "voice-notes",
-    "recording",
-    "inbox",
+    "content",
+    "pipeline",
+    "processing",
+    "workflow",
     "productivity",
     "note-taking",
-    "audio-management",
-    "workflow",
-    "organization"
+    "automation",
+    "organization",
+    "ai",
+    "llm"
   ],
   "author": {
     "name": "Filip",
@@ -41,12 +42,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/obsidian-audio-inbox.git"
+    "url": "https://github.com/yourusername/obsidian-content-pipeline.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/obsidian-audio-inbox/issues"
+    "url": "https://github.com/yourusername/obsidian-content-pipeline/issues"
   },
-  "homepage": "https://github.com/yourusername/obsidian-audio-inbox#readme",
+  "homepage": "https://github.com/yourusername/obsidian-content-pipeline#readme",
   "engines": {
     "node": ">=16.0.0"
   },

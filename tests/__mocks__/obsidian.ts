@@ -13,8 +13,8 @@ export class Plugin {
     constructor() {
         this.app = mockApp;
         this.manifest = {
-            id: 'obsidian-audio-inbox',
-            name: 'Audio Inbox',
+            id: 'obsidian-content-pipeline',
+            name: 'Content Pipeline',
             version: '1.0.0'
         };
     }

@@ -11,17 +11,17 @@ export class TextareaStyler {
         // Style the textarea container
         const textareaContainer = text.inputEl.parentElement;
         if (textareaContainer) {
-            textareaContainer.addClass('audio-inbox-textarea-container');
+            textareaContainer.addClass('content-pipeline-textarea-container');
         }
         
         // Style the textarea itself
-        text.inputEl.addClass('audio-inbox-textarea');
+        text.inputEl.addClass('content-pipeline-textarea');
     }
 
     /**
      * Apply full width styling to setting element
      */
     static styleSettingElement(settingEl: HTMLElement): void {
-        settingEl.addClass('audio-inbox-setting-element');
+        settingEl.addClass('content-pipeline-setting-element');
     }
 }

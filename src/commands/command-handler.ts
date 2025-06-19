@@ -1,11 +1,11 @@
 /**
- * Command handlers for Audio Inbox plugin
+ * Command handlers for Content Pipeline plugin
  * 
  * Centralizes all command logic and processing operations.
  */
 
 import { App, Notice, TFile } from 'obsidian';
-import { AudioInboxSettings, ProcessingStatus } from '../types';
+import { ContentPipelineSettings, ProcessingStatus } from '../types';
 import { PipelineExecutor } from '../core/pipeline-executor';
 import { FileDiscovery } from '../core/file-operations';
 import { createConfigurationService } from '../core/configuration-service';
@@ -15,9 +15,9 @@ const logger = createLogger('CommandHandler');
 
 export class CommandHandler {
     private app: App;
-    private settings: AudioInboxSettings;
+    private settings: ContentPipelineSettings;
 
-    constructor(app: App, settings: AudioInboxSettings) {
+    constructor(app: App, settings: ContentPipelineSettings) {
         this.app = app;
         this.settings = settings;
     }

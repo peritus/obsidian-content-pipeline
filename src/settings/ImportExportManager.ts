@@ -48,7 +48,7 @@ export class ImportExportManager {
             const exportData = {
                 version: '1.2',
                 exported: new Date().toISOString(),
-                description: 'Audio Inbox Pipeline Configuration',
+                description: 'Content Pipeline Pipeline Configuration',
                 pipeline: resolver.exportPipelineConfig()
             };
 
@@ -57,7 +57,7 @@ export class ImportExportManager {
             
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
-            link.download = `audio-inbox-pipeline-${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `content-pipeline-pipeline-${new Date().toISOString().split('T')[0]}.json`;
             
             document.body.appendChild(link);
             link.click();

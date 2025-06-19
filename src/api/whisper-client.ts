@@ -51,7 +51,7 @@ export class WhisperClient {
         } catch (error) {
             logger.error(`Transcription failed: ${filename}`, { requestId, error });
             
-            if (error instanceof Error && error.name === 'AudioInboxError') {
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
                 throw error;
             }
 

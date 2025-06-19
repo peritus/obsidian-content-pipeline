@@ -59,7 +59,7 @@ export class ExamplePromptsManager {
             this.examplePrompts = examplePrompts;
             
             // Create a container immediately to reserve the position
-            this.promptsContainer = containerEl.createEl('div', { cls: 'audio-inbox-prompts-container' });
+            this.promptsContainer = containerEl.createEl('div', { cls: 'content-pipeline-prompts-container' });
             
             // Populate the container asynchronously but in the correct position
             this.updatePromptsStatus();
@@ -67,7 +67,7 @@ export class ExamplePromptsManager {
         } catch (error) {
             console.error('Error accessing example prompts:', error);
             // Create a container for error display
-            this.promptsContainer = containerEl.createEl('div', { cls: 'audio-inbox-prompts-container' });
+            this.promptsContainer = containerEl.createEl('div', { cls: 'content-pipeline-prompts-container' });
             this.showSimpleError(this.promptsContainer, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
@@ -117,7 +117,7 @@ export class ExamplePromptsManager {
 
                 // Show info about imported prompts if applicable
                 if (this.importedPrompts) {
-                    const infoEl = contentSection.createEl('p', { cls: 'audio-inbox-prompts-info' });
+                    const infoEl = contentSection.createEl('p', { cls: 'content-pipeline-prompts-info' });
                     infoEl.textContent = `Using ${Object.keys(this.importedPrompts).length} example prompts from imported configuration.`;
                 }
 
@@ -130,7 +130,7 @@ export class ExamplePromptsManager {
                 }
             } else {
                 // If no prompts to show, hide the container completely
-                this.promptsContainer.addClass('audio-inbox-prompts-hidden');
+                this.promptsContainer.addClass('content-pipeline-prompts-hidden');
             }
 
         } catch (error) {
@@ -166,7 +166,7 @@ export class ExamplePromptsManager {
      * Simplified error display for basic errors
      */
     private showSimpleError(containerEl: HTMLElement, message: string): void {
-        const errorEl = containerEl.createEl('div', { cls: 'audio-inbox-simple-error' });
+        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-simple-error' });
         errorEl.innerHTML = `❌ <strong>Error:</strong> ${message}`;
     }
 
@@ -176,7 +176,7 @@ export class ExamplePromptsManager {
     private renderErrorPrompts(containerEl: HTMLElement, errorPrompts: PromptStatus[]): void {
         if (errorPrompts.length === 0) return;
 
-        const errorEl = containerEl.createEl('div', { cls: 'audio-inbox-error-with-details' });
+        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-error-with-details' });
         errorEl.innerHTML = `
             <strong>⚠️ Errors detected:</strong><br>
             ${errorPrompts.map(p => `• <code>${p.path}</code>: ${p.error}`).join('<br>')}
@@ -188,11 +188,11 @@ export class ExamplePromptsManager {
      */
     private handleOverallError(containerEl: HTMLElement, error: unknown): void {
         containerEl.empty();
-        const errorEl = containerEl.createEl('div', { cls: 'audio-inbox-overall-error' });
+        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-overall-error' });
         errorEl.innerHTML = `
-            <div class="audio-inbox-overall-error-icon">⚠️</div>
-            <div class="audio-inbox-overall-error-title">Error Checking Prompts</div>
-            <div class="audio-inbox-overall-error-details">${error instanceof Error ? error.message : String(error)}</div>
+            <div class="content-pipeline-overall-error-icon">⚠️</div>
+            <div class="content-pipeline-overall-error-title">Error Checking Prompts</div>
+            <div class="content-pipeline-overall-error-details">${error instanceof Error ? error.message : String(error)}</div>
         `;
         
         console.error('Error in updatePromptsStatus:', error);

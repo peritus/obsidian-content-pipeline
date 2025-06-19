@@ -7,7 +7,7 @@ import { WhisperStepProcessor } from '../whisper-step';
 import { ChatStepExecutor } from './ChatStepExecutor';
 import { createConfigurationService } from '../../configuration-service';
 import { 
-    AudioInboxSettings,
+    ContentPipelineSettings,
     FileInfo, 
     ProcessingResult, 
     ProcessingStatus,
@@ -20,11 +20,11 @@ const logger = createLogger('StepExecutor');
 
 export class StepExecutor {
     private app: App;
-    private settings: AudioInboxSettings;
+    private settings: ContentPipelineSettings;
     private whisperProcessor: WhisperStepProcessor;
     private chatExecutor: ChatStepExecutor;
 
-    constructor(app: App, settings: AudioInboxSettings) {
+    constructor(app: App, settings: ContentPipelineSettings) {
         this.app = app;
         this.settings = settings;
         this.whisperProcessor = new WhisperStepProcessor(app);

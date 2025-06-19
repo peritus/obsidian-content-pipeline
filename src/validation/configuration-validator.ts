@@ -5,7 +5,7 @@
  * eliminating scattered validation logic across the codebase.
  */
 
-import { AudioInboxSettings, PipelineConfiguration } from '../types';
+import { ContentPipelineSettings, PipelineConfiguration } from '../types';
 import { createConfigurationResolver } from '../validation/configuration-resolver';
 import { ErrorFactory } from '../error-handler';
 import { createLogger } from '../logger';
@@ -21,9 +21,9 @@ interface ConfigurationValidationResult {
 }
 
 class ConfigurationValidator {
-    private settings: AudioInboxSettings;
+    private settings: ContentPipelineSettings;
 
-    constructor(settings: AudioInboxSettings) {
+    constructor(settings: ContentPipelineSettings) {
         this.settings = settings;
     }
 
@@ -154,7 +154,7 @@ class ConfigurationValidator {
             return this.settings.parsedPipelineConfig;
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'AudioInboxError') {
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
                 throw error; // Re-throw our custom errors
             }
             
@@ -193,7 +193,7 @@ class ConfigurationValidator {
     /**
      * Update settings reference when settings change
      */
-    updateSettings(settings: AudioInboxSettings): void {
+    updateSettings(settings: ContentPipelineSettings): void {
         this.settings = settings;
         logger.debug('Configuration validator updated with new settings');
     }
@@ -202,6 +202,6 @@ class ConfigurationValidator {
 /**
  * Factory function to create a configuration validator
  */
-export function createConfigurationValidator(settings: AudioInboxSettings): ConfigurationValidator {
+export function createConfigurationValidator(settings: ContentPipelineSettings): ConfigurationValidator {
     return new ConfigurationValidator(settings);
 }

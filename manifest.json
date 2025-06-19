@@ -1,11 +1,11 @@
 {
-  "id": "obsidian-audio-inbox",
-  "name": "Audio Inbox",
+  "id": "obsidian-content-pipeline",
+  "name": "Content Pipeline",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "A sophisticated audio inbox management plugin for Obsidian",
+  "description": "A sophisticated content pipeline plugin for Obsidian",
   "author": "Your Name",
-  "authorUrl": "https://github.com/yourusername/obsidian-audio-inbox",
+  "authorUrl": "https://github.com/yourusername/obsidian-content-pipeline",
   "fundingUrl": "https://buymeacoffee.com/yourusername",
   "isDesktopOnly": false
 }

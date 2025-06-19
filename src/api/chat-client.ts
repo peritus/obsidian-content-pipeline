@@ -108,7 +108,7 @@ export class ChatClient {
         } catch (error) {
             logger.error(`YAML request failed`, { requestId, error, duration: Date.now() - startTime });
             
-            if (error instanceof Error && error.name === 'AudioInboxError') {
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
                 throw error;
             }
 

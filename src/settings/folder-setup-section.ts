@@ -1,15 +1,15 @@
 import { Setting, Notice } from 'obsidian';
-import AudioInboxPlugin from '../main';
+import ContentPipelinePlugin from '../main';
 import { FileOperations } from '../core/file-operations';
 
 /**
  * Folder setup section for settings
  */
 export class FolderSetupSection {
-    private plugin: AudioInboxPlugin;
+    private plugin: ContentPipelinePlugin;
     private fileOps: FileOperations;
 
-    constructor(plugin: AudioInboxPlugin, fileOps: FileOperations) {
+    constructor(plugin: ContentPipelinePlugin, fileOps: FileOperations) {
         this.plugin = plugin;
         this.fileOps = fileOps;
     }
@@ -22,13 +22,13 @@ export class FolderSetupSection {
         
         // Check if folder structure exists and show status
         const structureStatus = this.fileOps.checkInboxStructure();
-        const statusEl = containerEl.createEl('div', { cls: 'audio-inbox-folder-status' });
+        const statusEl = containerEl.createEl('div', { cls: 'content-pipeline-folder-status' });
         
         if (structureStatus.exists) {
-            statusEl.addClass('audio-inbox-folder-status-success');
+            statusEl.addClass('content-pipeline-folder-status-success');
             statusEl.innerHTML = '✅ <strong>Inbox structure is ready!</strong> All required folders exist.';
         } else {
-            statusEl.addClass('audio-inbox-folder-status-warning');
+            statusEl.addClass('content-pipeline-folder-status-warning');
             statusEl.innerHTML = `⚠️ <strong>Setup Required:</strong> Missing folders: ${structureStatus.missingFolders.join(', ')}`;
         }
         

@@ -3,16 +3,16 @@
  */
 
 import { Setting, TextAreaComponent } from 'obsidian';
-import AudioInboxPlugin from '../main';
+import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
 import { DEFAULT_MODELS_CONFIG } from './default-config';
 
 export class ModelsConfigSection {
-    private plugin: AudioInboxPlugin;
+    private plugin: ContentPipelinePlugin;
     private modelsTextarea: TextAreaComponent | null = null;
     private onChangeCallback: (value: string) => void;
 
-    constructor(plugin: AudioInboxPlugin, onChangeCallback: (value: string) => void) {
+    constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
         this.onChangeCallback = onChangeCallback;
     }
@@ -22,11 +22,11 @@ export class ModelsConfigSection {
      */
     render(containerEl: HTMLElement): void {
         // Models configuration header
-        const modelsHeaderEl = containerEl.createEl('div', { cls: 'audio-inbox-section-header' });
+        const modelsHeaderEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header' });
         
         const modelsHeader = modelsHeaderEl.createEl('h4', { text: '🔐 Models Configuration (Private)' });
         
-        const modelsDesc = modelsHeaderEl.createEl('div', { cls: 'audio-inbox-section-description' });
+        const modelsDesc = modelsHeaderEl.createEl('div', { cls: 'content-pipeline-section-description' });
         modelsDesc.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
 
         // Models configuration textarea
@@ -57,11 +57,11 @@ export class ModelsConfigSection {
      * Render the default config button
      */
     private renderDefaultConfigButton(containerEl: HTMLElement): void {
-        const modelsButtonContainer = containerEl.createEl('div', { cls: 'audio-inbox-config-button-container' });
+        const modelsButtonContainer = containerEl.createEl('div', { cls: 'content-pipeline-config-button-container' });
         
         const loadDefaultModelsBtn = modelsButtonContainer.createEl('button', { 
             text: 'Load Default Models Config',
-            cls: 'audio-inbox-config-button'
+            cls: 'content-pipeline-config-button'
         });
         loadDefaultModelsBtn.onclick = () => {
             const defaultConfig = JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2);

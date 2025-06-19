@@ -1,12 +1,12 @@
-/* Audio Inbox Plugin Styles */
+/* Content Pipeline Plugin Styles */
 
-.audio-inbox-container {
+.content-pipeline-container {
     padding: 10px;
     border-radius: 5px;
     background: var(--background-secondary);
 }
 
-.audio-inbox-button {
+.content-pipeline-button {
     background: var(--interactive-accent);
     color: var(--text-on-accent);
     border: none;
@@ -16,17 +16,17 @@
     margin: 5px;
 }
 
-.audio-inbox-button:hover {
+.content-pipeline-button:hover {
     background: var(--interactive-accent-hover);
 }
 
-.audio-inbox-list {
+.content-pipeline-list {
     list-style: none;
     padding: 0;
     margin: 10px 0;
 }
 
-.audio-inbox-item {
+.content-pipeline-item {
     padding: 8px;
     margin: 5px 0;
     background: var(--background-primary);
@@ -72,7 +72,7 @@
 }
 
 /* Settings Control Buttons */
-.audio-inbox-button-container {
+.content-pipeline-button-container {
     margin-top: 20px;
     margin-bottom: 20px;
     display: flex;
@@ -80,18 +80,18 @@
     flex-wrap: wrap;
 }
 
-.audio-inbox-accent-button {
+.content-pipeline-accent-button {
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
 }
 
 /* Configuration Textarea Styles */
-.audio-inbox-textarea-container {
+.content-pipeline-textarea-container {
     width: 100%;
     max-width: none;
 }
 
-.audio-inbox-textarea {
+.content-pipeline-textarea {
     width: 100%;
     min-width: 100%;
     max-width: 100%;
@@ -108,17 +108,17 @@
     box-sizing: border-box;
 }
 
-.audio-inbox-setting-element {
+.content-pipeline-setting-element {
     display: block;
 }
 
 /* Pipeline Visualization Styles */
-.audio-inbox-viz-header {
+.content-pipeline-viz-header {
     margin-top: 25px;
     margin-bottom: 10px;
 }
 
-.audio-inbox-viz-container {
+.content-pipeline-viz-container {
     margin-bottom: 20px;
     padding: 15px;
     background-color: var(--background-secondary);
@@ -126,77 +126,77 @@
     border: 1px solid var(--background-modifier-border);
 }
 
-.audio-inbox-viz-overview {
+.content-pipeline-viz-overview {
     margin-bottom: 15px;
 }
 
-.audio-inbox-viz-overview strong {
+.content-pipeline-viz-overview strong {
     font-weight: bold;
 }
 
-.audio-inbox-viz-entry-points {
+.content-pipeline-viz-entry-points {
     margin-bottom: 10px;
 }
 
-.audio-inbox-viz-table {
+.content-pipeline-viz-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
 }
 
-.audio-inbox-viz-table th {
+.content-pipeline-viz-table th {
     padding: 8px;
     text-align: left;
     border: 1px solid var(--background-modifier-border);
     background-color: var(--background-modifier-border);
 }
 
-.audio-inbox-viz-table td {
+.content-pipeline-viz-table td {
     padding: 8px;
     border: 1px solid var(--background-modifier-border);
 }
 
 /* Settings Section Headers */
-.audio-inbox-section-header {
+.content-pipeline-section-header {
     margin-top: 25px;
     margin-bottom: 10px;
 }
 
-.audio-inbox-section-header h4 {
+.content-pipeline-section-header h4 {
     margin-bottom: 5px;
 }
 
-.audio-inbox-section-description {
+.content-pipeline-section-description {
     font-size: 14px;
     color: var(--text-muted);
 }
 
 /* Button Container for Config Sections */
-.audio-inbox-config-button-container {
+.content-pipeline-config-button-container {
     margin-top: 10px;
     margin-bottom: 15px;
 }
 
-.audio-inbox-config-button {
+.content-pipeline-config-button {
     margin-right: 10px;
 }
 
 /* Example Prompts Styles */
-.audio-inbox-prompts-container {
+.content-pipeline-prompts-container {
     margin-bottom: 20px;
 }
 
-.audio-inbox-prompts-info {
+.content-pipeline-prompts-info {
     font-size: 13px;
     color: var(--text-muted);
     margin-bottom: 10px;
 }
 
-.audio-inbox-prompts-hidden {
+.content-pipeline-prompts-hidden {
     display: none;
 }
 
-.audio-inbox-simple-error {
+.content-pipeline-simple-error {
     color: var(--text-error);
     padding: 10px;
     border: 1px solid var(--background-modifier-error);
@@ -204,7 +204,7 @@
     background-color: var(--background-modifier-error);
 }
 
-.audio-inbox-error-with-details {
+.content-pipeline-error-with-details {
     color: var(--text-warning);
     padding: 10px;
     border: 1px solid var(--background-modifier-border);
@@ -212,29 +212,29 @@
     margin-bottom: 10px;
 }
 
-.audio-inbox-overall-error {
+.content-pipeline-overall-error {
     color: var(--text-error);
     padding: 15px;
     text-align: center;
 }
 
-.audio-inbox-overall-error-icon {
+.content-pipeline-overall-error-icon {
     font-size: 18px;
     margin-bottom: 10px;
 }
 
-.audio-inbox-overall-error-title {
+.content-pipeline-overall-error-title {
     font-weight: bold;
     margin-bottom: 8px;
 }
 
-.audio-inbox-overall-error-details {
+.content-pipeline-overall-error-details {
     font-size: 14px;
     opacity: 0.8;
 }
 
 /* Individual Prompt Styles */
-.audio-inbox-prompt-item {
+.content-pipeline-prompt-item {
     margin-bottom: 15px;
     padding: 15px;
     border: 1px solid var(--background-modifier-border);
@@ -243,20 +243,20 @@
     border-left: 4px solid var(--interactive-accent);
 }
 
-.audio-inbox-prompt-top-row {
+.content-pipeline-prompt-top-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 8px;
 }
 
-.audio-inbox-prompt-filename {
+.content-pipeline-prompt-filename {
     font-weight: 500;
     color: var(--text-normal);
     font-size: 14px;
 }
 
-.audio-inbox-prompt-create-button {
+.content-pipeline-prompt-create-button {
     background: var(--interactive-accent);
     color: var(--text-on-accent);
     border: none;
@@ -267,30 +267,30 @@
     transition: opacity 0.2s ease;
 }
 
-.audio-inbox-prompt-create-button:hover {
+.content-pipeline-prompt-create-button:hover {
     opacity: 0.9;
 }
 
-.audio-inbox-prompt-fine-print {
+.content-pipeline-prompt-fine-print {
     font-size: 12px;
     color: var(--text-muted);
     margin-top: 8px;
 }
 
 /* Folder Setup Section */
-.audio-inbox-folder-status {
+.content-pipeline-folder-status {
     margin-bottom: 15px;
     padding: 10px;
     border-radius: 4px;
 }
 
-.audio-inbox-folder-status-success {
+.content-pipeline-folder-status-success {
     background-color: #d4edda;
     border: 1px solid #c3e6cb;
     color: #155724;
 }
 
-.audio-inbox-folder-status-warning {
+.content-pipeline-folder-status-warning {
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
     color: #721c24;
