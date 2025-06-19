@@ -70,3 +70,228 @@
     color: #856404;
     border-radius: 6px;
 }
+
+/* Settings Control Buttons */
+.audio-inbox-button-container {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.audio-inbox-accent-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+/* Configuration Textarea Styles */
+.audio-inbox-textarea-container {
+    width: 100%;
+    max-width: none;
+}
+
+.audio-inbox-textarea {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    height: 400px;
+    font-family: var(--font-monospace), Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    resize: vertical;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 8px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    box-sizing: border-box;
+}
+
+.audio-inbox-setting-element {
+    display: block;
+}
+
+/* Pipeline Visualization Styles */
+.audio-inbox-viz-header {
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.audio-inbox-viz-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: var(--background-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.audio-inbox-viz-overview {
+    margin-bottom: 15px;
+}
+
+.audio-inbox-viz-overview strong {
+    font-weight: bold;
+}
+
+.audio-inbox-viz-entry-points {
+    margin-bottom: 10px;
+}
+
+.audio-inbox-viz-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.audio-inbox-viz-table th {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-modifier-border);
+}
+
+.audio-inbox-viz-table td {
+    padding: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+/* Settings Section Headers */
+.audio-inbox-section-header {
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+
+.audio-inbox-section-header h4 {
+    margin-bottom: 5px;
+}
+
+.audio-inbox-section-description {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Button Container for Config Sections */
+.audio-inbox-config-button-container {
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.audio-inbox-config-button {
+    margin-right: 10px;
+}
+
+/* Example Prompts Styles */
+.audio-inbox-prompts-container {
+    margin-bottom: 20px;
+}
+
+.audio-inbox-prompts-info {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.audio-inbox-prompts-hidden {
+    display: none;
+}
+
+.audio-inbox-simple-error {
+    color: var(--text-error);
+    padding: 10px;
+    border: 1px solid var(--background-modifier-error);
+    border-radius: 4px;
+    background-color: var(--background-modifier-error);
+}
+
+.audio-inbox-error-with-details {
+    color: var(--text-warning);
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.audio-inbox-overall-error {
+    color: var(--text-error);
+    padding: 15px;
+    text-align: center;
+}
+
+.audio-inbox-overall-error-icon {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.audio-inbox-overall-error-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.audio-inbox-overall-error-details {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Individual Prompt Styles */
+.audio-inbox-prompt-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background-color: var(--background-secondary);
+    border-left: 4px solid var(--interactive-accent);
+}
+
+.audio-inbox-prompt-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.audio-inbox-prompt-filename {
+    font-weight: 500;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+.audio-inbox-prompt-create-button {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.audio-inbox-prompt-create-button:hover {
+    opacity: 0.9;
+}
+
+.audio-inbox-prompt-fine-print {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* Folder Setup Section */
+.audio-inbox-folder-status {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.audio-inbox-folder-status-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.audio-inbox-folder-status-warning {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}

@@ -22,16 +22,11 @@ export class ModelsConfigSection {
      */
     render(containerEl: HTMLElement): void {
         // Models configuration header
-        const modelsHeaderEl = containerEl.createEl('div');
-        modelsHeaderEl.style.marginTop = '25px';
-        modelsHeaderEl.style.marginBottom = '10px';
+        const modelsHeaderEl = containerEl.createEl('div', { cls: 'audio-inbox-section-header' });
         
         const modelsHeader = modelsHeaderEl.createEl('h4', { text: '🔐 Models Configuration (Private)' });
-        modelsHeader.style.marginBottom = '5px';
         
-        const modelsDesc = modelsHeaderEl.createEl('div');
-        modelsDesc.style.fontSize = '14px';
-        modelsDesc.style.color = 'var(--text-muted)';
+        const modelsDesc = modelsHeaderEl.createEl('div', { cls: 'audio-inbox-section-description' });
         modelsDesc.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
 
         // Models configuration textarea
@@ -62,12 +57,12 @@ export class ModelsConfigSection {
      * Render the default config button
      */
     private renderDefaultConfigButton(containerEl: HTMLElement): void {
-        const modelsButtonContainer = containerEl.createEl('div');
-        modelsButtonContainer.style.marginTop = '10px';
-        modelsButtonContainer.style.marginBottom = '15px';
+        const modelsButtonContainer = containerEl.createEl('div', { cls: 'audio-inbox-config-button-container' });
         
-        const loadDefaultModelsBtn = modelsButtonContainer.createEl('button', { text: 'Load Default Models Config' });
-        loadDefaultModelsBtn.style.marginRight = '10px';
+        const loadDefaultModelsBtn = modelsButtonContainer.createEl('button', { 
+            text: 'Load Default Models Config',
+            cls: 'audio-inbox-config-button'
+        });
         loadDefaultModelsBtn.onclick = () => {
             const defaultConfig = JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2);
             if (this.modelsTextarea) {

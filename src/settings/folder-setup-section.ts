@@ -22,20 +22,13 @@ export class FolderSetupSection {
         
         // Check if folder structure exists and show status
         const structureStatus = this.fileOps.checkInboxStructure();
-        const statusEl = containerEl.createEl('div');
-        statusEl.style.marginBottom = '15px';
-        statusEl.style.padding = '10px';
-        statusEl.style.borderRadius = '4px';
+        const statusEl = containerEl.createEl('div', { cls: 'audio-inbox-folder-status' });
         
         if (structureStatus.exists) {
-            statusEl.style.backgroundColor = '#d4edda';
-            statusEl.style.border = '1px solid #c3e6cb';
-            statusEl.style.color = '#155724';
+            statusEl.addClass('audio-inbox-folder-status-success');
             statusEl.innerHTML = '✅ <strong>Inbox structure is ready!</strong> All required folders exist.';
         } else {
-            statusEl.style.backgroundColor = '#f8d7da';
-            statusEl.style.border = '1px solid #f5c6cb';
-            statusEl.style.color = '#721c24';
+            statusEl.addClass('audio-inbox-folder-status-warning');
             statusEl.innerHTML = `⚠️ <strong>Setup Required:</strong> Missing folders: ${structureStatus.missingFolders.join(', ')}`;
         }
         

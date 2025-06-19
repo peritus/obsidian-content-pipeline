@@ -121,12 +121,7 @@ export class AudioInboxSettingTab extends PluginSettingTab {
      * Render control buttons section (inlined from ControlButtons)
      */
     private renderControlButtons(containerEl: HTMLElement): void {
-        const buttonContainer = containerEl.createEl('div');
-        buttonContainer.style.marginTop = '20px';
-        buttonContainer.style.marginBottom = '20px';
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.gap = '10px';
-        buttonContainer.style.flexWrap = 'wrap';
+        const buttonContainer = containerEl.createEl('div', { cls: 'audio-inbox-button-container' });
 
         // Validate configuration button
         const validateBtn = buttonContainer.createEl('button', { text: 'Validate Configuration' });
@@ -138,10 +133,11 @@ export class AudioInboxSettingTab extends PluginSettingTab {
 
         // Clear imported prompts button (only shown if imported prompts exist)
         if (this.plugin.settings.importedExamplePrompts) {
-            const clearPromptsBtn = buttonContainer.createEl('button', { text: 'Clear Imported Prompts' });
+            const clearPromptsBtn = buttonContainer.createEl('button', { 
+                text: 'Clear Imported Prompts',
+                cls: 'audio-inbox-accent-button'
+            });
             clearPromptsBtn.onclick = () => this.clearImportedExamplePrompts();
-            clearPromptsBtn.style.backgroundColor = 'var(--interactive-accent)';
-            clearPromptsBtn.style.color = 'var(--text-on-accent)';
         }
     }
 

@@ -59,8 +59,7 @@ export class ExamplePromptsManager {
             this.examplePrompts = examplePrompts;
             
             // Create a container immediately to reserve the position
-            this.promptsContainer = containerEl.createEl('div');
-            this.promptsContainer.style.marginBottom = '20px';
+            this.promptsContainer = containerEl.createEl('div', { cls: 'audio-inbox-prompts-container' });
             
             // Populate the container asynchronously but in the correct position
             this.updatePromptsStatus();
@@ -68,8 +67,7 @@ export class ExamplePromptsManager {
         } catch (error) {
             console.error('Error accessing example prompts:', error);
             // Create a container for error display
-            this.promptsContainer = containerEl.createEl('div');
-            this.promptsContainer.style.marginBottom = '20px';
+            this.promptsContainer = containerEl.createEl('div', { cls: 'audio-inbox-prompts-container' });
             this.showSimpleError(this.promptsContainer, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
@@ -119,10 +117,7 @@ export class ExamplePromptsManager {
 
                 // Show info about imported prompts if applicable
                 if (this.importedPrompts) {
-                    const infoEl = contentSection.createEl('p');
-                    infoEl.style.fontSize = '13px';
-                    infoEl.style.color = 'var(--text-muted)';
-                    infoEl.style.marginBottom = '10px';
+                    const infoEl = contentSection.createEl('p', { cls: 'audio-inbox-prompts-info' });
                     infoEl.textContent = `Using ${Object.keys(this.importedPrompts).length} example prompts from imported configuration.`;
                 }
 
@@ -135,7 +130,7 @@ export class ExamplePromptsManager {
                 }
             } else {
                 // If no prompts to show, hide the container completely
-                this.promptsContainer.style.display = 'none';
+                this.promptsContainer.addClass('audio-inbox-prompts-hidden');
             }
 
         } catch (error) {
@@ -171,12 +166,7 @@ export class ExamplePromptsManager {
      * Simplified error display for basic errors
      */
     private showSimpleError(containerEl: HTMLElement, message: string): void {
-        const errorEl = containerEl.createEl('div');
-        errorEl.style.color = 'var(--text-error)';
-        errorEl.style.padding = '10px';
-        errorEl.style.border = '1px solid var(--background-modifier-error)';
-        errorEl.style.borderRadius = '4px';
-        errorEl.style.backgroundColor = 'var(--background-modifier-error)';
+        const errorEl = containerEl.createEl('div', { cls: 'audio-inbox-simple-error' });
         errorEl.innerHTML = `❌ <strong>Error:</strong> ${message}`;
     }
 
@@ -186,12 +176,7 @@ export class ExamplePromptsManager {
     private renderErrorPrompts(containerEl: HTMLElement, errorPrompts: PromptStatus[]): void {
         if (errorPrompts.length === 0) return;
 
-        const errorEl = containerEl.createEl('div');
-        errorEl.style.color = 'var(--text-warning)';
-        errorEl.style.padding = '10px';
-        errorEl.style.border = '1px solid var(--background-modifier-border)';
-        errorEl.style.borderRadius = '4px';
-        errorEl.style.marginBottom = '10px';
+        const errorEl = containerEl.createEl('div', { cls: 'audio-inbox-error-with-details' });
         errorEl.innerHTML = `
             <strong>⚠️ Errors detected:</strong><br>
             ${errorPrompts.map(p => `• <code>${p.path}</code>: ${p.error}`).join('<br>')}
@@ -203,14 +188,11 @@ export class ExamplePromptsManager {
      */
     private handleOverallError(containerEl: HTMLElement, error: unknown): void {
         containerEl.empty();
-        const errorEl = containerEl.createEl('div');
-        errorEl.style.color = 'var(--text-error)';
-        errorEl.style.padding = '15px';
-        errorEl.style.textAlign = 'center';
+        const errorEl = containerEl.createEl('div', { cls: 'audio-inbox-overall-error' });
         errorEl.innerHTML = `
-            <div style="font-size: 18px; margin-bottom: 10px;">⚠️</div>
-            <div style="font-weight: bold; margin-bottom: 8px;">Error Checking Prompts</div>
-            <div style="font-size: 14px; opacity: 0.8;">${error instanceof Error ? error.message : String(error)}</div>
+            <div class="audio-inbox-overall-error-icon">⚠️</div>
+            <div class="audio-inbox-overall-error-title">Error Checking Prompts</div>
+            <div class="audio-inbox-overall-error-details">${error instanceof Error ? error.message : String(error)}</div>
         `;
         
         console.error('Error in updatePromptsStatus:', error);

@@ -11,16 +11,14 @@ export class PipelineVisualization {
      * Render pipeline visualization section
      */
     render(containerEl: HTMLElement): void {
-        const vizHeader = containerEl.createEl('h4', { text: '📊 Pipeline Visualization' });
-        vizHeader.style.marginTop = '25px';
-        vizHeader.style.marginBottom = '10px';
+        const vizHeader = containerEl.createEl('h4', { 
+            text: '📊 Pipeline Visualization',
+            cls: 'audio-inbox-viz-header'
+        });
 
-        this.pipelineVisualizationEl = containerEl.createEl('div');
-        this.pipelineVisualizationEl.style.marginBottom = '20px';
-        this.pipelineVisualizationEl.style.padding = '15px';
-        this.pipelineVisualizationEl.style.backgroundColor = 'var(--background-secondary)';
-        this.pipelineVisualizationEl.style.borderRadius = '6px';
-        this.pipelineVisualizationEl.style.border = '1px solid var(--background-modifier-border)';
+        this.pipelineVisualizationEl = containerEl.createEl('div', {
+            cls: 'audio-inbox-viz-container'
+        });
     }
 
     /**
@@ -41,11 +39,11 @@ export class PipelineVisualization {
             const parsedPipelineConfig = JSON.parse(pipelineConfig);
             const stepIds = Object.keys(parsedPipelineConfig);
             
-            let html = '<div style="margin-bottom: 15px;"><strong>Pipeline Overview:</strong></div>';
+            let html = '<div class="audio-inbox-viz-overview"><strong>Pipeline Overview:</strong></div>';
             
             // Entry points
             if (validationResult.entryPoints.length > 0) {
-                html += `<div style="margin-bottom: 10px;"><strong>Entry Points:</strong> ${validationResult.entryPoints.join(', ')}</div>`;
+                html += `<div class="audio-inbox-viz-entry-points"><strong>Entry Points:</strong> ${validationResult.entryPoints.join(', ')}</div>`;
             }
             
             // Steps table
@@ -61,12 +59,12 @@ export class PipelineVisualization {
      * Generate the steps table HTML
      */
     private generateStepsTable(pipelineConfig: any, stepIds: string[]): string {
-        let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
-        html += '<tr style="background-color: var(--background-modifier-border);">';
-        html += '<th style="padding: 8px; text-align: left; border: 1px solid var(--background-modifier-border);">Step</th>';
-        html += '<th style="padding: 8px; text-align: left; border: 1px solid var(--background-modifier-border);">Model</th>';
-        html += '<th style="padding: 8px; text-align: left; border: 1px solid var(--background-modifier-border);">Input</th>';
-        html += '<th style="padding: 8px; text-align: left; border: 1px solid var(--background-modifier-border);">Next Steps</th>';
+        let html = '<table class="audio-inbox-viz-table">';
+        html += '<tr>';
+        html += '<th>Step</th>';
+        html += '<th>Model</th>';
+        html += '<th>Input</th>';
+        html += '<th>Next Steps</th>';
         html += '</tr>';
         
         stepIds.forEach(stepId => {
@@ -74,10 +72,10 @@ export class PipelineVisualization {
             const nextSteps = step.next ? Object.keys(step.next).join(', ') : 'None';
             
             html += `<tr>
-                <td style="padding: 8px; border: 1px solid var(--background-modifier-border);">${stepId}</td>
-                <td style="padding: 8px; border: 1px solid var(--background-modifier-border);">${step.modelConfig}</td>
-                <td style="padding: 8px; border: 1px solid var(--background-modifier-border);">${step.input}</td>
-                <td style="padding: 8px; border: 1px solid var(--background-modifier-border);">${nextSteps}</td>
+                <td>${stepId}</td>
+                <td>${step.modelConfig}</td>
+                <td>${step.input}</td>
+                <td>${nextSteps}</td>
             </tr>`;
         });
         

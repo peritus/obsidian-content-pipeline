@@ -31,16 +31,11 @@ export class PipelineConfigSection {
      */
     render(containerEl: HTMLElement): void {
         // Pipeline configuration header
-        const pipelineHeaderEl = containerEl.createEl('div');
-        pipelineHeaderEl.style.marginTop = '25px';
-        pipelineHeaderEl.style.marginBottom = '10px';
+        const pipelineHeaderEl = containerEl.createEl('div', { cls: 'audio-inbox-section-header' });
         
         const pipelineHeader = pipelineHeaderEl.createEl('h4', { text: '🔄 Pipeline Configuration (Shareable)' });
-        pipelineHeader.style.marginBottom = '5px';
         
-        const pipelineDesc = pipelineHeaderEl.createEl('div');
-        pipelineDesc.style.fontSize = '14px';
-        pipelineDesc.style.color = 'var(--text-muted)';
+        const pipelineDesc = pipelineHeaderEl.createEl('div', { cls: 'audio-inbox-section-description' });
         pipelineDesc.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
 
         // Pipeline configuration textarea
@@ -71,12 +66,12 @@ export class PipelineConfigSection {
      * Render the action buttons for pipeline configuration
      */
     private renderActionButtons(containerEl: HTMLElement): void {
-        const pipelineButtonContainer = containerEl.createEl('div');
-        pipelineButtonContainer.style.marginTop = '10px';
-        pipelineButtonContainer.style.marginBottom = '15px';
+        const pipelineButtonContainer = containerEl.createEl('div', { cls: 'audio-inbox-config-button-container' });
         
-        const loadDefaultPipelineBtn = pipelineButtonContainer.createEl('button', { text: 'Load Default Pipeline Config' });
-        loadDefaultPipelineBtn.style.marginRight = '10px';
+        const loadDefaultPipelineBtn = pipelineButtonContainer.createEl('button', { 
+            text: 'Load Default Pipeline Config',
+            cls: 'audio-inbox-config-button'
+        });
         loadDefaultPipelineBtn.onclick = () => {
             const defaultConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
             if (this.pipelineTextarea) {
@@ -85,8 +80,10 @@ export class PipelineConfigSection {
             }
         };
 
-        const exportBtn = pipelineButtonContainer.createEl('button', { text: 'Export Pipeline Config' });
-        exportBtn.style.marginRight = '10px';
+        const exportBtn = pipelineButtonContainer.createEl('button', { 
+            text: 'Export Pipeline Config',
+            cls: 'audio-inbox-config-button'
+        });
         exportBtn.onclick = this.onExportCallback;
 
         const importBtn = pipelineButtonContainer.createEl('button', { text: 'Import Pipeline Config' });
