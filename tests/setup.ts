@@ -144,7 +144,6 @@ export const createMockFileMetadata = (overrides: any = {}) => ({
     processed: '2024-01-15T10:30:00Z',
     step: 'transcribe',
     nextStep: 'process-thoughts',
-    pipeline: 'audio-processing',
     version: '1.2',
     ...overrides
 });

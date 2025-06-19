@@ -65,8 +65,7 @@ export class OutputHandler {
                 source: context.archivePath,
                 processed: new Date().toISOString(),
                 step: context.stepId,
-                nextStep: section.nextStep,
-                pipeline: 'audio-processing'
+                nextStep: section.nextStep
             };
 
             // Create frontmatter
@@ -76,9 +75,6 @@ export class OutputHandler {
             frontmatterLines.push(`step: "${metadata.step}"`);
             if (metadata.nextStep) {
                 frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
-            }
-            if (metadata.pipeline) {
-                frontmatterLines.push(`pipeline: "${metadata.pipeline}"`);
             }
             frontmatterLines.push('---');
             frontmatterLines.push('');
@@ -209,8 +205,7 @@ export class OutputHandler {
                     source: context.archivePath,
                     processed: new Date().toISOString(),
                     step: context.stepId,
-                    nextStep: section.nextStep,
-                    pipeline: 'audio-processing'
+                    nextStep: section.nextStep
                 };
 
                 // Create frontmatter
@@ -220,9 +215,6 @@ export class OutputHandler {
                 frontmatterLines.push(`step: "${metadata.step}"`);
                 if (metadata.nextStep) {
                     frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
-                }
-                if (metadata.pipeline) {
-                    frontmatterLines.push(`pipeline: "${metadata.pipeline}"`);
                 }
                 frontmatterLines.push('---');
                 frontmatterLines.push('');
