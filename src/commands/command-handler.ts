@@ -88,7 +88,7 @@ export class CommandHandler {
             const configService = createConfigurationService(this.settings);
             const validationResult = configService.validateConfigurations();
             if (!validationResult.isValid) {
-                this.showNotice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
+                new Notice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', validationResult.error);
                 return;
             }
@@ -96,13 +96,13 @@ export class CommandHandler {
             // Intelligent Processing: Find the appropriate step for this file
             const stepId = await this.findStepForFile(file);
             if (!stepId) {
-                this.showNotice(`❌ Could not determine processing step for file: ${file.name}`, 8000);
+                new Notice(`❌ Could not determine processing step for file: ${file.name}`, 8000);
                 logger.error(`No step found for file: ${file.path}`);
                 return;
             }
 
             // Show processing started notification
-            this.showNotice(`🔄 Processing file: ${file.name}...`, 3000);
+            new Notice(`🔄 Processing file: ${file.name}...`, 3000);
             
             // Create file info object
             const fileInfo = await this.createFileInfo(file);
@@ -119,7 +119,7 @@ export class CommandHandler {
             
             // Show user-friendly error message
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            this.showNotice(`❌ Failed to process file: ${errorMessage}`, 8000);
+            new Notice(`❌ Failed to process file: ${errorMessage}`, 8000);
             
             // Log detailed error information
             logger.error('Command execution error details:', {
@@ -141,13 +141,13 @@ export class CommandHandler {
             const configService = createConfigurationService(this.settings);
             const validationResult = configService.validateConfigurations();
             if (!validationResult.isValid) {
-                this.showNotice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
+                new Notice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', validationResult.error);
                 return;
             }
 
             // Show processing started notification
-            this.showNotice('🔄 Processing next file...', 3000);
+            new Notice('🔄 Processing next file...', 3000);
             
             // Create executor and process file
             const executor = new PipelineExecutor(this.app, this.settings);
@@ -161,7 +161,7 @@ export class CommandHandler {
             
             // Show user-friendly error message
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            this.showNotice(`❌ Failed to process file: ${errorMessage}`, 8000);
+            new Notice(`❌ Failed to process file: ${errorMessage}`, 8000);
             
             // Log detailed error information
             logger.error('Command execution error details:', {
@@ -178,7 +178,7 @@ export class CommandHandler {
         switch (result.status) {
             case ProcessingStatus.COMPLETED:
                 const outputCount = result.outputFiles.length;
-                this.showNotice(
+                new Notice(
                     `✅ Successfully processed: ${result.inputFile.name} → ${outputCount} output file(s)`, 
                     6000
                 );
@@ -190,16 +190,16 @@ export class CommandHandler {
                 
             case ProcessingStatus.SKIPPED:
                 if (contextDescription.includes('next available')) {
-                    this.showNotice('ℹ️ No files found to process. Place audio files in inbox/audio/ folder.', 6000);
+                    new Notice('ℹ️ No files found to process. Place audio files in inbox/audio/ folder.', 6000);
                     logger.info('No files available for processing');
                 } else {
-                    this.showNotice(`ℹ️ File processing was skipped: ${contextDescription}`, 6000);
+                    new Notice(`ℹ️ File processing was skipped: ${contextDescription}`, 6000);
                     logger.info(`File processing skipped: ${contextDescription}`);
                 }
                 break;
                 
             case ProcessingStatus.FAILED:
-                this.showNotice(`❌ Processing failed: ${result.error || 'Unknown error'}`, 8000);
+                new Notice(`❌ Processing failed: ${result.error || 'Unknown error'}`, 8000);
                 logger.error('File processing failed:', {
                     error: result.error,
                     inputFile: result.inputFile?.path,
@@ -208,7 +208,7 @@ export class CommandHandler {
                 break;
                 
             default:
-                this.showNotice('⚠️ Processing completed with unknown status', 5000);
+                new Notice('⚠️ Processing completed with unknown status', 5000);
                 logger.warn('Unexpected processing status:', result.status);
         }
     }
@@ -247,12 +247,5 @@ export class CommandHandler {
             lastModified: new Date(stat?.mtime || Date.now()),
             mimeType: undefined // Could be enhanced to detect MIME type
         };
-    }
-
-    /**
-     * Show a notice to the user
-     */
-    private showNotice(message: string, timeout: number = 5000): void {
-        new Notice(message, timeout);
     }
 }

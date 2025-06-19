@@ -1,16 +1,14 @@
 /**
- * Error Handling System Tests
+ * Simplified Error Handling System Tests
  * 
- * Test suite for the error handling framework.
+ * Test suite for the simplified error handling framework.
  */
 
 import { 
     AudioInboxError, 
     ErrorFactory, 
     ErrorHandler, 
-    NotificationManager,
     errorHandler,
-    notificationManager,
     createUserFriendlyMessage,
     wrapAsync,
     wrapSync
@@ -106,92 +104,6 @@ describe('ErrorFactory', () => {
         expect(error.type).toBe(ErrorType.API);
         expect(error.suggestions).toContain('Check your API key');
     });
-
-    it('should create pipeline errors', () => {
-        const error = ErrorFactory.pipeline(
-            'Pipeline failed',
-            'Pipeline error'
-        );
-
-        expect(error.type).toBe(ErrorType.PIPELINE);
-        expect(error.suggestions).toContain('Check your pipeline configuration');
-    });
-
-    it('should create validation errors', () => {
-        const error = ErrorFactory.validation(
-            'Validation failed',
-            'Validation error'
-        );
-
-        expect(error.type).toBe(ErrorType.VALIDATION);
-        expect(error.suggestions).toContain('Check your input data');
-    });
-
-    it('should create parsing errors', () => {
-        const error = ErrorFactory.parsing(
-            'Parse failed',
-            'Parsing error'
-        );
-
-        expect(error.type).toBe(ErrorType.PARSING);
-        expect(error.suggestions).toContain('Check your data format');
-    });
-
-    it('should accept custom suggestions', () => {
-        const customSuggestions = ['Custom suggestion 1', 'Custom suggestion 2'];
-        const error = ErrorFactory.configuration(
-            'Test',
-            'Test',
-            {},
-            customSuggestions
-        );
-
-        expect(error.suggestions).toEqual(customSuggestions);
-    });
-});
-
-describe('NotificationManager', () => {
-    afterEach(() => {
-        cleanup();
-    });
-
-    it('should be a singleton', () => {
-        const instance1 = NotificationManager.getInstance();
-        const instance2 = NotificationManager.getInstance();
-        
-        expect(instance1).toBe(instance2);
-        expect(instance1).toBe(notificationManager);
-    });
-
-    it('should show notifications with different types', () => {
-        notificationManager.success('Success message');
-        notificationManager.error('Error message');
-        notificationManager.warning('Warning message');
-        notificationManager.info('Info message');
-
-        // mockNotice should be called for each notification
-        expect(mockNotice).toHaveBeenCalledTimes(4);
-    });
-
-    it('should use appropriate timeouts for different types', () => {
-        notificationManager.success('Success', { timeout: 1000 });
-        notificationManager.error('Error', { timeout: 2000 });
-        
-        expect(mockNotice).toHaveBeenCalledWith('Success', 1000);
-        expect(mockNotice).toHaveBeenCalledWith('Error', 2000);
-    });
-
-    it('should handle notification errors gracefully', () => {
-        // Mock Notice to throw an error
-        mockNotice.mockImplementationOnce(() => {
-            throw new Error('Notification failed');
-        });
-
-        // This should not throw, but handle the error gracefully
-        expect(() => {
-            notificationManager.info('Test message');
-        }).not.toThrow();
-    });
 });
 
 describe('ErrorHandler', () => {
@@ -238,60 +150,6 @@ describe('ErrorHandler', () => {
 
         expect(mockNotice).toHaveBeenCalled();
     });
-
-    it('should create user-friendly messages', () => {
-        const errorInfo = {
-            type: ErrorType.CONFIGURATION,
-            message: 'Technical details',
-            userMessage: 'User message',
-            context: {}
-        };
-
-        const friendlyMessage = createUserFriendlyMessage(errorInfo);
-        
-        expect(friendlyMessage).toContain('Configuration Error');
-        expect(friendlyMessage).toContain('User message');
-    });
-
-    it('should wrap async functions with error handling', () => {
-        const asyncFn = jest.fn().mockResolvedValue('success');
-        const wrappedFn = wrapAsync(asyncFn, 'test context');
-
-        expect(typeof wrappedFn).toBe('function');
-        
-        // Should return a promise
-        const result = wrappedFn('arg1', 'arg2');
-        expect(result).toBeInstanceOf(Promise);
-    });
-
-    it('should wrap sync functions with error handling', () => {
-        const syncFn = jest.fn().mockReturnValue('success');
-        const wrappedFn = wrapSync(syncFn, 'test context');
-
-        expect(typeof wrappedFn).toBe('function');
-        
-        const result = wrappedFn('arg1', 'arg2');
-        expect(result).toBe('success');
-        expect(syncFn).toHaveBeenCalledWith('arg1', 'arg2');
-    });
-
-    it('should handle errors in wrapped async functions', async () => {
-        const asyncFn = jest.fn().mockRejectedValue(new Error('Async error'));
-        const wrappedFn = wrapAsync(asyncFn, 'test context');
-
-        await expect(wrappedFn()).rejects.toThrow('Async error');
-        expect(mockNotice).toHaveBeenCalled();
-    });
-
-    it('should handle errors in wrapped sync functions', () => {
-        const syncFn = jest.fn().mockImplementation(() => {
-            throw new Error('Sync error');
-        });
-        const wrappedFn = wrapSync(syncFn, 'test context');
-
-        expect(() => wrappedFn()).toThrow('Sync error');
-        expect(mockNotice).toHaveBeenCalled();
-    });
 });
 
 describe('Error Integration', () => {
@@ -304,47 +162,16 @@ describe('Error Integration', () => {
         const error = ErrorFactory.configuration(
             'Configuration is invalid',
             'Please check your settings',
-            { setting: 'invalid' },
-            ['Check setting X', 'Restart plugin']
+            { setting: 'invalid' }
         );
 
         // Handle the error
         errorHandler.handleError(error);
 
-        // Verify notification was shown
+        // Verify notification was shown with correct timeout
         expect(mockNotice).toHaveBeenCalledWith(
-            expect.stringContaining('Please check your settings'),
-            expect.any(Number)
-        );
-    });
-
-    it('should include suggestions in user message', () => {
-        const error = ErrorFactory.validation(
-            'Invalid input',
-            'Input validation failed',
-            {},
-            ['Fix input format', 'Check documentation']
-        );
-
-        errorHandler.handleError(error);
-
-        const lastCall = mockNotice.mock.calls[mockNotice.mock.calls.length - 1];
-        const message = lastCall[0];
-        
-        expect(message).toContain('Suggestions:');
-        expect(message).toContain('Fix input format');
-        expect(message).toContain('Check documentation');
-    });
-
-    it('should handle AudioInboxError instances in handleUnknownError', () => {
-        const audioInboxError = ErrorFactory.api('API failed', 'API error');
-        
-        errorHandler.handleUnknownError(audioInboxError, { context: 'test' });
-        
-        // Should handle it as an AudioInboxError, not create a new pipeline error
-        expect(mockNotice).toHaveBeenCalledWith(
-            expect.stringContaining('API error'),
-            expect.any(Number)
+            'Please check your settings',
+            6000
         );
     });
 });

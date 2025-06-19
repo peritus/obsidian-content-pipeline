@@ -352,37 +352,13 @@ export interface ErrorInfo {
 // =============================================================================
 
 /**
- * Notification severity levels
+ * Notification severity levels (used for error categorization)
  */
 export enum NotificationType {
     SUCCESS = 'success',
     ERROR = 'error',
     WARNING = 'warning',
     INFO = 'info'
-}
-
-/**
- * Notification configuration
- */
-export interface NotificationOptions {
-    /** Auto-dismiss timeout in milliseconds */
-    timeout?: number;
-    /** Whether notification persists until manually dismissed */
-    persistent?: boolean;
-    /** Action buttons for the notification */
-    actions?: NotificationAction[];
-}
-
-/**
- * Notification action button
- */
-export interface NotificationAction {
-    /** Button label */
-    label: string;
-    /** Action callback */
-    callback: () => void;
-    /** Button style */
-    style?: 'primary' | 'secondary' | 'destructive';
 }
 
 // =============================================================================

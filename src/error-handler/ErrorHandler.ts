@@ -1,11 +1,10 @@
 /**
- * Central error handler for the plugin
+ * Simplified error handler for the plugin
  */
 
+import { Notice } from 'obsidian';
 import { createLogger } from '../logger';
 import { AudioInboxError } from './AudioInboxError';
-import { NotificationManager } from './NotificationManager';
-import { ErrorType } from '../types';
 
 /**
  * Logger for error handling system
@@ -13,15 +12,12 @@ import { ErrorType } from '../types';
 const errorLogger = createLogger('ErrorHandler');
 
 /**
- * Central error handler for the plugin
+ * Simplified central error handler for the plugin
  */
 export class ErrorHandler {
     private static instance: ErrorHandler;
-    private notificationManager: NotificationManager;
 
-    private constructor() {
-        this.notificationManager = NotificationManager.getInstance();
-    }
+    private constructor() {}
 
     static getInstance(): ErrorHandler {
         if (!ErrorHandler.instance) {
@@ -42,44 +38,19 @@ export class ErrorHandler {
             stack: error.stack
         });
 
-        // Show user-friendly notification
-        const severity = error.getSeverity();
-        let userMessage = error.userMessage;
-
-        // Add suggestions if available
-        if (error.suggestions && error.suggestions.length > 0) {
-            userMessage += '\n\nSuggestions: ' + error.suggestions.join(', ');
-        }
-
-        this.notificationManager.notify(severity, userMessage);
+        // Show user-friendly notification - longer timeout for errors
+        new Notice(error.userMessage, 6000);
     }
 
     /**
      * Handle a generic JavaScript error
      */
     handleUnknownError(error: unknown, context?: any): void {
-        let audioInboxError: AudioInboxError;
+        // Log the error
+        errorLogger.error('Unexpected error occurred', { error, context });
 
-        if (error instanceof AudioInboxError) {
-            audioInboxError = error;
-        } else if (error instanceof Error) {
-            audioInboxError = new AudioInboxError(
-                ErrorType.PIPELINE,
-                error.message,
-                'An unexpected error occurred. Please check the console for details.',
-                { originalError: error, context },
-                ['Check the browser console for technical details', 'Try restarting the plugin']
-            );
-        } else {
-            audioInboxError = new AudioInboxError(
-                ErrorType.PIPELINE,
-                String(error),
-                'An unexpected error occurred. Please check the console for details.',
-                { originalError: error, context },
-                ['Check the browser console for technical details', 'Try restarting the plugin']
-            );
-        }
-
-        this.handleError(audioInboxError);
+        // Show simple user notification
+        const message = error instanceof Error ? error.message : String(error);
+        new Notice(`Error: ${message}`, 6000);
     }
 }

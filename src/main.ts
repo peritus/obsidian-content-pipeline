@@ -42,7 +42,7 @@ export default class AudioInboxPlugin extends Plugin {
         this.addRibbonIcon('microphone', 'Audio Inbox', () => {
             this.logger.info('Audio Inbox ribbon clicked');
             const configStatus = this.getConfigurationStatus();
-            this.showNotice(`Audio Inbox ready! Configuration: ${configStatus}`);
+            new Notice(`Audio Inbox ready! Configuration: ${configStatus}`);
         });
 
         // Register file menu integration
@@ -221,13 +221,6 @@ export default class AudioInboxPlugin extends Plugin {
             this.logger.error('Failed to save settings:', error);
             throw error;
         }
-    }
-
-    /**
-     * Show a notice to the user
-     */
-    private showNotice(message: string, timeout: number = 5000): void {
-        new Notice(message, timeout);
     }
 
     /**
