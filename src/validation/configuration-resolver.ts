@@ -1,8 +1,8 @@
 /**
- * Configuration resolver for v1.2 split configuration system
+ * Configuration resolver for v2.0 routing-aware output system
  * 
- * Handles resolution of pipeline steps to model configurations and provides
- * cross-reference validation between models and pipeline configurations.
+ * Handles resolution of pipeline steps to model configurations, provides
+ * cross-reference validation, and resolves routing-aware output paths.
  */
 
 import { ErrorFactory } from '../error-handler';
@@ -11,13 +11,15 @@ import {
     PipelineConfiguration, 
     ResolvedPipelineStep, 
     ConfigValidationResult, 
-    PipelineStep 
+    PipelineStep,
+    RoutingAwareOutput,
+    isRoutingAwareOutput
 } from '../types';
 import { validateModelsConfig } from './models-config';
 import { getClientClass } from './models-config';
 
 /**
- * Configuration resolver for managing dual configuration system
+ * Configuration resolver for managing dual configuration system with routing-aware outputs
  */
 class ConfigurationResolver {
     private modelsConfig: ModelsConfig;
@@ -29,13 +31,67 @@ class ConfigurationResolver {
     }
 
     /**
-     * Resolve a pipeline step to include actual model configuration
+     * Resolve output path based on routing decision and step configuration
+     * 
+     * @param step - Pipeline step with output configuration
+     * @param nextStep - Optional next step chosen by routing
+     * @returns Resolved output path
+     * @throws ContentPipelineError if no valid output path can be resolved
+     */
+    resolveOutputPath(step: PipelineStep, nextStep?: string): string {
+        // Handle string output (backward compatibility)
+        if (typeof step.output === 'string') {
+            return step.output;
+        }
+
+        // Handle routing-aware output
+        if (isRoutingAwareOutput(step.output)) {
+            // Priority 1: Use nextStep if valid
+            if (nextStep && step.output[nextStep]) {
+                return step.output[nextStep];
+            }
+
+            // Priority 2: Use default fallback if available
+            if (step.output.default) {
+                return step.output.default;
+            }
+
+            // Priority 3: No valid path found
+            const availableOptions = Object.keys(step.output).filter(key => key !== 'default');
+            throw ErrorFactory.routing(
+                `No valid output path for routing decision: nextStep="${nextStep || 'undefined'}", no default fallback`,
+                'Unable to determine output path for file processing',
+                { 
+                    nextStep, 
+                    availableOptions, 
+                    hasDefault: false,
+                    outputConfig: step.output
+                },
+                [
+                    'Add default fallback to output configuration',
+                    'Ensure AI routing returns valid nextStep option',
+                    'Check available routing options in step configuration'
+                ]
+            );
+        }
+
+        throw ErrorFactory.validation(
+            'Invalid output configuration - must be string or routing-aware object',
+            'Step output configuration is in invalid format',
+            { output: step.output },
+            ['Use string for simple output path', 'Use object with nextStep mapping for routing-aware output']
+        );
+    }
+
+    /**
+     * Resolve a pipeline step to include actual model configuration and routing info
      * 
      * @param stepId - The step ID to resolve
-     * @returns Resolved pipeline step with model config
+     * @param nextStep - Optional next step for output path resolution
+     * @returns Resolved pipeline step with model config and resolved output path
      * @throws ContentPipelineError if step or model config not found
      */
-    resolveStep(stepId: string): ResolvedPipelineStep {
+    resolveStep(stepId: string, nextStep?: string): ResolvedPipelineStep {
         // Get pipeline step
         const step = this.pipelineConfig[stepId];
         if (!step) {
@@ -58,11 +114,27 @@ class ConfigurationResolver {
             );
         }
 
+        // Resolve output path
+        let resolvedOutputPath: string | undefined;
+        let routingAwareOutput: RoutingAwareOutput | undefined;
+
+        try {
+            resolvedOutputPath = this.resolveOutputPath(step, nextStep);
+            if (isRoutingAwareOutput(step.output)) {
+                routingAwareOutput = step.output;
+            }
+        } catch (error) {
+            // Allow step resolution without output path resolution for validation purposes
+            // The error will be thrown when actually trying to use the output path
+        }
+
         return {
             stepId,
             modelConfig,
             input: step.input,
-            output: step.output,
+            output: typeof step.output === 'string' ? step.output : JSON.stringify(step.output),
+            resolvedOutputPath,
+            routingAwareOutput,
             archive: step.archive,
             include: step.include,
             next: step.next,
@@ -84,6 +156,7 @@ class ConfigurationResolver {
 
     /**
      * Perform comprehensive validation of both configurations and their relationships
+     * Updated to include output routing validation
      * 
      * @returns Complete validation result
      */
@@ -93,6 +166,7 @@ class ConfigurationResolver {
             modelsErrors: [],
             pipelineErrors: [],
             crossRefErrors: [],
+            outputRoutingErrors: [],
             warnings: [],
             entryPoints: []
         };
@@ -125,6 +199,15 @@ class ConfigurationResolver {
             result.isValid = false;
         }
 
+        // Perform output routing validation
+        try {
+            this.validateOutputRouting(result);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            result.outputRoutingErrors.push(errorMessage);
+            result.isValid = false;
+        }
+
         // Find entry points if validation passed
         if (result.isValid) {
             try {
@@ -137,6 +220,107 @@ class ConfigurationResolver {
         }
 
         return result;
+    }
+
+    /**
+     * Validate output routing configuration for all steps
+     * 
+     * @param result - Validation result to populate with errors
+     */
+    private validateOutputRouting(result: ConfigValidationResult): void {
+        const stepIds = Object.keys(this.pipelineConfig);
+        
+        stepIds.forEach(stepId => {
+            const step = this.pipelineConfig[stepId];
+            
+            // Get available next steps for this step
+            const availableNextSteps = step.next ? Object.keys(step.next) : [];
+
+            // Validate output configuration
+            if (typeof step.output === 'string') {
+                // String output is always valid (backward compatibility)
+                return;
+            }
+
+            if (isRoutingAwareOutput(step.output)) {
+                // Validate all nextStep options have corresponding output paths
+                const outputKeys = Object.keys(step.output);
+                const routingKeys = outputKeys.filter(key => key !== 'default');
+
+                const missingOutputPaths = availableNextSteps.filter(nextStep => !outputKeys.includes(nextStep));
+                if (missingOutputPaths.length > 0) {
+                    result.outputRoutingErrors.push(
+                        `Step "${stepId}": Missing output paths for next steps: ${missingOutputPaths.join(', ')}`
+                    );
+                }
+
+                // Check for unused output paths (warning)
+                const unusedOutputPaths = routingKeys.filter(key => !availableNextSteps.includes(key));
+                if (unusedOutputPaths.length > 0) {
+                    result.warnings.push(
+                        `Step "${stepId}": Unused output paths configured: ${unusedOutputPaths.join(', ')}`
+                    );
+                }
+
+                // Validate path patterns
+                for (const [key, path] of Object.entries(step.output)) {
+                    if (typeof path !== 'string' || path.trim().length === 0) {
+                        result.outputRoutingErrors.push(
+                            `Step "${stepId}": Invalid output path for "${key}" - must be non-empty string`
+                        );
+                    }
+                }
+
+                // Recommend default fallback if not present
+                if (!step.output.default && availableNextSteps.length > 0) {
+                    result.warnings.push(
+                        `Step "${stepId}": No default fallback configured - routing failures will cause pipeline errors`
+                    );
+                }
+            } else {
+                result.outputRoutingErrors.push(
+                    `Step "${stepId}": Invalid output configuration - must be string or routing-aware object`
+                );
+            }
+        });
+
+        // Validate for output path conflicts
+        this.validateOutputPathConflicts(result);
+    }
+
+    /**
+     * Validate for output path conflicts across steps
+     * 
+     * @param result - Validation result to populate with errors
+     */
+    private validateOutputPathConflicts(result: ConfigValidationResult): void {
+        const pathMapping = new Map<string, string[]>(); // path -> [stepIds]
+
+        Object.entries(this.pipelineConfig).forEach(([stepId, step]) => {
+            const outputPaths: string[] = [];
+
+            if (typeof step.output === 'string') {
+                outputPaths.push(step.output);
+            } else if (isRoutingAwareOutput(step.output)) {
+                outputPaths.push(...Object.values(step.output));
+            }
+
+            outputPaths.forEach(path => {
+                if (!pathMapping.has(path)) {
+                    pathMapping.set(path, []);
+                }
+                pathMapping.get(path)!.push(stepId);
+            });
+        });
+
+        // Find conflicts
+        pathMapping.forEach((stepIds, path) => {
+            if (stepIds.length > 1) {
+                result.outputRoutingErrors.push(
+                    `Output path conflict: "${path}" used by steps: ${stepIds.join(', ')}`
+                );
+            }
+        });
     }
 
     /**
@@ -174,6 +358,7 @@ class ConfigurationResolver {
 
     /**
      * Validate pipeline structure without cross-reference checks
+     * Updated to handle routing-aware output configurations
      * 
      * @throws ContentPipelineError if pipeline structure is invalid
      */
@@ -261,6 +446,7 @@ class ConfigurationResolver {
 
     /**
      * Validate basic pipeline step structure without model resolution
+     * Updated to handle routing-aware output configurations
      * 
      * @param step - Pipeline step to validate
      * @param stepId - Step ID for error context
@@ -296,6 +482,25 @@ class ConfigurationResolver {
                 `Pipeline step "${stepId}" modelConfig must be a non-empty string`,
                 { stepId, modelConfig: step.modelConfig },
                 ['Specify a valid model config ID', 'Reference an existing model configuration']
+            );
+        }
+
+        // Validate output field (string or routing-aware object)
+        if (!step.output) {
+            throw ErrorFactory.validation(
+                `Missing output field in step ${stepId} - output field is required`,
+                `Pipeline step "${stepId}" output field is required`,
+                { stepId },
+                ['Add output field to step configuration', 'Use string for simple path or object for routing-aware paths']
+            );
+        }
+
+        if (typeof step.output !== 'string' && !isRoutingAwareOutput(step.output)) {
+            throw ErrorFactory.validation(
+                `Invalid output field in step ${stepId} - output must be string or routing-aware object`,
+                `Pipeline step "${stepId}" output must be string or routing-aware object`,
+                { stepId, output: step.output },
+                ['Use string for simple output path', 'Use object with nextStep mapping for routing-aware output']
             );
         }
 

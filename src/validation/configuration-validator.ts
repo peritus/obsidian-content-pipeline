@@ -1,11 +1,17 @@
 /**
- * Centralized Configuration Validation Service
+ * Centralized Configuration Validation Service (v2.0)
  * 
  * Provides unified configuration validation for all components,
- * eliminating scattered validation logic across the codebase.
+ * including routing-aware output path validation.
  */
 
-import { ContentPipelineSettings, PipelineConfiguration } from '../types';
+import { 
+    ContentPipelineSettings, 
+    PipelineConfiguration, 
+    ConfigValidationResult,
+    isRoutingAwareOutput,
+    isValidRoutingAwareOutput 
+} from '../types';
 import { createConfigurationResolver } from '../validation/configuration-resolver';
 import { ErrorFactory } from '../error-handler';
 import { createLogger } from '../logger';
@@ -18,6 +24,7 @@ interface ConfigurationValidationResult {
     modelsErrors?: string[];
     pipelineErrors?: string[];
     crossRefErrors?: string[];
+    outputRoutingErrors?: string[];
 }
 
 class ConfigurationValidator {
@@ -28,8 +35,126 @@ class ConfigurationValidator {
     }
 
     /**
+     * Validate output configuration for routing-aware paths
+     * 
+     * @param stepId - Step ID for context
+     * @param step - Pipeline step to validate
+     * @param availableNextSteps - Available next step options
+     * @returns Validation errors (empty array if valid)
+     */
+    validateOutputConfiguration(stepId: string, step: any, availableNextSteps: string[]): string[] {
+        const errors: string[] = [];
+
+        if (!step.output) {
+            errors.push(`Step "${stepId}": Missing output configuration`);
+            return errors;
+        }
+
+        // Handle string output (backward compatibility)
+        if (typeof step.output === 'string') {
+            return errors; // Valid string output, no routing validation needed
+        }
+
+        // Handle routing-aware output
+        if (isRoutingAwareOutput(step.output)) {
+            if (!isValidRoutingAwareOutput(step.output)) {
+                errors.push(`Step "${stepId}": Invalid routing-aware output structure - all values must be strings`);
+                return errors;
+            }
+
+            const outputKeys = Object.keys(step.output);
+            const routingKeys = outputKeys.filter(key => key !== 'default');
+
+            // Validate all nextStep options have corresponding output paths
+            const missingOutputPaths = availableNextSteps.filter(nextStep => !outputKeys.includes(nextStep));
+            if (missingOutputPaths.length > 0) {
+                errors.push(`Step "${stepId}": Missing output paths for next steps: ${missingOutputPaths.join(', ')}`);
+            }
+
+            // Warn about unused output paths (not an error, but useful feedback)
+            const unusedOutputPaths = routingKeys.filter(key => !availableNextSteps.includes(key));
+            if (unusedOutputPaths.length > 0) {
+                logger.warn(`Step "${stepId}": Unused output paths configured: ${unusedOutputPaths.join(', ')}`);
+            }
+
+            // Validate path patterns are valid (basic check)
+            for (const [key, path] of Object.entries(step.output)) {
+                if (typeof path !== 'string' || path.trim().length === 0) {
+                    errors.push(`Step "${stepId}": Invalid output path for "${key}" - must be non-empty string`);
+                }
+
+                // Check for supported variables in path patterns
+                const supportedVariables = ['{filename}', '{timestamp}', '{date}', '{stepId}'];
+                const invalidVariables = this.extractVariables(path).filter(
+                    variable => !supportedVariables.includes(variable)
+                );
+                if (invalidVariables.length > 0) {
+                    errors.push(`Step "${stepId}": Unsupported variables in output path "${key}": ${invalidVariables.join(', ')}`);
+                }
+            }
+
+            // Recommend default fallback if not present
+            if (!step.output.default) {
+                logger.warn(`Step "${stepId}": No default fallback configured - routing failures will cause pipeline errors`);
+            }
+        } else {
+            errors.push(`Step "${stepId}": Invalid output configuration - must be string or routing-aware object`);
+        }
+
+        return errors;
+    }
+
+    /**
+     * Extract variable placeholders from path patterns
+     * 
+     * @param path - Path pattern to analyze
+     * @returns Array of variable placeholders found
+     */
+    private extractVariables(path: string): string[] {
+        const variableRegex = /\{[^}]+\}/g;
+        return path.match(variableRegex) || [];
+    }
+
+    /**
+     * Validate for output path conflicts across steps
+     * 
+     * @param pipelineConfig - Complete pipeline configuration
+     * @returns Array of conflict errors
+     */
+    validateOutputPathConflicts(pipelineConfig: PipelineConfiguration): string[] {
+        const errors: string[] = [];
+        const pathMapping = new Map<string, string[]>(); // path -> [stepIds]
+
+        Object.entries(pipelineConfig).forEach(([stepId, step]) => {
+            const outputPaths: string[] = [];
+
+            if (typeof step.output === 'string') {
+                outputPaths.push(step.output);
+            } else if (isRoutingAwareOutput(step.output)) {
+                outputPaths.push(...Object.values(step.output));
+            }
+
+            outputPaths.forEach(path => {
+                if (!pathMapping.has(path)) {
+                    pathMapping.set(path, []);
+                }
+                pathMapping.get(path)!.push(stepId);
+            });
+        });
+
+        // Find conflicts
+        pathMapping.forEach((stepIds, path) => {
+            if (stepIds.length > 1) {
+                errors.push(`Output path conflict: "${path}" used by steps: ${stepIds.join(', ')}`);
+            }
+        });
+
+        return errors;
+    }
+
+    /**
      * Validate configurations and return detailed status (non-throwing)
-     * Used by commands and UI components that need graceful validation
+     * Updated to include output routing validation
      */
     validateConfigurations(): ConfigurationValidationResult {
         // Check if parsed configurations exist
@@ -39,7 +164,8 @@ class ConfigurationValidator {
                 error: 'Models configuration not parsed',
                 modelsErrors: ['Models configuration not parsed'],
                 pipelineErrors: [],
-                crossRefErrors: []
+                crossRefErrors: [],
+                outputRoutingErrors: []
             };
         }
         
@@ -49,7 +175,8 @@ class ConfigurationValidator {
                 error: 'Pipeline configuration not parsed',
                 modelsErrors: [],
                 pipelineErrors: ['Pipeline configuration not parsed'],
-                crossRefErrors: []
+                crossRefErrors: [],
+                outputRoutingErrors: []
             };
         }
         
@@ -72,13 +199,17 @@ class ConfigurationValidator {
                 if (validationResult.crossRefErrors.length > 0) {
                     errorSections.push(`Cross-ref: ${validationResult.crossRefErrors.length} errors`);
                 }
+                if (validationResult.outputRoutingErrors.length > 0) {
+                    errorSections.push(`Output routing: ${validationResult.outputRoutingErrors.length} errors`);
+                }
                 
                 return { 
                     isValid: false, 
                     error: errorSections.join(', '),
                     modelsErrors: validationResult.modelsErrors,
                     pipelineErrors: validationResult.pipelineErrors,
-                    crossRefErrors: validationResult.crossRefErrors
+                    crossRefErrors: validationResult.crossRefErrors,
+                    outputRoutingErrors: validationResult.outputRoutingErrors
                 };
             }
             
@@ -87,7 +218,8 @@ class ConfigurationValidator {
                 isValid: true,
                 modelsErrors: [],
                 pipelineErrors: [],
-                crossRefErrors: []
+                crossRefErrors: [],
+                outputRoutingErrors: []
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -97,7 +229,8 @@ class ConfigurationValidator {
                 error: errorMessage,
                 modelsErrors: [],
                 pipelineErrors: [],
-                crossRefErrors: [errorMessage]
+                crossRefErrors: [errorMessage],
+                outputRoutingErrors: []
             };
         }
     }
@@ -129,7 +262,8 @@ class ConfigurationValidator {
                 const errorSummary = [
                     ...validationResult.modelsErrors,
                     ...validationResult.pipelineErrors,
-                    ...validationResult.crossRefErrors
+                    ...validationResult.crossRefErrors,
+                    ...validationResult.outputRoutingErrors
                 ].join('; ');
                 
                 throw ErrorFactory.configuration(
