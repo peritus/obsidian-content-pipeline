@@ -75,15 +75,13 @@ export class WhisperStepProcessor {
             let usedDefaultFallback = false;
             let resolvedOutputPath: string;
 
-            // For Whisper steps, determine routing based on configuration
-            if (resolvedStep.next) {
-                const nextStepIds = Object.keys(resolvedStep.next);
-                if (nextStepIds.length > 0) {
-                    // For Whisper, typically take the first (or only) available next step
-                    // Could be enhanced with content analysis in the future
-                    nextStep = nextStepIds[0];
-                    logger.debug(`Whisper step routing to: ${nextStep}`);
-                }
+            // For Whisper steps, determine routing based on routing-aware output configuration
+            const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
+            if (availableNextSteps.length > 0) {
+                // For Whisper, typically take the first (or only) available next step
+                // Could be enhanced with content analysis in the future
+                nextStep = availableNextSteps[0];
+                logger.debug(`Whisper step routing to: ${nextStep}`);
             }
 
             // Resolve output path using routing-aware logic
@@ -94,7 +92,7 @@ export class WhisperStepProcessor {
                 nextStep,
                 usedDefaultFallback,
                 resolvedOutputPath,
-                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+                availableOptions: availableNextSteps
             };
 
             // Format and save output with routing-aware metadata
@@ -122,7 +120,7 @@ export class WhisperStepProcessor {
 
             // Create routing decision metadata for result
             const routingDecision = {
-                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : [],
+                availableOptions: availableNextSteps,
                 chosenOption: nextStep,
                 usedDefaultFallback,
                 resolvedOutputPath: outputPath,
@@ -145,6 +143,19 @@ export class WhisperStepProcessor {
             logger.error(`Whisper transcription failed: ${fileInfo.name}`, error);
             throw error;
         }
+    }
+
+    /**
+     * Get available next steps from routing-aware output only
+     */
+    private getAvailableNextSteps(resolvedStep: ResolvedPipelineStep): string[] {
+        // Use routing-aware output keys if available
+        if (resolvedStep.routingAwareOutput && isRoutingAwareOutput(resolvedStep.routingAwareOutput)) {
+            return Object.keys(resolvedStep.routingAwareOutput).filter(key => key !== 'default');
+        }
+
+        // No routing-aware output configured
+        return [];
     }
 
     /**

@@ -10,10 +10,7 @@
     "include": [
       "prompts/transcriptionprompt.md"
     ],
-    "description": "Transcribe audio files to text",
-    "next": {
-      "summarize": "Always summarize the transcribed content."
-    }
+    "description": "Transcribe audio files to text"
   },
   "summarize": {
     "modelConfig": "openai-gpt",

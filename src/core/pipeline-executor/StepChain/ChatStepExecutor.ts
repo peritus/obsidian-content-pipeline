@@ -60,12 +60,12 @@ export class ChatStepExecutor {
                 outputPath: '' // Will be resolved per output file based on routing
             };
 
-            // Format YAML request with next step routing
+            // Format YAML request with routing-aware output
             const yamlRequest = await this.yamlProcessor.formatRequest(
                 fileInfo,
                 resolvedStep.include || [],
                 context,
-                resolvedStep.next // Pass next steps for routing
+                resolvedStep.routingAwareOutput // Pass routing-aware output for routing
             );
 
             // Create chat client and process request using resolved model config
@@ -108,7 +108,6 @@ export class ChatStepExecutor {
                 output: resolvedStep.routingAwareOutput || resolvedStep.output, // Use routing-aware output if available
                 archive: resolvedStep.archive,
                 include: resolvedStep.include,
-                next: resolvedStep.next,
                 description: resolvedStep.description
             };
             
@@ -149,7 +148,7 @@ export class ChatStepExecutor {
                 nextStep: nextStep,
                 usedDefaultFallback: routingDecisions.some(rd => rd.usedDefaultFallback),
                 resolvedOutputPath: '', // Will be set per section
-                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+                availableOptions: this.getAvailableNextSteps(resolvedStep)
             };
 
             // Handle different response types and output patterns with routing support
@@ -181,7 +180,7 @@ export class ChatStepExecutor {
                         nextStep: section.nextStep,
                         usedDefaultFallback: !section.nextStep || !this.isValidNextStep(section.nextStep, resolvedStep),
                         resolvedOutputPath: this.outputHandler.resolveOutputPath(outputStepCompat, section.nextStep),
-                        availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+                        availableOptions: this.getAvailableNextSteps(resolvedStep)
                     }
                 };
 
@@ -199,14 +198,15 @@ export class ChatStepExecutor {
                 if (section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)) {
                     nextStep = section.nextStep;
                 } else if (section.nextStep) {
-                    logger.warn(`Invalid nextStep '${section.nextStep}' not found in step configuration. Available options: ${Object.keys(resolvedStep.next || {}).join(', ')}`);
+                    const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
+                    logger.warn(`Invalid nextStep '${section.nextStep}' not found in step configuration. Available options: ${availableNextSteps.join(', ')}`);
                     nextStep = undefined;
                 }
             }
 
             // Create comprehensive routing decision metadata for result
             const finalRoutingDecision = {
-                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : [],
+                availableOptions: this.getAvailableNextSteps(resolvedStep),
                 chosenOption: nextStep,
                 usedDefaultFallback: routingDecisions.some(rd => rd.usedDefaultFallback),
                 resolvedOutputPath: outputFiles[0] || '', // Use first output file as representative
@@ -234,6 +234,19 @@ export class ChatStepExecutor {
     }
 
     /**
+     * Get available next steps from routing-aware output only
+     */
+    private getAvailableNextSteps(resolvedStep: ResolvedPipelineStep): string[] {
+        // Use routing-aware output keys if available
+        if (resolvedStep.routingAwareOutput && isRoutingAwareOutput(resolvedStep.routingAwareOutput)) {
+            return Object.keys(resolvedStep.routingAwareOutput).filter(key => key !== 'default');
+        }
+
+        // No routing-aware output configured
+        return [];
+    }
+
+    /**
      * Validate routing decisions from LLM response against step configuration
      */
     private validateRoutingDecisions(sections: any[], resolvedStep: ResolvedPipelineStep): {
@@ -242,7 +255,7 @@ export class ChatStepExecutor {
         fallbacksUsed: number;
         totalSections: number;
     } {
-        const availableNextSteps = resolvedStep.next ? Object.keys(resolvedStep.next) : [];
+        const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
         const invalidRoutes: string[] = [];
         let fallbacksUsed = 0;
 
@@ -284,7 +297,6 @@ export class ChatStepExecutor {
             output: resolvedStep.routingAwareOutput || resolvedStep.output,
             archive: resolvedStep.archive,
             include: resolvedStep.include,
-            next: resolvedStep.next,
             description: resolvedStep.description
         };
 
@@ -298,9 +310,11 @@ export class ChatStepExecutor {
 
     /**
      * Check if a nextStep is valid according to step configuration
+     * Now supports only routing-aware output
      */
     private isValidNextStep(nextStep: string, resolvedStep: ResolvedPipelineStep): boolean {
-        return !!(resolvedStep.next && resolvedStep.next[nextStep]);
+        const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
+        return availableNextSteps.includes(nextStep);
     }
 
     /**
@@ -385,7 +399,7 @@ export class ChatStepExecutor {
             filePath: fileInfo.path,
             modelConfig: resolvedStep.modelConfig.model,
             hasRoutingAwareOutput: !!resolvedStep.routingAwareOutput,
-            availableNextSteps: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+            availableNextSteps: this.getAvailableNextSteps(resolvedStep)
         });
     }
 }

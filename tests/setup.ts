@@ -2,7 +2,7 @@
  * Jest test setup file
  * 
  * This file runs before each test suite and sets up mocks and global test configuration.
- * Updated for v1.2 schema - dual configuration system with models and pipeline configs.
+ * Updated for v2.0 schema - routing-aware output system without legacy 'next' field.
  */
 
 // Import the mocked obsidian module directly
@@ -35,7 +35,7 @@ declare global {
     }
 }
 
-// Custom Jest matchers updated for v1.2 schema
+// Custom Jest matchers updated for v2.0 schema
 expect.extend({
     toBeValidPath(received: string) {
         const isValid = typeof received === 'string' && 
@@ -72,7 +72,7 @@ expect.extend({
     }
 });
 
-// Test data factories updated for v1.2 schema
+// Test data factories updated for v2.0 schema
 
 export const createMockContext = (overrides: any = {}) => ({
     filename: 'test-file',
@@ -85,7 +85,7 @@ export const createMockContext = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Factory for creating mock model configurations (v1.2)
+// Factory for creating mock model configurations (v2.0)
 export const createMockModelConfig = (overrides: Partial<ModelConfig> = {}): ModelConfig => ({
     baseUrl: 'https://api.openai.com/v1',
     apiKey: 'sk-proj-test1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
@@ -95,7 +95,7 @@ export const createMockModelConfig = (overrides: Partial<ModelConfig> = {}): Mod
     ...overrides
 });
 
-// Factory for creating mock models configuration (v1.2)
+// Factory for creating mock models configuration (v2.0)
 export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): ModelsConfig => ({
     'openai-gpt': createMockModelConfig({
         implementation: 'chatgpt',
@@ -109,7 +109,7 @@ export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): M
     ...overrides
 });
 
-// Factory for creating mock pipeline steps (v1.2)
+// Factory for creating mock pipeline steps (v2.0) - no longer includes 'next' field
 export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): PipelineStep => ({
     modelConfig: 'test-model',  // Reference to models config
     input: 'inbox/audio',
@@ -120,13 +120,13 @@ export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): P
     ...overrides
 });
 
-// Factory for creating mock pipeline configuration (v1.2)
+// Factory for creating mock pipeline configuration (v2.0)
 export const createMockPipelineConfig = (overrides: Partial<PipelineConfiguration> = {}): PipelineConfiguration => ({
     'test-step': createMockPipelineStep(),
     ...overrides
 });
 
-// Mock file info factory for v1.2 schema
+// Mock file info factory for v2.0 schema
 export const createMockFileInfo = (overrides: any = {}) => ({
     name: 'test-audio.mp3',
     path: 'inbox/audio/test-audio.mp3',
@@ -138,13 +138,13 @@ export const createMockFileInfo = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Mock file metadata factory for v1.2 schema
+// Mock file metadata factory for v2.0 schema
 export const createMockFileMetadata = (overrides: any = {}) => ({
     source: 'inbox/archive/transcribe/test-audio.mp3',
     processed: '2024-01-15T10:30:00Z',
     step: 'transcribe',
     nextStep: 'process-thoughts',
-    version: '1.2',
+    version: '2.0',
     ...overrides
 });
 
@@ -177,7 +177,7 @@ export const createMockValidationResult = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Mock processing result for v1.2 schema
+// Mock processing result for v2.0 schema
 export const createMockProcessingResult = (overrides: any = {}) => ({
     inputFile: createMockFileInfo(),
     status: 'completed',
@@ -190,54 +190,58 @@ export const createMockProcessingResult = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Helper function to create complex pipeline configurations for testing (v1.2)
+// Helper function to create complex pipeline configurations for testing (v2.0)
 export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     'transcribe': createMockPipelineStep({
         modelConfig: 'openai-whisper',
         input: 'inbox/audio',
         output: 'inbox/transcripts/{filename}-transcript.md',
+        routingAwareOutput: {
+            'process-thoughts': 'inbox/transcripts/{filename}-transcript.md',
+            'process-tasks': 'inbox/transcripts/{filename}-transcript.md', 
+            'process-ideas': 'inbox/transcripts/{filename}-transcript.md',
+            'default': 'inbox/transcripts/{filename}-transcript.md'
+        },
         archive: 'inbox/archive/transcribe',
         include: ['transcriptionprompt.md'],
-        description: 'Transcribe audio files to text',
-        next: {
-            'process-thoughts': 'If the document contains personal thoughts, reflections, or private topics',
-            'process-tasks': 'If the document contains work-related content, meeting notes, or action items',
-            'process-ideas': 'If the document contains innovative concepts or brainstorming sessions'
-        }
+        description: 'Transcribe audio files to text'
     }),
     'process-thoughts': createMockPipelineStep({
         modelConfig: 'openai-gpt',
         input: 'inbox/transcripts',
         output: 'inbox/process-thoughts/{filename}-processed.md',
+        routingAwareOutput: {
+            'summary-personal': 'inbox/process-thoughts/{filename}-processed.md',
+            'default': 'inbox/process-thoughts/{filename}-processed.md'
+        },
         archive: 'inbox/archive/process-thoughts',
         include: ['process-thoughts-prompt.md'],
-        description: 'Process personal thoughts and reflections',
-        next: {
-            'summary-personal': 'Always route personal content to personal summary'
-        }
+        description: 'Process personal thoughts and reflections'
     }),
     'process-tasks': createMockPipelineStep({
         modelConfig: 'openai-gpt',
         input: 'inbox/transcripts',
         output: 'inbox/process-tasks/{filename}-processed.md',
+        routingAwareOutput: {
+            'summary-work': 'inbox/process-tasks/{filename}-processed.md',
+            'default': 'inbox/process-tasks/{filename}-processed.md'
+        },
         archive: 'inbox/archive/process-tasks',
         include: ['process-tasks-prompt.md'],
-        description: 'Process work content and action items',
-        next: {
-            'summary-work': 'Always route work content to work summary'
-        }
+        description: 'Process work content and action items'
     }),
     'process-ideas': createMockPipelineStep({
         modelConfig: 'openai-gpt',
         input: 'inbox/transcripts',
         output: 'inbox/process-ideas/{filename}-processed.md',
+        routingAwareOutput: {
+            'summary-personal': 'inbox/process-ideas/{filename}-personal.md',
+            'summary-work': 'inbox/process-ideas/{filename}-work.md',
+            'default': 'inbox/process-ideas/{filename}-processed.md'
+        },
         archive: 'inbox/archive/process-ideas',
         include: ['process-ideas-prompt.md'],
-        description: 'Process innovative ideas and concepts',
-        next: {
-            'summary-personal': 'If personal ideas detected',
-            'summary-work': 'If business ideas detected'
-        }
+        description: 'Process innovative ideas and concepts'
     }),
     'summary-personal': createMockPipelineStep({
         modelConfig: 'openai-gpt',
@@ -257,7 +261,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     })
 });
 
-// Helper function to create complex models config for testing (v1.2)
+// Helper function to create complex models config for testing (v2.0)
 export const createComplexModelsConfig = (): ModelsConfig => ({
     'openai-gpt': createMockModelConfig({
         implementation: 'chatgpt',
@@ -269,7 +273,7 @@ export const createComplexModelsConfig = (): ModelsConfig => ({
     })
 });
 
-// Helper function to create invalid configurations for testing (v1.2)
+// Helper function to create invalid configurations for testing (v2.0)
 export const createInvalidPipelineConfig = (errorType: string): PipelineConfiguration => {
     const baseStep = createMockPipelineStep();
     
@@ -278,25 +282,25 @@ export const createInvalidPipelineConfig = (errorType: string): PipelineConfigur
             return {
                 'step1': {
                     ...baseStep,
-                    next: { 'step2': 'Route to step2' }
+                    routingAwareOutput: { 'step2': 'inbox/step2/{filename}.md' }
                 },
                 'step2': {
                     ...baseStep,
-                    next: { 'step1': 'Route back to step1' }
+                    routingAwareOutput: { 'step1': 'inbox/step1/{filename}.md' }
                 }
             };
         case 'missing-reference':
             return {
                 'step1': {
                     ...baseStep,
-                    next: { 'non-existent': 'Route to missing step' }
+                    routingAwareOutput: { 'non-existent': 'inbox/non-existent/{filename}.md' }
                 }
             };
         case 'orphaned':
             return {
                 'entry': {
                     ...baseStep,
-                    next: { 'connected': 'Route to connected' }
+                    routingAwareOutput: { 'connected': 'inbox/connected/{filename}.md' }
                 },
                 'connected': { ...baseStep },
                 'orphaned': { ...baseStep }
@@ -316,7 +320,7 @@ export const createInvalidPipelineConfig = (errorType: string): PipelineConfigur
     }
 };
 
-// Helper function to create invalid models config for testing (v1.2)
+// Helper function to create invalid models config for testing (v2.0)
 export const createInvalidModelsConfig = (errorType: string): ModelsConfig => {
     const baseModel = createMockModelConfig();
     

@@ -78,12 +78,12 @@ export interface PipelineStep {
     input: string;
     /** Pattern for output file path (string) or routing-aware output mapping */
     output: string | RoutingAwareOutput;
+    /** Original routing-aware output configuration (if applicable) */
+    routingAwareOutput?: RoutingAwareOutput;
     /** Pattern for archive directory (auto-generated) */
     archive: string;
     /** File patterns to include (prompts + additional files) */
     include: string[];
-    /** Object mapping step IDs to routing prompts (optional) */
-    next?: { [stepId: string]: string };
     /** Description of what this step does */
     description?: string;
 }
@@ -119,8 +119,6 @@ export interface ResolvedPipelineStep {
     archive: string;
     /** Include patterns */
     include: string[];
-    /** Next step routing */
-    next?: { [stepId: string]: string };
     /** Description */
     description?: string;
 }

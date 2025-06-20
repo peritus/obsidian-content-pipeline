@@ -6,7 +6,7 @@
 
 import { App, TFile, TFolder, Vault, normalizePath } from 'obsidian';
 import { PathResolver } from '../path-resolver';
-import { PathContext, FileInfo, PipelineConfiguration } from '../../types';
+import { PathContext, FileInfo, PipelineConfiguration, isRoutingAwareOutput } from '../../types';
 import { FileDiscoveryOptions, FileDiscoveryResult } from './types';
 import { FileInfoProvider } from './file-info-provider';
 import { ErrorFactory } from '../../error-handler';
@@ -284,7 +284,7 @@ export class FileDiscovery {
     }
 
     /**
-     * Find entry points in the pipeline (steps not referenced by others)
+     * Find entry points in the pipeline (steps not referenced by others via routing-aware output)
      */
     findEntryPoints(config: PipelineConfiguration): string[] {
         const allSteps = Object.keys(config);
@@ -292,10 +292,14 @@ export class FileDiscovery {
 
         allSteps.forEach(stepId => {
             const step = config[stepId];
-            if (step.next) {
-                // step.next is now an object mapping step IDs to routing prompts
-                Object.keys(step.next).forEach(nextStepId => {
-                    referencedSteps.add(nextStepId);
+            
+            // Check routing-aware output for referenced next steps
+            if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
+                Object.keys(step.routingAwareOutput).forEach(nextStepId => {
+                    // Skip 'default' key as it's not a step reference
+                    if (nextStepId !== 'default') {
+                        referencedSteps.add(nextStepId);
+                    }
                 });
             }
         });

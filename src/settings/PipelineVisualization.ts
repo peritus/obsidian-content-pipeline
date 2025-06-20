@@ -3,6 +3,7 @@
  */
 
 import { createConfigurationResolver } from '../validation/configuration-resolver';
+import { isRoutingAwareOutput } from '../types';
 
 export class PipelineVisualization {
     private pipelineVisualizationEl: HTMLElement | null = null;
@@ -69,7 +70,13 @@ export class PipelineVisualization {
         
         stepIds.forEach(stepId => {
             const step = pipelineConfig[stepId];
-            const nextSteps = step.next ? Object.keys(step.next).join(', ') : 'None';
+            
+            // Get next steps from routing-aware output
+            let nextSteps = 'None';
+            if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
+                const routes = Object.keys(step.routingAwareOutput).filter(key => key !== 'default');
+                nextSteps = routes.length > 0 ? routes.join(', ') : 'None';
+            }
             
             html += `<tr>
                 <td>${stepId}</td>

@@ -76,14 +76,18 @@ export class InboxStructureManager {
         try {
             logger.info('Creating entry point folders from pipeline configuration');
 
-            // Find entry point steps (steps not referenced by other steps)
+            // Find entry point steps (steps not referenced by other steps via routing-aware output)
             const allStepIds = Object.keys(pipelineConfig);
             const referencedSteps = new Set<string>();
             
             for (const step of Object.values(pipelineConfig)) {
-                if (step.next) {
-                    Object.keys(step.next).forEach(nextStepId => {
-                        referencedSteps.add(nextStepId);
+                // Check routing-aware output for referenced next steps
+                if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
+                    Object.keys(step.routingAwareOutput).forEach(nextStepId => {
+                        // Skip 'default' key as it's not a step reference
+                        if (nextStepId !== 'default') {
+                            referencedSteps.add(nextStepId);
+                        }
                     });
                 }
             }

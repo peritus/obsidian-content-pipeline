@@ -137,7 +137,6 @@ class ConfigurationResolver {
             routingAwareOutput,
             archive: step.archive,
             include: step.include,
-            next: step.next,
             description: step.description
         };
     }
@@ -233,8 +232,8 @@ class ConfigurationResolver {
         stepIds.forEach(stepId => {
             const step = this.pipelineConfig[stepId];
             
-            // Get available next steps for this step
-            const availableNextSteps = step.next ? Object.keys(step.next) : [];
+            // Get available next steps from routing-aware output
+            const availableNextSteps = this.getAvailableNextSteps(step);
 
             // Validate output configuration
             if (typeof step.output === 'string') {
@@ -247,21 +246,6 @@ class ConfigurationResolver {
                 const outputKeys = Object.keys(step.output);
                 const routingKeys = outputKeys.filter(key => key !== 'default');
 
-                const missingOutputPaths = availableNextSteps.filter(nextStep => !outputKeys.includes(nextStep));
-                if (missingOutputPaths.length > 0) {
-                    result.outputRoutingErrors.push(
-                        `Step "${stepId}": Missing output paths for next steps: ${missingOutputPaths.join(', ')}`
-                    );
-                }
-
-                // Check for unused output paths (warning)
-                const unusedOutputPaths = routingKeys.filter(key => !availableNextSteps.includes(key));
-                if (unusedOutputPaths.length > 0) {
-                    result.warnings.push(
-                        `Step "${stepId}": Unused output paths configured: ${unusedOutputPaths.join(', ')}`
-                    );
-                }
-
                 // Validate path patterns
                 for (const [key, path] of Object.entries(step.output)) {
                     if (typeof path !== 'string' || path.trim().length === 0) {
@@ -271,8 +255,8 @@ class ConfigurationResolver {
                     }
                 }
 
-                // Recommend default fallback if not present
-                if (!step.output.default && availableNextSteps.length > 0) {
+                // Recommend default fallback if not present and step has routing options
+                if (!step.output.default && routingKeys.length > 0) {
                     result.warnings.push(
                         `Step "${stepId}": No default fallback configured - routing failures will cause pipeline errors`
                     );
@@ -286,6 +270,16 @@ class ConfigurationResolver {
 
         // Validate for output path conflicts
         this.validateOutputPathConflicts(result);
+    }
+
+    /**
+     * Get available next steps from routing-aware output
+     */
+    private getAvailableNextSteps(step: PipelineStep): string[] {
+        if (isRoutingAwareOutput(step.output)) {
+            return Object.keys(step.output).filter(key => key !== 'default');
+        }
+        return [];
     }
 
     /**
@@ -324,7 +318,7 @@ class ConfigurationResolver {
     }
 
     /**
-     * Find entry points in the pipeline configuration
+     * Find entry points in the pipeline configuration using routing-aware output
      * 
      * @returns Array of step IDs that are entry points
      */
@@ -332,12 +326,17 @@ class ConfigurationResolver {
         const stepIds = Object.keys(this.pipelineConfig);
         const referencedSteps = new Set<string>();
 
-        // Collect all steps that are referenced by other steps
+        // Collect all steps that are referenced by other steps via routing-aware output
         stepIds.forEach(stepId => {
             const step = this.pipelineConfig[stepId];
-            if (step.next) {
-                Object.keys(step.next).forEach(nextStepId => {
-                    referencedSteps.add(nextStepId);
+            
+            // Check routing-aware output for referenced next steps
+            if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
+                Object.keys(step.routingAwareOutput).forEach(nextStepId => {
+                    // Skip 'default' key as it's not a step reference
+                    if (nextStepId !== 'default') {
+                        referencedSteps.add(nextStepId);
+                    }
                 });
             }
         });
@@ -389,17 +388,18 @@ class ConfigurationResolver {
             this.validatePipelineStepStructure(step, stepId);
         });
 
-        // Validate step references exist
+        // Validate routing-aware output step references exist
         stepIds.forEach(stepId => {
             const step = this.pipelineConfig[stepId];
-            if (step.next) {
-                Object.keys(step.next).forEach(nextStepId => {
-                    if (!stepIds.includes(nextStepId)) {
+            if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
+                Object.keys(step.routingAwareOutput).forEach(nextStepId => {
+                    // Skip 'default' key as it's not a step reference
+                    if (nextStepId !== 'default' && !stepIds.includes(nextStepId)) {
                         throw ErrorFactory.validation(
                             `Invalid step reference: ${stepId} → ${nextStepId} - next step does not exist`,
-                            `Step "${stepId}" references non-existent step "${nextStepId}"`,
+                            `Step "${stepId}" routing-aware output references non-existent step "${nextStepId}"`,
                             { stepId, nextStepId, availableSteps: stepIds },
-                            ['Fix step reference to point to existing step', 'Remove invalid next field', 'Check step ID spelling']
+                            ['Fix step reference to point to existing step', 'Remove invalid routing option', 'Check step ID spelling']
                         );
                     }
                 });
