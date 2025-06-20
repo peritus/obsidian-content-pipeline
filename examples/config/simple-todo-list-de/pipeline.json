@@ -5,7 +5,7 @@
     "archive": "Content Pipeline/Archiv/Audio/",
     "output": "Content Pipeline/Transkripte/{filename}.md",
     "include": [
-      "Content Pipeline/Transkription-Prompt.md"
+      "Content Pipeline/Prompts/Transkription-Prompt.md"
     ],
     "description": "Transkribiert Audio-Dateien zu Text.",
     "next": {
@@ -18,7 +18,7 @@
     "output": "Content Pipeline/Extrahierte-Todos/{filename}.md",
     "archive": "Content Pipeline/Archiv/Transkripte/",
     "include": [
-      "Content Pipeline/Todo-Extraktion-Prompt.md"
+      "Content Pipeline/Prompts/Todo-Extraktion-Prompt.md"
     ],
     "description": "Extrahiert einzelne Todo-Eintraege aus einem Transkript.",
     "next": {
@@ -31,7 +31,7 @@
     "output": "Content Pipeline/Zusammenfassung/",
     "archive": "Content Pipeline/Archiv/Extrahierte-Todos/",
     "include": [
-      "Content Pipeline/Aufgaben-Zusammenfassen.md",
+      "Content Pipeline/Prompts/Aufgaben-Zusammenfassen.md",
       "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md"
     ],
     "description": "Fasst mehrere Todo-Extrakte zu einer konsolidierten Todo-Liste zusammen."
