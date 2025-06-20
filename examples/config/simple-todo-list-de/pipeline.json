@@ -9,21 +9,45 @@
     ],
     "description": "Transkribiert Audio-Dateien zu Text.",
     "next": {
-      "extract-todos": "Der naechste Schritt ist immer Todo-Extraktion aus dem Transkript."
+      "analyze-content": "Der naechste Schritt ist immer Inhaltsanalyse zur Bestimmung der Verarbeitung."
+    }
+  },
+  "analyze-content": {
+    "modelConfig": "openai-gpt",
+    "input": "Content Pipeline/Transkripte/",
+    "output": "Content Pipeline/Analysiert/{filename}.md",
+    "archive": "Content Pipeline/Archiv/Transkripte/",
+    "include": [
+      "Content Pipeline/Prompts/Inhalts-Analyse-Prompt.md"
+    ],
+    "description": "Analysiert Transkripte und entscheidet über die weitere Verarbeitung.",
+    "next": {
+      "extract-todos": "Wenn das Transkript Aufgaben, Todos, Action Items, Termine, oder Dinge enthält die erledigt werden müssen. Explizite Hinweise: 'ich muss', 'ich sollte', 'TODO', 'Aufgabe', 'erledigen', 'machen', 'organisieren', Deadlines, Termine.",
+      "create-note": "Wenn das Transkript allgemeine Informationen, Notizen, Gedanken, Ideen, Erinnerungen, Wissen, oder Fakten enthält die dokumentiert werden sollen. Keine konkreten Handlungsaufforderungen."
     }
   },
   "extract-todos": {
     "modelConfig": "openai-gpt",
-    "input": "Content Pipeline/Transkripte/",
+    "input": "Content Pipeline/Analysiert/",
     "output": "Content Pipeline/Extrahierte-Todos/{filename}.md",
-    "archive": "Content Pipeline/Archiv/Transkripte/",
+    "archive": "Content Pipeline/Archiv/Analysiert/",
     "include": [
       "Content Pipeline/Prompts/Todo-Extraktion-Prompt.md"
     ],
-    "description": "Extrahiert einzelne Todo-Eintraege aus einem Transkript.",
+    "description": "Extrahiert einzelne Todo-Eintraege aus einem analysierten Transkript.",
     "next": {
       "summarize": "Der naechste Schritt ist immer Zusammenfassung aller Todos."
     }
+  },
+  "create-note": {
+    "modelConfig": "openai-gpt",
+    "input": "Content Pipeline/Analysiert/",
+    "output": "Content Pipeline/Notizen/{filename}.md",
+    "archive": "Content Pipeline/Archiv/Analysiert/",
+    "include": [
+      "Content Pipeline/Prompts/Notiz-Erstellung-Prompt.md"
+    ],
+    "description": "Erstellt strukturierte Notizen aus allgemeinen Informationen und Gedanken."
   },
   "summarize": {
     "modelConfig": "openai-gpt",
