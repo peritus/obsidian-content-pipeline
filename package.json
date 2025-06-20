@@ -4,7 +4,7 @@
   "description": "A sophisticated content pipeline plugin for Obsidian for advanced content processing workflows",
   "main": "main.js",
   "scripts": {
-    "build:configs": "node build/generate-configs.js",
+    "build:configs": "npx ts-node generate-configs.ts",
     "build": "npm run build:configs && node esbuild.config.js",
     "build:debug": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=debug node esbuild.config.js",
     "build:info": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=info node esbuild.config.js",
