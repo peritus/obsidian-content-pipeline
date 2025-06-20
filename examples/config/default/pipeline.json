@@ -2,7 +2,12 @@
   "transcribe": {
     "modelConfig": "openai-whisper",
     "input": "inbox/audio",
-    "output": "inbox/transcripts/{filename}-transcript.md",
+    "output": {
+      "process-thoughts": "inbox/transcripts/{filename}-transcript.md",
+      "process-tasks": "inbox/transcripts/{filename}-transcript.md",
+      "process-ideas": "inbox/transcripts/{filename}-transcript.md",
+      "default": "inbox/transcripts/{filename}-transcript.md"
+    },
     "archive": "inbox/archive/audio",
     "include": [
       "prompts/transcriptionprompt.md"
@@ -43,7 +48,11 @@
   "process-ideas": {
     "modelConfig": "openai-gpt",
     "input": "inbox/transcripts",
-    "output": "inbox/process-ideas/{filename}-processed.md",
+    "output": {
+      "summary-personal": "inbox/process-ideas/{filename}-processed.md",
+      "summary-work": "inbox/process-ideas/{filename}-processed.md",
+      "default": "inbox/process-ideas/{filename}-processed.md"
+    },
     "archive": "inbox/archive/transcripts",
     "include": [
       "prompts/process-ideas-prompt.md"

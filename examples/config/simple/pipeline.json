@@ -2,7 +2,10 @@
   "transcribe": {
     "modelConfig": "openai-whisper",
     "input": "inbox/audio",
-    "output": "inbox/transcripts/{filename}-transcript.md",
+    "output": {
+      "summarize": "inbox/transcripts/{filename}-transcript.md",
+      "default": "inbox/transcripts/{filename}-transcript.md"
+    },
     "archive": "inbox/archive/audio",
     "include": [
       "prompts/transcriptionprompt.md"

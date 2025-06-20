@@ -1,53 +1,46 @@
 {
   "transcribe": {
     "modelConfig": "openai-whisper",
-    "input": "Content Pipeline/Eingang/Audio/",
+    "input": "Content Pipeline/Eingang-Audio/",
     "archive": "Content Pipeline/Archiv/Audio/",
     "output": "Content Pipeline/Transkripte/{filename}.md",
     "include": [
       "Content Pipeline/Prompts/Transkription-Prompt.md"
-    ],
-    "description": "Transkribiert Audio-Dateien zu Text.",
-    "next": {
-      "analyze-content": "Der naechste Schritt ist immer Inhaltsanalyse zur Bestimmung der Verarbeitung."
-    }
+    ]
   },
   "analyze-content": {
     "modelConfig": "openai-gpt",
     "input": "Content Pipeline/Transkripte/",
-    "output": "Content Pipeline/Analysiert/{filename}.md",
+    "output": {
+      "extract-todos": "Content Pipeline/Text-Todos/{filename}.md",
+      "create-note": "Content Pipeline/Text-Notizen/{filename}.md",
+      "default": "Content Pipeline/Unklassifiziert/{filename}.md"
+    },
     "archive": "Content Pipeline/Archiv/Transkripte/",
     "include": [
       "Content Pipeline/Prompts/Inhalts-Analyse-Prompt.md"
-    ],
-    "description": "Analysiert Transkripte und entscheidet über die weitere Verarbeitung.",
-    "next": {
-      "extract-todos": "Wenn das Transkript Aufgaben, Todos, Action Items, Termine, oder Dinge enthält die erledigt werden müssen. Explizite Hinweise: 'ich muss', 'ich sollte', 'TODO', 'Aufgabe', 'erledigen', 'machen', 'organisieren', Deadlines, Termine.",
-      "create-note": "Wenn das Transkript allgemeine Informationen, Notizen, Gedanken, Ideen, Erinnerungen, Wissen, oder Fakten enthält die dokumentiert werden sollen. Keine konkreten Handlungsaufforderungen."
-    }
+    ]
   },
   "extract-todos": {
     "modelConfig": "openai-gpt",
-    "input": "Content Pipeline/Analysiert/",
-    "output": "Content Pipeline/Extrahierte-Todos/{filename}.md",
-    "archive": "Content Pipeline/Archiv/Analysiert/",
+    "input": "Content Pipeline/Text-Todos/",
+    "output": {
+      "summarize": "Content Pipeline/Extrahierte-Todos/{filename}.md",
+      "default": "Content Pipeline/Extrahierte-Todos/{filename}.md"
+    },
+    "archive": "Content Pipeline/Archiv/Text-Todos/",
     "include": [
       "Content Pipeline/Prompts/Todo-Extraktion-Prompt.md"
-    ],
-    "description": "Extrahiert einzelne Todo-Eintraege aus einem analysierten Transkript.",
-    "next": {
-      "summarize": "Der naechste Schritt ist immer Zusammenfassung aller Todos."
-    }
+    ]
   },
   "create-note": {
     "modelConfig": "openai-gpt",
-    "input": "Content Pipeline/Analysiert/",
+    "input": "Content Pipeline/Text-Notizen/",
     "output": "Content Pipeline/Notizen/{filename}.md",
-    "archive": "Content Pipeline/Archiv/Analysiert/",
+    "archive": "Content Pipeline/Archiv/Text-Notizen/",
     "include": [
       "Content Pipeline/Prompts/Notiz-Erstellung-Prompt.md"
-    ],
-    "description": "Erstellt strukturierte Notizen aus allgemeinen Informationen und Gedanken."
+    ]
   },
   "summarize": {
     "modelConfig": "openai-gpt",
@@ -57,7 +50,6 @@
     "include": [
       "Content Pipeline/Prompts/Aufgaben-Zusammenfassen.md",
       "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md"
-    ],
-    "description": "Fasst mehrere Todo-Extrakte zu einer konsolidierten Todo-Liste zusammen."
+    ]
   }
 }
