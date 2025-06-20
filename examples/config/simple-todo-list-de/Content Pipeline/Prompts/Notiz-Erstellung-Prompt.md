@@ -13,27 +13,27 @@ Transformiere den transkribierten Inhalt in eine gut organisierte, nützliche No
 
 ## Ausgabeformat:
 
-```yaml
+```
 ---
 filename: [wähle einen beschreibenden deutschen Dateinamen wie "Projektideen Meeting.md" oder "Interessante Fakten über KI.md"]
 ---
 
-# [Aussagekräftiger Titel]
-
 ## Zusammenfassung
+
 [2-3 Sätze die den Kerninhalt zusammenfassen]
 
 ## Hauptpunkte
+
 [Die wichtigsten Informationen strukturiert aufgelistet]
 
 ## Details
+
 [Zusätzliche relevante Informationen, Beispiele, oder Kontext]
 
 ## Notizen
+
 [Zusätzliche Gedanken, Verbindungen zu anderen Themen, oder Fragen die sich ergeben]
 
----
-*Erstellt aus Audio-Transkript am [aktuelles Datum]*
 ```
 
 ## Qualitätskriterien:
