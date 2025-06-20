@@ -78,10 +78,14 @@ class ConfigurationValidator {
             }
 
             // Validate path patterns are valid (basic check)
-            for (const [key, path] of Object.entries(step.output)) {
-                if (typeof path !== 'string' || path.trim().length === 0) {
+            for (const [key, pathValue] of Object.entries(step.output)) {
+                if (typeof pathValue !== 'string' || pathValue.trim().length === 0) {
                     errors.push(`Step "${stepId}": Invalid output path for "${key}" - must be non-empty string`);
+                    continue; // Skip further validation for this invalid path
                 }
+
+                // Now we know pathValue is a string, so we can safely use it
+                const path = pathValue as string;
 
                 // Check for supported variables in path patterns
                 const supportedVariables = ['{filename}', '{timestamp}', '{date}', '{stepId}'];

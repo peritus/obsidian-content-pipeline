@@ -229,6 +229,7 @@ export class SettingsTab extends PluginSettingTab {
                 modelsErrors: [],
                 pipelineErrors: [],
                 crossRefErrors: [errorMessage],
+                outputRoutingErrors: [],
                 warnings: [],
                 entryPoints: []
             };
@@ -251,6 +252,10 @@ export class SettingsTab extends PluginSettingTab {
         
         if (validationResult.crossRefErrors.length > 0) {
             errorSections.push(`Cross-reference: ${validationResult.crossRefErrors.join('; ')}`);
+        }
+        
+        if (validationResult.outputRoutingErrors.length > 0) {
+            errorSections.push(`Output routing: ${validationResult.outputRoutingErrors.join('; ')}`);
         }
         
         const message = errorSections.length > 0 

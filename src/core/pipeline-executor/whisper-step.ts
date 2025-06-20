@@ -1,12 +1,21 @@
 /**
- * Whisper-specific step processing (v1.2 - Updated for dual configuration)
+ * Whisper-specific step processing with Routing-Aware Output Support (v2.0)
  */
 
 import { App } from 'obsidian';
-import { PathUtils } from '../path-resolver';
+import { PathUtils, PathResolver } from '../path-resolver';
 import { FileOperations } from '../file-operations';
 import { WhisperClient } from '../../api';
-import { FileInfo, ProcessingResult, ProcessingStatus, ResolvedPipelineStep } from '../../types';
+import { 
+    FileInfo, 
+    ProcessingResult, 
+    ProcessingStatus, 
+    ResolvedPipelineStep,
+    ProcessingContext,
+    FileMetadata,
+    isRoutingAwareOutput,
+    RoutingAwareOutput
+} from '../../types';
 import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
 
@@ -50,27 +59,75 @@ export class WhisperStepProcessor {
             // Archive original file first and capture archive path
             const archivePath = await this.archiveFile(fileInfo.path, resolvedStep.archive, fileInfo);
 
-            // Format and save output using archive path for source metadata
-            const outputContent = this.formatTranscriptionOutput(transcriptionResult.text, fileInfo, stepId, archivePath);
-            const outputPath = this.resolveOutputPath(resolvedStep.output, fileInfo);
+            // Create processing context for routing-aware output resolution
+            const context: ProcessingContext = {
+                filename: PathUtils.getBasename(fileInfo.path),
+                timestamp: new Date().toISOString(),
+                date: new Date().toISOString().split('T')[0],
+                archivePath,
+                stepId,
+                inputPath: fileInfo.path,
+                outputPath: '' // Will be resolved based on routing
+            };
+
+            // Determine next step and routing for Whisper step
+            let nextStep: string | undefined;
+            let usedDefaultFallback = false;
+            let resolvedOutputPath: string;
+
+            // For Whisper steps, determine routing based on configuration
+            if (resolvedStep.next) {
+                const nextStepIds = Object.keys(resolvedStep.next);
+                if (nextStepIds.length > 0) {
+                    // For Whisper, typically take the first (or only) available next step
+                    // Could be enhanced with content analysis in the future
+                    nextStep = nextStepIds[0];
+                    logger.debug(`Whisper step routing to: ${nextStep}`);
+                }
+            }
+
+            // Resolve output path using routing-aware logic
+            resolvedOutputPath = this.resolveOutputPath(resolvedStep, nextStep);
+
+            // Add routing decision to context
+            context.routingDecision = {
+                nextStep,
+                usedDefaultFallback,
+                resolvedOutputPath,
+                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+            };
+
+            // Format and save output with routing-aware metadata
+            const outputContent = this.formatTranscriptionOutput(
+                transcriptionResult.text, 
+                fileInfo, 
+                stepId, 
+                archivePath, 
+                context
+            );
+            
+            const outputPath = PathResolver.resolvePath(resolvedOutputPath, {
+                filename: context.filename,
+                timestamp: context.timestamp,
+                date: context.date,
+                stepId: context.stepId
+            }).resolvedPath;
             
             await this.fileOps.writeFile(outputPath, outputContent, {
                 createDirectories: true,
                 overwrite: true
             });
 
-            logger.info(`Whisper transcription completed: ${fileInfo.name} → ${outputPath}`);
+            logger.info(`Whisper transcription completed with routing: ${fileInfo.name} → ${outputPath}, nextStep: ${nextStep || 'none'}`);
 
-            // Get next step from resolved step configuration
-            let nextStep: string | undefined;
-            if (resolvedStep.next) {
-                // For Whisper steps, we might have intelligent routing
-                // For now, just take the first available next step
-                const nextStepIds = Object.keys(resolvedStep.next);
-                if (nextStepIds.length > 0) {
-                    nextStep = nextStepIds[0]; // Simple fallback - could be enhanced with content analysis
-                }
-            }
+            // Create routing decision metadata for result
+            const routingDecision = {
+                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : [],
+                chosenOption: nextStep,
+                usedDefaultFallback,
+                resolvedOutputPath: outputPath,
+                routingConfig: this.getRoutingConfig(resolvedStep)
+            };
 
             return {
                 inputFile: fileInfo,
@@ -80,13 +137,83 @@ export class WhisperStepProcessor {
                 startTime,
                 endTime: new Date(),
                 stepId,
-                nextStep
+                nextStep,
+                routingDecision
             };
 
         } catch (error) {
             logger.error(`Whisper transcription failed: ${fileInfo.name}`, error);
             throw error;
         }
+    }
+
+    /**
+     * Resolve output path using routing-aware logic (similar to OutputHandler)
+     */
+    private resolveOutputPath(resolvedStep: ResolvedPipelineStep, nextStep?: string): string {
+        // Check if step has routing-aware output configuration
+        const output = resolvedStep.routingAwareOutput || resolvedStep.output;
+
+        // Handle backward compatibility with string output
+        if (typeof output === 'string') {
+            logger.debug('Whisper using string output (backward compatible)', { 
+                output, 
+                nextStep 
+            });
+            return output;
+        }
+
+        // Handle routing-aware output
+        if (isRoutingAwareOutput(output)) {
+            const routingOutput = output as RoutingAwareOutput;
+            
+            // Priority 1: Use nextStep if provided and valid
+            if (nextStep && routingOutput[nextStep]) {
+                logger.debug('Whisper using routing-aware output for nextStep', { 
+                    nextStep, 
+                    outputPath: routingOutput[nextStep] 
+                });
+                return routingOutput[nextStep];
+            }
+
+            // Priority 2: Use default fallback if nextStep is invalid/missing
+            if (routingOutput.default) {
+                logger.debug('Whisper using default fallback output', { 
+                    nextStep: nextStep || 'undefined',
+                    defaultPath: routingOutput.default,
+                    availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
+                });
+                return routingOutput.default;
+            }
+
+            // Priority 3: If no default, throw error
+            const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
+            throw ErrorFactory.routing(
+                `Whisper step: No valid output path found for routing decision: nextStep='${nextStep}', no default fallback configured`,
+                'Cannot determine where to save Whisper output file - routing configuration is incomplete',
+                { 
+                    nextStep, 
+                    availableRoutes,
+                    routingConfig: routingOutput 
+                },
+                [
+                    'Add a "default" fallback path to your Whisper step output routing configuration',
+                    `Ensure nextStep value matches one of: ${availableRoutes.join(', ')}`,
+                    'Consider using simple string output for Whisper steps if routing is not needed'
+                ]
+            );
+        }
+
+        // Fallback to resolved step output as string
+        return resolvedStep.output;
+    }
+
+    /**
+     * Get routing configuration for metadata
+     */
+    private getRoutingConfig(resolvedStep: ResolvedPipelineStep): RoutingAwareOutput | undefined {
+        const output = resolvedStep.routingAwareOutput || resolvedStep.output;
+        return isRoutingAwareOutput(output) ? output as RoutingAwareOutput : undefined;
     }
 
     private async readAudioFile(filePath: string): Promise<ArrayBuffer> {
@@ -108,24 +235,52 @@ export class WhisperStepProcessor {
         }
     }
 
-    private formatTranscriptionOutput(text: string, fileInfo: FileInfo, stepId: string, archivePath: string): string {
+    private formatTranscriptionOutput(
+        text: string, 
+        fileInfo: FileInfo, 
+        stepId: string, 
+        archivePath: string,
+        context: ProcessingContext
+    ): string {
         const timestamp = new Date().toISOString();
         
-        return `---
-source: "[[${archivePath}]]"
-processed: "${timestamp}"
-step: "${stepId}"
----
+        // Create comprehensive metadata with routing information
+        const metadata: FileMetadata = {
+            source: archivePath,
+            processed: timestamp,
+            step: stepId,
+            nextStep: context.routingDecision?.nextStep,
+            usedDefaultRouting: context.routingDecision?.usedDefaultFallback,
+            routingDecision: context.routingDecision ? {
+                availableOptions: context.routingDecision.availableOptions,
+                chosenOption: context.routingDecision.nextStep,
+                fallbackUsed: context.routingDecision.usedDefaultFallback
+            } : undefined
+        };
 
-${text}`;
-    }
+        // Build frontmatter with routing information
+        const frontmatterLines = ['---'];
+        frontmatterLines.push(`source: "[[${metadata.source}]]"`);
+        frontmatterLines.push(`processed: "${metadata.processed}"`);
+        frontmatterLines.push(`step: "${metadata.step}"`);
+        if (metadata.nextStep) {
+            frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
+        }
+        if (metadata.usedDefaultRouting !== undefined) {
+            frontmatterLines.push(`usedDefaultRouting: ${metadata.usedDefaultRouting}`);
+        }
+        if (metadata.routingDecision) {
+            frontmatterLines.push(`routingDecision:`);
+            frontmatterLines.push(`  availableOptions: [${metadata.routingDecision.availableOptions.map(opt => `"${opt}"`).join(', ')}]`);
+            if (metadata.routingDecision.chosenOption) {
+                frontmatterLines.push(`  chosenOption: "${metadata.routingDecision.chosenOption}"`);
+            }
+            frontmatterLines.push(`  fallbackUsed: ${metadata.routingDecision.fallbackUsed}`);
+        }
+        frontmatterLines.push('---');
+        frontmatterLines.push('');
 
-    private resolveOutputPath(outputPattern: string, fileInfo: FileInfo): string {
-        const basename = PathUtils.getBasename(fileInfo.path);
-        return outputPattern
-            .replace('{filename}', basename)
-            .replace('{date}', new Date().toISOString().split('T')[0])
-            .replace('{timestamp}', new Date().toISOString());
+        return frontmatterLines.join('\n') + text;
     }
 
     private async archiveFile(sourcePath: string, archivePattern: string, fileInfo: FileInfo): Promise<string> {

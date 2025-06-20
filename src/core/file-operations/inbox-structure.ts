@@ -1,5 +1,5 @@
 /**
- * Step-based inbox structure management
+ * Step-based inbox structure management with Routing-Aware Output Support
  */
 
 import { App } from 'obsidian';
@@ -7,7 +7,7 @@ import { DirectoryManager } from './directory-manager';
 import { InboxCore } from './inbox-core';
 import { EntryPointManager } from './entry-point-manager';
 import { FolderStructureResult } from './types';
-import { PipelineConfiguration } from '../../types';
+import { PipelineConfiguration, isRoutingAwareOutput } from '../../types';
 import { PathResolver } from '../path-resolver';
 import { createLogger } from '../../logger';
 
@@ -22,6 +22,44 @@ export class InboxStructureManager {
         this.directoryManager = new DirectoryManager(app);
         this.inboxCore = new InboxCore(this.directoryManager);
         this.entryPointManager = new EntryPointManager(this.directoryManager);
+    }
+
+    /**
+     * Extract output directory paths from step output configuration
+     * Handles both string and routing-aware output configurations
+     */
+    private extractOutputDirectories(stepOutput: string | any): string[] {
+        const outputDirs: string[] = [];
+
+        if (typeof stepOutput === 'string') {
+            // Handle string output (backward compatibility)
+            let outputDir = stepOutput.replace(/\{[^}]+\}/g, '');
+            if (outputDir.includes('.')) {
+                // If output includes a filename, get the directory part
+                outputDir = outputDir.substring(0, outputDir.lastIndexOf('/'));
+            }
+            outputDir = outputDir.replace(/\/+$/, '');
+            if (outputDir) {
+                outputDirs.push(outputDir);
+            }
+        } else if (isRoutingAwareOutput(stepOutput)) {
+            // Handle routing-aware output
+            for (const outputPath of Object.values(stepOutput)) {
+                if (typeof outputPath === 'string') {
+                    let outputDir = outputPath.replace(/\{[^}]+\}/g, '');
+                    if (outputDir.includes('.')) {
+                        // If output includes a filename, get the directory part
+                        outputDir = outputDir.substring(0, outputDir.lastIndexOf('/'));
+                    }
+                    outputDir = outputDir.replace(/\/+$/, '');
+                    if (outputDir && !outputDirs.includes(outputDir)) {
+                        outputDirs.push(outputDir);
+                    }
+                }
+            }
+        }
+
+        return outputDirs;
     }
 
     /**
@@ -109,19 +147,15 @@ export class InboxStructureManager {
                         logger.debug(`Created input folder: ${inputDir}`);
                     }
 
-                    // Create output directory (remove variables and filename for base path)
-                    let outputDir = step.output.replace(/\{[^}]+\}/g, '');
-                    if (outputDir.includes('.')) {
-                        // If output includes a filename, get the directory part
-                        outputDir = outputDir.substring(0, outputDir.lastIndexOf('/'));
-                    }
-                    outputDir = outputDir.replace(/\/+$/, '');
-                    
-                    if (outputDir && !result.createdPaths.includes(outputDir)) {
-                        await this.directoryManager.ensureDirectory(outputDir);
-                        result.foldersCreated++;
-                        result.createdPaths.push(outputDir);
-                        logger.debug(`Created output folder: ${outputDir}`);
+                    // Create output directories (handle routing-aware outputs)
+                    const outputDirs = this.extractOutputDirectories(step.output);
+                    for (const outputDir of outputDirs) {
+                        if (outputDir && !result.createdPaths.includes(outputDir)) {
+                            await this.directoryManager.ensureDirectory(outputDir);
+                            result.foldersCreated++;
+                            result.createdPaths.push(outputDir);
+                            logger.debug(`Created output folder: ${outputDir}`);
+                        }
                     }
 
                     // Create archive directory (step-based pattern: inbox/archive/{stepId})
@@ -189,17 +223,15 @@ export class InboxStructureManager {
         };
 
         try {
-            // Create output directory for this step
-            let outputDir = step.output.replace(/\{[^}]+\}/g, '');
-            if (outputDir.includes('.')) {
-                outputDir = outputDir.substring(0, outputDir.lastIndexOf('/'));
-            }
-            outputDir = outputDir.replace(/\/+$/, '');
-            
-            if (outputDir) {
-                await this.directoryManager.ensureDirectory(outputDir);
-                result.foldersCreated++;
-                result.createdPaths.push(outputDir);
+            // Create output directories for this step (handle routing-aware outputs)
+            const outputDirs = this.extractOutputDirectories(step.output);
+            for (const outputDir of outputDirs) {
+                if (outputDir) {
+                    await this.directoryManager.ensureDirectory(outputDir);
+                    result.foldersCreated++;
+                    result.createdPaths.push(outputDir);
+                    logger.debug(`Created output folder for step ${stepId}: ${outputDir}`);
+                }
             }
 
             // Create archive directory for this step
@@ -207,6 +239,7 @@ export class InboxStructureManager {
             await this.directoryManager.ensureDirectory(archiveDir);
             result.foldersCreated++;
             result.createdPaths.push(archiveDir);
+            logger.debug(`Created archive folder for step ${stepId}: ${archiveDir}`);
 
             result.success = true;
             return result;

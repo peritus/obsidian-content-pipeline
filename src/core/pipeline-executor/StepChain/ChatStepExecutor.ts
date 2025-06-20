@@ -1,5 +1,5 @@
 /**
- * Chat Step Execution Logic (v1.2 - Updated for dual configuration)
+ * Chat Step Execution Logic with Routing-Aware Output Support (v2.0)
  */
 
 import { App } from 'obsidian';
@@ -14,7 +14,9 @@ import {
     FileInfo, 
     ProcessingResult, 
     ProcessingStatus,
-    ProcessingContext
+    ProcessingContext,
+    isRoutingAwareOutput,
+    RoutingAwareOutput
 } from '../../../types';
 import { ErrorFactory } from '../../../error-handler';
 import { createLogger } from '../../../logger';
@@ -47,7 +49,7 @@ export class ChatStepExecutor {
 
             logger.info(`Starting chat processing: ${fileInfo.name} with ${resolvedStep.modelConfig.model}`);
 
-            // Create processing context
+            // Create processing context with routing preparation
             const context: ProcessingContext = {
                 filename: PathUtils.getBasename(fileInfo.path),
                 timestamp: FileUtils.generateTimestamp(),
@@ -55,7 +57,7 @@ export class ChatStepExecutor {
                 archivePath: '', // Will be set after archiving
                 stepId,
                 inputPath: fileInfo.path,
-                outputPath: '' // Will be resolved per output file
+                outputPath: '' // Will be resolved per output file based on routing
             };
 
             // Format YAML request with next step routing
@@ -95,11 +97,15 @@ export class ChatStepExecutor {
             }
             context.archivePath = archivePath;
 
-            // Save output files with direct content output - create legacy step object for OutputHandler compatibility  
+            // Validate routing decisions and resolve output paths
+            const routingValidation = this.validateRoutingDecisions(parsedResponse.sections, resolvedStep);
+            logger.debug("Routing validation completed", routingValidation);
+
+            // Create legacy step object for OutputHandler compatibility with routing-aware output support
             const outputStepCompat: PipelineStep = {
                 modelConfig: stepId, // Not used by OutputHandler but needed for interface
                 input: resolvedStep.input,
-                output: resolvedStep.output,
+                output: resolvedStep.routingAwareOutput || resolvedStep.output, // Use routing-aware output if available
                 archive: resolvedStep.archive,
                 include: resolvedStep.include,
                 next: resolvedStep.next,
@@ -108,11 +114,45 @@ export class ChatStepExecutor {
             
             const outputFiles: string[] = [];
             let nextStep: string | undefined;
+            const routingDecisions: Array<{
+                section: string;
+                nextStep?: string;
+                usedDefaultFallback: boolean;
+                resolvedOutputPath: string;
+            }> = [];
 
-            // Determine if output is a directory pattern
-            const isDirectoryOutput = this.isDirectoryOutput(resolvedStep.output);
+            // Determine if output is a directory pattern (check resolved output or first routing option)
+            let outputPattern: string;
+            if (isRoutingAwareOutput(outputStepCompat.output)) {
+                const routingOutput = outputStepCompat.output as RoutingAwareOutput;
+                // Use first available route or default for pattern detection
+                const firstRoute = Object.keys(routingOutput).find(k => k !== 'default');
+                outputPattern = routingOutput[firstRoute || 'default'] || routingOutput.default || resolvedStep.output;
+            } else {
+                outputPattern = outputStepCompat.output as string;
+            }
+            const isDirectoryOutput = this.isDirectoryOutput(outputPattern);
 
-            // Handle different response types and output patterns
+            // Process routing decisions and prepare context
+            for (const section of parsedResponse.sections) {
+                const sectionRoutingDecision = this.createRoutingDecision(section, resolvedStep);
+                routingDecisions.push(sectionRoutingDecision);
+                
+                // Set the first valid nextStep as the overall nextStep for the processing result
+                if (!nextStep && sectionRoutingDecision.nextStep && this.isValidNextStep(sectionRoutingDecision.nextStep, resolvedStep)) {
+                    nextStep = sectionRoutingDecision.nextStep;
+                }
+            }
+
+            // Update context with comprehensive routing information
+            context.routingDecision = {
+                nextStep: nextStep,
+                usedDefaultFallback: routingDecisions.some(rd => rd.usedDefaultFallback),
+                resolvedOutputPath: '', // Will be set per section
+                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+            };
+
+            // Handle different response types and output patterns with routing support
             if (parsedResponse.isMultiFile) {
                 // Multi-file response: always use appropriate method based on output pattern
                 if (isDirectoryOutput) {
@@ -123,31 +163,57 @@ export class ChatStepExecutor {
                     outputFiles.push(...Object.values(savedFiles));
                 }
                 
-                // Get nextStep from first section that has it
-                nextStep = parsedResponse.sections.find(section => section.nextStep)?.nextStep;
+                // Get nextStep from first section that has a valid one
+                const validNextStep = parsedResponse.sections.find(section => 
+                    section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)
+                )?.nextStep;
+                if (validNextStep) {
+                    nextStep = validNextStep;
+                }
             } else if (parsedResponse.sections.length > 0) {
                 // Single-file response: check if output pattern is directory
+                const section = parsedResponse.sections[0];
+                
+                // Update context with specific routing decision for this section
+                const sectionContext = {
+                    ...context,
+                    routingDecision: {
+                        nextStep: section.nextStep,
+                        usedDefaultFallback: !section.nextStep || !this.isValidNextStep(section.nextStep, resolvedStep),
+                        resolvedOutputPath: this.outputHandler.resolveOutputPath(outputStepCompat, section.nextStep),
+                        availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : []
+                    }
+                };
+
                 if (isDirectoryOutput) {
                     // Even for single-file responses, use saveToDirectory if output is a directory pattern
-                    const savedFiles = await this.outputHandler.saveToDirectory(parsedResponse.sections, outputStepCompat, context);
+                    const savedFiles = await this.outputHandler.saveToDirectory(parsedResponse.sections, outputStepCompat, sectionContext);
                     outputFiles.push(...Object.values(savedFiles));
                 } else {
                     // Regular file output pattern
-                    const outputPath = await this.outputHandler.save(parsedResponse.sections[0], outputStepCompat, context);
+                    const outputPath = await this.outputHandler.save(section, outputStepCompat, sectionContext);
                     outputFiles.push(outputPath);
                 }
-                nextStep = parsedResponse.sections[0].nextStep;
-            }
-
-            // Validate nextStep if present
-            if (nextStep) {
-                if (!resolvedStep.next || !resolvedStep.next[nextStep]) {
-                    logger.warn(`Invalid nextStep '${nextStep}' not found in step configuration. Ending processing chain.`);
+                
+                // Validate and set nextStep
+                if (section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)) {
+                    nextStep = section.nextStep;
+                } else if (section.nextStep) {
+                    logger.warn(`Invalid nextStep '${section.nextStep}' not found in step configuration. Available options: ${Object.keys(resolvedStep.next || {}).join(', ')}`);
                     nextStep = undefined;
                 }
             }
 
-            logger.info(`Chat processing completed: ${fileInfo.name} → ${outputFiles.length} files`);
+            // Create comprehensive routing decision metadata for result
+            const finalRoutingDecision = {
+                availableOptions: resolvedStep.next ? Object.keys(resolvedStep.next) : [],
+                chosenOption: nextStep,
+                usedDefaultFallback: routingDecisions.some(rd => rd.usedDefaultFallback),
+                resolvedOutputPath: outputFiles[0] || '', // Use first output file as representative
+                routingConfig: isRoutingAwareOutput(outputStepCompat.output) ? outputStepCompat.output as RoutingAwareOutput : undefined
+            };
+
+            logger.info(`Chat processing completed with routing: ${fileInfo.name} → ${outputFiles.length} files, nextStep: ${nextStep || 'none'}`);
 
             return {
                 inputFile: fileInfo,
@@ -157,13 +223,84 @@ export class ChatStepExecutor {
                 startTime,
                 endTime: new Date(),
                 stepId,
-                nextStep
+                nextStep,
+                routingDecision: finalRoutingDecision
             };
 
         } catch (error) {
             logger.error(`Chat processing failed: ${fileInfo?.name || 'unknown file'}`, error);
             throw error;
         }
+    }
+
+    /**
+     * Validate routing decisions from LLM response against step configuration
+     */
+    private validateRoutingDecisions(sections: any[], resolvedStep: ResolvedPipelineStep): {
+        hasValidRoutes: boolean;
+        invalidRoutes: string[];
+        fallbacksUsed: number;
+        totalSections: number;
+    } {
+        const availableNextSteps = resolvedStep.next ? Object.keys(resolvedStep.next) : [];
+        const invalidRoutes: string[] = [];
+        let fallbacksUsed = 0;
+
+        for (const section of sections) {
+            if (section.nextStep) {
+                if (!availableNextSteps.includes(section.nextStep)) {
+                    invalidRoutes.push(section.nextStep);
+                    fallbacksUsed++;
+                }
+            } else {
+                // No nextStep provided counts as using default fallback
+                fallbacksUsed++;
+            }
+        }
+
+        return {
+            hasValidRoutes: invalidRoutes.length === 0,
+            invalidRoutes,
+            fallbacksUsed,
+            totalSections: sections.length
+        };
+    }
+
+    /**
+     * Create routing decision metadata for a section
+     */
+    private createRoutingDecision(section: any, resolvedStep: ResolvedPipelineStep): {
+        section: string;
+        nextStep?: string;
+        usedDefaultFallback: boolean;
+        resolvedOutputPath: string;
+    } {
+        const isValid = section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep);
+        
+        // Create temporary step object for output path resolution
+        const stepForResolution: PipelineStep = {
+            modelConfig: resolvedStep.stepId,
+            input: resolvedStep.input,
+            output: resolvedStep.routingAwareOutput || resolvedStep.output,
+            archive: resolvedStep.archive,
+            include: resolvedStep.include,
+            next: resolvedStep.next,
+            description: resolvedStep.description
+        };
+
+        return {
+            section: section.filename || 'unnamed',
+            nextStep: isValid ? section.nextStep : undefined,
+            usedDefaultFallback: !isValid,
+            resolvedOutputPath: this.outputHandler.resolveOutputPath(stepForResolution, isValid ? section.nextStep : undefined)
+        };
+    }
+
+    /**
+     * Check if a nextStep is valid according to step configuration
+     */
+    private isValidNextStep(nextStep: string, resolvedStep: ResolvedPipelineStep): boolean {
+        return !!(resolvedStep.next && resolvedStep.next[nextStep]);
     }
 
     /**
@@ -246,7 +383,9 @@ export class ChatStepExecutor {
             stepId, 
             fileName: fileInfo.name, 
             filePath: fileInfo.path,
-            modelConfig: resolvedStep.modelConfig.model
+            modelConfig: resolvedStep.modelConfig.model,
+            hasRoutingAwareOutput: !!resolvedStep.routingAwareOutput,
+            availableNextSteps: resolvedStep.next ? Object.keys(resolvedStep.next) : []
         });
     }
 }

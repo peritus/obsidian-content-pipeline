@@ -43,13 +43,12 @@ export interface ModelsConfig {
 
 /**
  * Routing-aware output configuration that maps nextStep options to output paths
+ * Note: Using Record type to properly handle the default property
  */
-export interface RoutingAwareOutput {
-    /** Mapping of next step IDs to their respective output paths */
-    [nextStepId: string]: string;
+export type RoutingAwareOutput = Record<string, string> & {
     /** Default fallback output path when routing decision is invalid/missing */
     default?: string;
-}
+};
 
 /**
  * Output routing validation result types

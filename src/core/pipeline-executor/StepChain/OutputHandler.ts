@@ -1,5 +1,5 @@
 /**
- * Output File Handling Logic
+ * Output File Handling Logic with Routing-Aware Output Support (v2.0)
  */
 
 import { App } from 'obsidian';
@@ -9,9 +9,12 @@ import {
     PipelineStep,
     ProcessingContext,
     YamlResponseSection,
-    FileMetadata
+    FileMetadata,
+    RoutingAwareOutput,
+    isRoutingAwareOutput
 } from '../../../types';
 import { createLogger } from '../../../logger';
+import { ErrorFactory } from '../../../error-handler';
 
 const logger = createLogger('OutputHandler');
 
@@ -40,11 +43,77 @@ export class OutputHandler {
         this.fileOps = new FileOperations(app);
     }
 
+    /**
+     * Resolve output path based on routing decision and step configuration
+     */
+    resolveOutputPath(step: PipelineStep, nextStep?: string): string {
+        // Handle backward compatibility with string output
+        if (typeof step.output === 'string') {
+            logger.debug('Using string output (backward compatible)', { 
+                output: step.output, 
+                nextStep 
+            });
+            return step.output;
+        }
+
+        // Handle routing-aware output
+        if (isRoutingAwareOutput(step.output)) {
+            const routingOutput = step.output as RoutingAwareOutput;
+            
+            // Priority 1: Use nextStep if provided and valid
+            if (nextStep && routingOutput[nextStep]) {
+                logger.debug('Using routing-aware output for nextStep', { 
+                    nextStep, 
+                    outputPath: routingOutput[nextStep] 
+                });
+                return routingOutput[nextStep];
+            }
+
+            // Priority 2: Use default fallback if nextStep is invalid/missing
+            if (routingOutput.default) {
+                logger.debug('Using default fallback output', { 
+                    nextStep: nextStep || 'undefined',
+                    defaultPath: routingOutput.default,
+                    availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
+                });
+                return routingOutput.default;
+            }
+
+            // Priority 3: If no default, throw error
+            const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
+            throw ErrorFactory.routing(
+                `No valid output path found for routing decision: nextStep='${nextStep}', no default fallback configured`,
+                'Cannot determine where to save output file - routing configuration is incomplete',
+                { 
+                    nextStep, 
+                    availableRoutes,
+                    routingConfig: routingOutput 
+                },
+                [
+                    'Add a "default" fallback path to your output routing configuration',
+                    `Ensure nextStep value matches one of: ${availableRoutes.join(', ')}`,
+                    'Check your routing prompt instructions for clarity'
+                ]
+            );
+        }
+
+        // Should not reach here with proper typing, but handle gracefully
+        throw ErrorFactory.validation(
+            'Invalid output configuration - not string or routing-aware object',
+            'Output configuration must be either a string path or routing-aware object',
+            { stepOutput: step.output },
+            ['Check your pipeline configuration format', 'Ensure output is string or object with routing paths']
+        );
+    }
+
     async save(
         section: YamlResponseSection,
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<string> {
+        // Resolve output path based on routing decision
+        const outputPattern = this.resolveOutputPath(step, section.nextStep);
+        
         // Determine effective filename to use for path resolution
         const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
         
@@ -56,16 +125,22 @@ export class OutputHandler {
             stepId: context.stepId
         };
 
-        const outputResult = PathResolver.resolvePath(step.output, pathContext);
+        const outputResult = PathResolver.resolvePath(outputPattern, pathContext);
         const outputPath = outputResult.resolvedPath;
 
         try {
-            // Generate standardized frontmatter
+            // Generate standardized frontmatter with routing information
             const metadata: FileMetadata = {
                 source: context.archivePath,
                 processed: new Date().toISOString(),
                 step: context.stepId,
-                nextStep: section.nextStep
+                nextStep: section.nextStep,
+                usedDefaultRouting: context.routingDecision?.usedDefaultFallback,
+                routingDecision: context.routingDecision ? {
+                    availableOptions: context.routingDecision.availableOptions,
+                    chosenOption: section.nextStep,
+                    fallbackUsed: context.routingDecision.usedDefaultFallback
+                } : undefined
             };
 
             // Create frontmatter
@@ -76,15 +151,29 @@ export class OutputHandler {
             if (metadata.nextStep) {
                 frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
             }
+            if (metadata.usedDefaultRouting !== undefined) {
+                frontmatterLines.push(`usedDefaultRouting: ${metadata.usedDefaultRouting}`);
+            }
+            if (metadata.routingDecision) {
+                frontmatterLines.push(`routingDecision:`);
+                frontmatterLines.push(`  availableOptions: [${metadata.routingDecision.availableOptions.map(opt => `"${opt}"`).join(', ')}]`);
+                if (metadata.routingDecision.chosenOption) {
+                    frontmatterLines.push(`  chosenOption: "${metadata.routingDecision.chosenOption}"`);
+                }
+                frontmatterLines.push(`  fallbackUsed: ${metadata.routingDecision.fallbackUsed}`);
+            }
             frontmatterLines.push('---');
             frontmatterLines.push('');
 
             // Combine frontmatter with direct API response content
             const finalContent = frontmatterLines.join('\n') + section.content;
 
-            // Debug logging: Saving output file
-            logger.debug("Saving output file", {
+            // Debug logging: Saving output file with routing info
+            logger.debug("Saving output file with routing", {
                 outputPath: outputPath,
+                outputPattern: outputPattern,
+                nextStep: section.nextStep,
+                usedDefaultFallback: context.routingDecision?.usedDefaultFallback,
                 contentLength: finalContent.length,
                 frontmatterUsed: metadata,
                 filenameSource: this.getFilenameSource(section.filename, context),
@@ -99,7 +188,7 @@ export class OutputHandler {
                 overwrite: true
             });
 
-            logger.debug(`Output file saved with direct content: ${outputPath}`);
+            logger.debug(`Output file saved with routing-aware path: ${outputPath}`);
             return outputPath;
 
         } catch (error) {
@@ -115,15 +204,18 @@ export class OutputHandler {
     ): Promise<{ [filename: string]: string }> {
         const savedFiles: { [filename: string]: string } = {};
 
-        logger.debug("Saving multiple sections", {
+        logger.debug("Saving multiple sections with routing", {
             sectionCount: sections.length,
             stepId: context.stepId,
-            stepOutput: step.output
+            stepOutput: step.output,
+            isRoutingAware: isRoutingAwareOutput(step.output)
         });
 
         for (const section of sections) {
             try {
-                const outputPath = await this.save(section, step, context);
+                // Update context with routing decision for this section
+                const sectionContext = this.createSectionContext(context, section, step);
+                const outputPath = await this.save(section, step, sectionContext);
                 savedFiles[section.filename] = outputPath;
             } catch (error) {
                 logger.error(`Failed to save section: ${section.filename}`, error);
@@ -131,7 +223,7 @@ export class OutputHandler {
             }
         }
 
-        logger.debug("Multiple sections save complete", {
+        logger.debug("Multiple sections save complete with routing", {
             successCount: Object.keys(savedFiles).length,
             totalCount: sections.length,
             savedFiles: savedFiles
@@ -141,7 +233,7 @@ export class OutputHandler {
     }
 
     /**
-     * Handle directory-only outputs for multi-file responses
+     * Handle directory-only outputs for multi-file responses with routing support
      */
     async saveToDirectory(
         sections: YamlResponseSection[],
@@ -150,36 +242,39 @@ export class OutputHandler {
     ): Promise<{ [filename: string]: string }> {
         const savedFiles: { [filename: string]: string } = {};
 
-        // Check if output is a directory pattern
-        const isDirectoryOutput = step.output.endsWith('/') || !step.output.includes('{filename}');
-
-        logger.debug("Saving to directory", {
+        logger.debug("Saving to directory with routing", {
             sectionCount: sections.length,
             stepOutput: step.output,
-            isDirectoryOutput: isDirectoryOutput,
-            stepId: context.stepId
+            stepId: context.stepId,
+            isRoutingAware: isRoutingAwareOutput(step.output)
         });
 
         for (const section of sections) {
             try {
-                let outputPath: string;
+                // Resolve output path based on routing decision for this section
+                const outputPattern = this.resolveOutputPath(step, section.nextStep);
+                
+                // Check if output is a directory pattern
+                const isDirectoryOutput = outputPattern.endsWith('/') || !outputPattern.includes('{filename}');
                 const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
+
+                let outputPath: string;
 
                 if (isDirectoryOutput) {
                     // For directory outputs, handle specially to preserve directory nature
                     let directoryPath: string;
                     
-                    if (step.output.endsWith('/')) {
+                    if (outputPattern.endsWith('/')) {
                         // Pattern like "inbox/summary-personal/" - remove trailing slash before resolving
-                        const directoryPattern = step.output.slice(0, -1);
-                        directoryPath = PathResolver.resolvePath(directoryPattern, {
+                        const directoryPatternBase = outputPattern.slice(0, -1);
+                        directoryPath = PathResolver.resolvePath(directoryPatternBase, {
                             timestamp: context.timestamp,
                             date: context.date,
                             stepId: context.stepId
                         }).resolvedPath;
                     } else {
                         // Pattern without filename variable, like "inbox/summary-personal"
-                        directoryPath = PathResolver.resolvePath(step.output, {
+                        directoryPath = PathResolver.resolvePath(outputPattern, {
                             timestamp: context.timestamp,
                             date: context.date,
                             stepId: context.stepId
@@ -197,15 +292,21 @@ export class OutputHandler {
                         date: context.date,
                         stepId: context.stepId
                     };
-                    outputPath = PathResolver.resolvePath(step.output, pathContext).resolvedPath;
+                    outputPath = PathResolver.resolvePath(outputPattern, pathContext).resolvedPath;
                 }
 
-                // Generate metadata and content
+                // Generate metadata with routing information
                 const metadata: FileMetadata = {
                     source: context.archivePath,
                     processed: new Date().toISOString(),
                     step: context.stepId,
-                    nextStep: section.nextStep
+                    nextStep: section.nextStep,
+                    usedDefaultRouting: context.routingDecision?.usedDefaultFallback,
+                    routingDecision: context.routingDecision ? {
+                        availableOptions: context.routingDecision.availableOptions,
+                        chosenOption: section.nextStep,
+                        fallbackUsed: context.routingDecision.usedDefaultFallback
+                    } : undefined
                 };
 
                 // Create frontmatter
@@ -216,15 +317,29 @@ export class OutputHandler {
                 if (metadata.nextStep) {
                     frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
                 }
+                if (metadata.usedDefaultRouting !== undefined) {
+                    frontmatterLines.push(`usedDefaultRouting: ${metadata.usedDefaultRouting}`);
+                }
+                if (metadata.routingDecision) {
+                    frontmatterLines.push(`routingDecision:`);
+                    frontmatterLines.push(`  availableOptions: [${metadata.routingDecision.availableOptions.map(opt => `"${opt}"`).join(', ')}]`);
+                    if (metadata.routingDecision.chosenOption) {
+                        frontmatterLines.push(`  chosenOption: "${metadata.routingDecision.chosenOption}"`);
+                    }
+                    frontmatterLines.push(`  fallbackUsed: ${metadata.routingDecision.fallbackUsed}`);
+                }
                 frontmatterLines.push('---');
                 frontmatterLines.push('');
 
                 // Combine frontmatter with direct API response content
                 const finalContent = frontmatterLines.join('\n') + section.content;
 
-                // Debug logging: Saving section to directory
-                logger.debug("Saving section to directory", {
+                // Debug logging: Saving section to directory with routing
+                logger.debug("Saving section to directory with routing", {
                     outputPath: outputPath,
+                    outputPattern: outputPattern,
+                    nextStep: section.nextStep,
+                    usedDefaultFallback: context.routingDecision?.usedDefaultFallback,
                     contentLength: finalContent.length,
                     frontmatterUsed: metadata,
                     filenameSource: this.getFilenameSource(section.filename, context),
@@ -240,7 +355,7 @@ export class OutputHandler {
                 });
 
                 savedFiles[section.filename] = outputPath;
-                logger.debug(`Section saved to directory: ${outputPath}`);
+                logger.debug(`Section saved to directory with routing: ${outputPath}`);
 
             } catch (error) {
                 logger.error(`Failed to save section to directory: ${section.filename}`, error);
@@ -248,13 +363,44 @@ export class OutputHandler {
             }
         }
 
-        logger.debug("Directory save complete", {
+        logger.debug("Directory save complete with routing", {
             successCount: Object.keys(savedFiles).length,
             totalCount: sections.length,
             savedFiles: savedFiles
         });
 
         return savedFiles;
+    }
+
+    /**
+     * Create section-specific context with routing decision metadata
+     */
+    private createSectionContext(
+        baseContext: ProcessingContext, 
+        section: YamlResponseSection, 
+        step: PipelineStep
+    ): ProcessingContext {
+        // Determine if default fallback was used
+        let usedDefaultFallback = false;
+        let availableOptions: string[] = [];
+
+        if (isRoutingAwareOutput(step.output)) {
+            const routingOutput = step.output as RoutingAwareOutput;
+            availableOptions = Object.keys(routingOutput).filter(k => k !== 'default');
+            
+            // Check if nextStep is valid or if we're using default
+            usedDefaultFallback = !section.nextStep || !routingOutput[section.nextStep];
+        }
+
+        return {
+            ...baseContext,
+            routingDecision: {
+                nextStep: section.nextStep,
+                usedDefaultFallback,
+                resolvedOutputPath: this.resolveOutputPath(step, section.nextStep),
+                availableOptions
+            }
+        };
     }
 
     /**
