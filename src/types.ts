@@ -38,19 +38,47 @@ export interface ModelsConfig {
 }
 
 // =============================================================================
-// PIPELINE CONFIGURATION TYPES
+// ROUTING-AWARE OUTPUT PATH TYPES (v2.0)
 // =============================================================================
 
 /**
- * Configuration for a single pipeline step
+ * Routing-aware output configuration that maps nextStep options to output paths
+ */
+export interface RoutingAwareOutput {
+    /** Mapping of next step IDs to their respective output paths */
+    [nextStepId: string]: string;
+    /** Default fallback output path when routing decision is invalid/missing */
+    default?: string;
+}
+
+/**
+ * Output routing validation result types
+ */
+export interface OutputRoutingValidationResult {
+    /** Whether the output routing configuration is valid */
+    isValid: boolean;
+    /** List of validation errors */
+    errors: string[];
+    /** Available next step options */
+    availableNextSteps: string[];
+    /** Whether default fallback is configured */
+    hasDefaultFallback: boolean;
+}
+
+// =============================================================================
+// PIPELINE CONFIGURATION TYPES (v2.0)
+// =============================================================================
+
+/**
+ * Configuration for a single pipeline step with routing-aware output support
  */
 export interface PipelineStep {
     /** Reference to ModelConfig ID */
     modelConfig: string;
     /** Pattern for input directory */
     input: string;
-    /** Pattern for output file path */
-    output: string;
+    /** Pattern for output file path (string) or routing-aware output mapping */
+    output: string | RoutingAwareOutput;
     /** Pattern for archive directory (auto-generated) */
     archive: string;
     /** File patterns to include (prompts + additional files) */
@@ -69,11 +97,11 @@ export interface PipelineConfiguration {
 }
 
 // =============================================================================
-// CONFIGURATION RESOLUTION TYPES (v1.2)
+// CONFIGURATION RESOLUTION TYPES (v2.0)
 // =============================================================================
 
 /**
- * Resolved pipeline step with actual model configuration
+ * Resolved pipeline step with actual model configuration and resolved output path
  */
 export interface ResolvedPipelineStep {
     /** Step ID */
@@ -82,8 +110,12 @@ export interface ResolvedPipelineStep {
     modelConfig: ModelConfig;
     /** Input pattern */
     input: string;
-    /** Output pattern */
+    /** Output pattern (string for backward compatibility) */
     output: string;
+    /** Resolved output path based on routing decision */
+    resolvedOutputPath?: string;
+    /** Original routing-aware output configuration (if applicable) */
+    routingAwareOutput?: RoutingAwareOutput;
     /** Archive pattern */
     archive: string;
     /** Include patterns */
@@ -95,7 +127,7 @@ export interface ResolvedPipelineStep {
 }
 
 /**
- * Configuration validation result for dual config system
+ * Configuration validation result for dual config system with routing validation
  */
 export interface ConfigValidationResult {
     /** Whether both configurations are valid */
@@ -106,6 +138,8 @@ export interface ConfigValidationResult {
     pipelineErrors: string[];
     /** Cross-reference validation errors */
     crossRefErrors: string[];
+    /** Output routing validation errors */
+    outputRoutingErrors: string[];
     /** Validation warnings */
     warnings: string[];
     /** Entry points identified */
@@ -113,11 +147,11 @@ export interface ConfigValidationResult {
 }
 
 // =============================================================================
-// PROCESSING CONTEXT TYPES
+// PROCESSING CONTEXT TYPES (v2.0)
 // =============================================================================
 
 /**
- * Context information available during file processing
+ * Context information available during file processing with routing metadata
  */
 export interface ProcessingContext {
     /** Original filename without extension */
@@ -134,10 +168,21 @@ export interface ProcessingContext {
     inputPath: string;
     /** Generated output file path */
     outputPath: string;
+    /** Routing decision metadata */
+    routingDecision?: {
+        /** Next step chosen by AI routing */
+        nextStep?: string;
+        /** Whether default fallback was used */
+        usedDefaultFallback: boolean;
+        /** Resolved output path based on routing */
+        resolvedOutputPath: string;
+        /** Available routing options */
+        availableOptions: string[];
+    };
 }
 
 /**
- * File metadata stored in frontmatter
+ * File metadata stored in frontmatter with routing information
  */
 export interface FileMetadata {
     /** Path to archived source file */
@@ -148,6 +193,14 @@ export interface FileMetadata {
     step: string;
     /** Chosen next step for processing (if applicable) */
     nextStep?: string;
+    /** Whether default routing fallback was used */
+    usedDefaultRouting?: boolean;
+    /** Routing decision metadata */
+    routingDecision?: {
+        availableOptions: string[];
+        chosenOption?: string;
+        fallbackUsed: boolean;
+    };
     /** Pipeline identifier (for future multi-pipeline support) */
     pipeline?: string;
     /** Template version (for future template evolution) */
@@ -155,7 +208,7 @@ export interface FileMetadata {
 }
 
 // =============================================================================
-// FILE PROCESSING TYPES
+// FILE PROCESSING TYPES (v2.0)
 // =============================================================================
 
 /**
@@ -190,7 +243,7 @@ export enum ProcessingStatus {
 }
 
 /**
- * File processing result
+ * File processing result with routing decision details
  */
 export interface ProcessingResult {
     /** Input file that was processed */
@@ -211,6 +264,19 @@ export interface ProcessingResult {
     stepId: string;
     /** Next step to process (if any) */
     nextStep?: string;
+    /** Routing decision details */
+    routingDecision?: {
+        /** Available routing options at time of processing */
+        availableOptions: string[];
+        /** Chosen routing option */
+        chosenOption?: string;
+        /** Whether default fallback was used */
+        usedDefaultFallback: boolean;
+        /** Resolved output path */
+        resolvedOutputPath: string;
+        /** Original routing configuration */
+        routingConfig?: RoutingAwareOutput;
+    };
 }
 
 // =============================================================================
@@ -262,7 +328,7 @@ export interface StepRoutingInfo {
 }
 
 // =============================================================================
-// ERROR HANDLING TYPES
+// ERROR HANDLING TYPES (v2.0)
 // =============================================================================
 
 /**
@@ -274,7 +340,8 @@ export enum ErrorType {
     API = 'api',
     PIPELINE = 'pipeline',
     VALIDATION = 'validation',
-    PARSING = 'parsing'
+    PARSING = 'parsing',
+    ROUTING = 'routing'
 }
 
 /**
@@ -395,7 +462,7 @@ export interface ContentPipelineSettings {
 }
 
 // =============================================================================
-// TYPE GUARDS AND UTILITIES
+// TYPE GUARDS AND UTILITIES (v2.0)
 // =============================================================================
 
 /**
@@ -403,4 +470,29 @@ export interface ContentPipelineSettings {
  */
 export function isValidModelImplementation(value: any): value is ModelImplementation {
     return ['whisper', 'chatgpt', 'claude'].includes(value);
+}
+
+/**
+ * Type guard for checking if output configuration is routing-aware
+ */
+export function isRoutingAwareOutput(output: string | RoutingAwareOutput): output is RoutingAwareOutput {
+    return typeof output === 'object' && output !== null;
+}
+
+/**
+ * Type guard for validating routing-aware output structure
+ */
+export function isValidRoutingAwareOutput(value: any): value is RoutingAwareOutput {
+    if (typeof value !== 'object' || value === null) {
+        return false;
+    }
+    
+    // Check that all values are strings
+    for (const [key, val] of Object.entries(value)) {
+        if (typeof val !== 'string') {
+            return false;
+        }
+    }
+    
+    return true;
 }
