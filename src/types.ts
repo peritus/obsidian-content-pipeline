@@ -82,8 +82,10 @@ export interface PipelineStep {
     routingAwareOutput?: RoutingAwareOutput;
     /** Pattern for archive directory (auto-generated) */
     archive: string;
-    /** File patterns to include (prompts + additional files) */
-    include: string[];
+    /** Files containing LLM instructions */
+    prompts?: string[];
+    /** Files containing reference material */
+    context?: string[];
     /** Description of what this step does */
     description?: string;
 }
@@ -117,8 +119,10 @@ export interface ResolvedPipelineStep {
     routingAwareOutput?: RoutingAwareOutput;
     /** Archive pattern */
     archive: string;
-    /** Include patterns */
-    include: string[];
+    /** Resolved prompt file paths */
+    prompts?: string[];
+    /** Resolved context file paths */
+    context?: string[];
     /** Description */
     description?: string;
 }
