@@ -1,9 +1,9 @@
 /**
- * Chat Step Execution Logic with Routing-Aware Output Support (v2.0)
+ * Chat Step Execution Logic with Structured Output Support (v2.0)
  */
 
 import { App } from 'obsidian';
-import { YamlProcessor } from '../../yaml-processor';
+import { PromptBuilder } from '../../prompt-builder';
 import { ChatClient } from '../../../api/chat-client';
 import { FileOperations, FileUtils } from '../../file-operations';
 import { PathUtils } from '../../path-resolver';
@@ -25,13 +25,13 @@ const logger = createLogger('ChatStepExecutor');
 
 export class ChatStepExecutor {
     private app: App;
-    private yamlProcessor: YamlProcessor;
+    private promptBuilder: PromptBuilder;
     private fileOps: FileOperations;
     private outputHandler: OutputHandler;
 
     constructor(app: App) {
         this.app = app;
-        this.yamlProcessor = new YamlProcessor(app);
+        this.promptBuilder = new PromptBuilder(app);
         this.fileOps = new FileOperations(app);
         this.outputHandler = new OutputHandler(app);
     }
@@ -60,25 +60,29 @@ export class ChatStepExecutor {
                 outputPath: '' // Will be resolved per output file based on routing
             };
 
-            // Format YAML request with routing-aware output
-            const yamlRequest = await this.yamlProcessor.formatRequest(
+            // Build simple prompt (no YAML instructions)
+            const prompt = await this.promptBuilder.buildPrompt(
                 fileInfo,
                 resolvedStep.include || [],
                 context,
-                resolvedStep.routingAwareOutput // Pass routing-aware output for routing
+                this.getAvailableNextSteps(resolvedStep)
             );
 
-            // Create chat client and process request using resolved model config
+            // Create chat client and process request using structured output
             const chatClient = new ChatClient({
                 apiKey: resolvedStep.modelConfig.apiKey,
                 baseUrl: resolvedStep.modelConfig.baseUrl,
                 organization: resolvedStep.modelConfig.organization
             });
 
-            const parsedResponse = await chatClient.processYamlRequest(yamlRequest, {
-                model: resolvedStep.modelConfig.model,
-                temperature: 0.1
-            });
+            const processedResponse = await chatClient.processStructuredRequest(
+                prompt,
+                this.getAvailableNextSteps(resolvedStep),
+                {
+                    model: resolvedStep.modelConfig.model,
+                    temperature: 0.1
+                }
+            );
 
             // Archive input file using FileOperations directly
             let archivePath: string;
@@ -98,7 +102,7 @@ export class ChatStepExecutor {
             context.archivePath = archivePath;
 
             // Validate routing decisions and resolve output paths
-            const routingValidation = this.validateRoutingDecisions(parsedResponse.sections, resolvedStep);
+            const routingValidation = this.validateRoutingDecisions(processedResponse.sections, resolvedStep);
             logger.debug("Routing validation completed", routingValidation);
 
             // Create legacy step object for OutputHandler compatibility with routing-aware output support
@@ -133,7 +137,7 @@ export class ChatStepExecutor {
             const isDirectoryOutput = this.isDirectoryOutput(outputPattern);
 
             // Process routing decisions and prepare context
-            for (const section of parsedResponse.sections) {
+            for (const section of processedResponse.sections) {
                 const sectionRoutingDecision = this.createRoutingDecision(section, resolvedStep);
                 routingDecisions.push(sectionRoutingDecision);
                 
@@ -152,26 +156,26 @@ export class ChatStepExecutor {
             };
 
             // Handle different response types and output patterns with routing support
-            if (parsedResponse.isMultiFile) {
+            if (processedResponse.isMultiFile) {
                 // Multi-file response: always use appropriate method based on output pattern
                 if (isDirectoryOutput) {
-                    const savedFiles = await this.outputHandler.saveToDirectory(parsedResponse.sections, outputStepCompat, context);
+                    const savedFiles = await this.outputHandler.saveToDirectory(processedResponse.sections, outputStepCompat, context);
                     outputFiles.push(...Object.values(savedFiles));
                 } else {
-                    const savedFiles = await this.outputHandler.saveMultiple(parsedResponse.sections, outputStepCompat, context);
+                    const savedFiles = await this.outputHandler.saveMultiple(processedResponse.sections, outputStepCompat, context);
                     outputFiles.push(...Object.values(savedFiles));
                 }
                 
                 // Get nextStep from first section that has a valid one
-                const validNextStep = parsedResponse.sections.find(section => 
+                const validNextStep = processedResponse.sections.find(section => 
                     section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)
                 )?.nextStep;
                 if (validNextStep) {
                     nextStep = validNextStep;
                 }
-            } else if (parsedResponse.sections.length > 0) {
+            } else if (processedResponse.sections.length > 0) {
                 // Single-file response: check if output pattern is directory
-                const section = parsedResponse.sections[0];
+                const section = processedResponse.sections[0];
                 
                 // Update context with specific routing decision for this section
                 const sectionContext = {
@@ -186,7 +190,7 @@ export class ChatStepExecutor {
 
                 if (isDirectoryOutput) {
                     // Even for single-file responses, use saveToDirectory if output is a directory pattern
-                    const savedFiles = await this.outputHandler.saveToDirectory(parsedResponse.sections, outputStepCompat, sectionContext);
+                    const savedFiles = await this.outputHandler.saveToDirectory(processedResponse.sections, outputStepCompat, sectionContext);
                     outputFiles.push(...Object.values(savedFiles));
                 } else {
                     // Regular file output pattern
@@ -213,7 +217,7 @@ export class ChatStepExecutor {
                 routingConfig: isRoutingAwareOutput(outputStepCompat.output) ? outputStepCompat.output as RoutingAwareOutput : undefined
             };
 
-            logger.info(`Chat processing completed with routing: ${fileInfo.name} → ${outputFiles.length} files, nextStep: ${nextStep || 'none'}`);
+            logger.info(`Chat processing completed with structured output: ${fileInfo.name} → ${outputFiles.length} files, nextStep: ${nextStep || 'none'}`);
 
             return {
                 inputFile: fileInfo,
