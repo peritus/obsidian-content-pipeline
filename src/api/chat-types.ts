@@ -46,6 +46,14 @@ export interface OpenAIChatRequest {
     frequency_penalty?: number;
     presence_penalty?: number;
     stop?: string | string[];
+    response_format?: {
+        type: "json_schema";
+        json_schema: {
+            name: string;
+            strict: boolean;
+            schema: any;
+        };
+    };
 }
 
 export interface OpenAIChatResponse {
@@ -66,6 +74,34 @@ export interface OpenAIChatResponse {
         completion_tokens: number;
         total_tokens: number;
     };
+}
+
+// =============================================================================
+// STRUCTURED OUTPUT TYPES
+// =============================================================================
+
+/**
+ * Single section of processed content from structured output
+ */
+export interface ProcessedSection {
+    /** Output filename */
+    filename: string;
+    /** File content */
+    content: string;
+    /** Next step for routing (optional) */
+    nextStep?: string;
+}
+
+/**
+ * Complete structured response from OpenAI API
+ */
+export interface ProcessedResponse {
+    /** Array of content sections */
+    sections: ProcessedSection[];
+    /** Whether response contains multiple files */
+    isMultiFile: boolean;
+    /** Raw JSON response for debugging */
+    rawResponse: string;
 }
 
 export const DEFAULT_CHAT_CONFIG = {
