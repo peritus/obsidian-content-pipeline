@@ -60,10 +60,10 @@ export class ChatStepExecutor {
                 outputPath: '' // Will be resolved per output file based on routing
             };
 
-            // Build simple prompt (no YAML instructions)
+            // Build prompt using explicit configuration
             const prompt = await this.promptBuilder.buildPrompt(
                 fileInfo,
-                resolvedStep.include || [],
+                resolvedStep,  // NEW WAY - pass entire resolved step
                 context,
                 this.getAvailableNextSteps(resolvedStep)
             );
@@ -111,7 +111,8 @@ export class ChatStepExecutor {
                 input: resolvedStep.input,
                 output: resolvedStep.routingAwareOutput || resolvedStep.output, // Use routing-aware output if available
                 archive: resolvedStep.archive,
-                include: resolvedStep.include,
+                prompts: resolvedStep.prompts,
+                context: resolvedStep.context,
                 description: resolvedStep.description
             };
             
@@ -300,7 +301,8 @@ export class ChatStepExecutor {
             input: resolvedStep.input,
             output: resolvedStep.routingAwareOutput || resolvedStep.output,
             archive: resolvedStep.archive,
-            include: resolvedStep.include,
+            prompts: resolvedStep.prompts,
+            context: resolvedStep.context,
             description: resolvedStep.description
         };
 
@@ -396,12 +398,21 @@ export class ChatStepExecutor {
             );
         }
 
+        // Validate prompt configuration
+        if (!resolvedStep.prompts || resolvedStep.prompts.length === 0) {
+            logger.warn(`Step '${stepId}' has no prompt files configured. This may result in poor LLM performance.`);
+        }
+        
+        // Context files are optional, so no validation needed
+
         // Log validation success
         logger.debug('Input validation passed', { 
             stepId, 
             fileName: fileInfo.name, 
             filePath: fileInfo.path,
             modelConfig: resolvedStep.modelConfig.model,
+            promptFiles: resolvedStep.prompts?.length || 0,
+            contextFiles: resolvedStep.context?.length || 0,
             hasRoutingAwareOutput: !!resolvedStep.routingAwareOutput,
             availableNextSteps: this.getAvailableNextSteps(resolvedStep)
         });
