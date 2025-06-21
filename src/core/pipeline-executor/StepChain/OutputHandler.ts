@@ -5,10 +5,10 @@
 import { App } from 'obsidian';
 import { FileOperations, FileUtils } from '../../file-operations';
 import { PathResolver, PathUtils } from '../../path-resolver';
+import { ProcessedSection } from '../../../api/chat-types';
 import { 
     PipelineStep,
     ProcessingContext,
-    YamlResponseSection,
     FileMetadata,
     RoutingAwareOutput,
     isRoutingAwareOutput
@@ -107,7 +107,7 @@ export class OutputHandler {
     }
 
     async save(
-        section: YamlResponseSection,
+        section: ProcessedSection,
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<string> {
@@ -181,7 +181,7 @@ export class OutputHandler {
     }
 
     async saveMultiple(
-        sections: YamlResponseSection[],
+        sections: ProcessedSection[],
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<{ [filename: string]: string }> {
@@ -219,7 +219,7 @@ export class OutputHandler {
      * Handle directory-only outputs for multi-file responses with routing support
      */
     async saveToDirectory(
-        sections: YamlResponseSection[],
+        sections: ProcessedSection[],
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<{ [filename: string]: string }> {
@@ -343,7 +343,7 @@ export class OutputHandler {
      */
     private createSectionContext(
         baseContext: ProcessingContext, 
-        section: YamlResponseSection, 
+        section: ProcessedSection, 
         step: PipelineStep
     ): ProcessingContext {
         // Determine if default fallback was used

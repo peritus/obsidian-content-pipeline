@@ -7,7 +7,8 @@
 
 import { OutputHandler } from '../src/core/pipeline-executor/StepChain/OutputHandler';
 import { App } from 'obsidian';
-import { PipelineStep, ProcessingContext, YamlResponseSection } from '../src/types';
+import { PipelineStep, ProcessingContext } from '../src/types';
+import { ProcessedSection } from '../src/api/chat-types';
 import { FileOperationResult } from '../src/core/file-operations/types';
 import { cleanup, createMockContext, createMockPipelineStep } from './setup';
 
@@ -49,7 +50,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
     describe('Test Case 1: LLM provides custom filename', () => {
         it('should use LLM-provided filename when it is meaningful', async () => {
             // Mock LLM response with custom filename
-            const section: YamlResponseSection = {
+            const section: ProcessedSection = {
                 filename: 'my-custom-name.md',
                 nextStep: 'summary-personal',
                 content: 'Processed content here'
@@ -74,7 +75,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
     describe('Test Case 2: LLM provides generic filename', () => {
         it('should fall back to original filename when LLM provides generic filename', async () => {
             // Mock LLM response with generic filename (should trigger fallback)
-            const section: YamlResponseSection = {
+            const section: ProcessedSection = {
                 filename: 'response.md',
                 nextStep: 'summary-personal', 
                 content: 'Processed content here'
@@ -99,8 +100,8 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
     describe('Test Case 3: LLM does not provide filename', () => {
         it('should fall back to original filename when LLM does not provide filename', async () => {
             // Mock LLM response without filename (using 'untitled.md' as default)
-            const section: YamlResponseSection = {
-                filename: 'untitled.md', // This is what the YAML parser returns when no filename is provided
+            const section: ProcessedSection = {
+                filename: 'untitled.md', // This is what the structured output returns when no filename is provided
                 nextStep: 'summary-personal',
                 content: 'Processed content here'
             };
@@ -135,7 +136,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
         genericFilenames.forEach(filename => {
             it(`should detect "${filename}" as generic and use original filename`, async () => {
-                const section: YamlResponseSection = {
+                const section: ProcessedSection = {
                     filename: filename,
                     nextStep: 'summary-personal',
                     content: 'Processed content here'
@@ -168,7 +169,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
         customFilenames.forEach(filename => {
             it(`should detect "${filename}" as custom and use it`, async () => {
-                const section: YamlResponseSection = {
+                const section: ProcessedSection = {
                     filename: filename,
                     nextStep: 'summary-personal', 
                     content: 'Processed content here'
@@ -193,7 +194,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
     describe('Metadata generation', () => {
         it('should include correct source path in frontmatter', async () => {
-            const section: YamlResponseSection = {
+            const section: ProcessedSection = {
                 filename: 'test-file.md',
                 nextStep: 'summary-personal',
                 content: 'Test content'

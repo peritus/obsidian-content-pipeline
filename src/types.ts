@@ -269,54 +269,6 @@ export interface ProcessingResult {
 }
 
 // =============================================================================
-// YAML FRONTMATTER TYPES
-// =============================================================================
-
-/**
- * Role assignment for files in YAML requests
- */
-export enum FileRole {
-    INPUT = 'input',
-    PROMPT = 'prompt',
-    CONTEXT = 'context',
-    ROUTING = 'routing'
-}
-
-/**
- * YAML frontmatter section for requests
- */
-export interface YamlRequestSection {
-    role: FileRole;
-    filename: string;
-    content: string;
-}
-
-/**
- * YAML frontmatter section for responses
- */
-export interface YamlResponseSection {
-    filename: string;
-    nextStep?: string;
-    content: string;
-}
-
-/**
- * Parsed YAML response with multiple sections
- */
-export interface ParsedYamlResponse {
-    sections: YamlResponseSection[];
-    isMultiFile: boolean;
-    rawResponse: string;
-}
-
-/**
- * Step routing information for YAML requests
- */
-export interface StepRoutingInfo {
-    available_next_steps: { [stepId: string]: string };
-}
-
-// =============================================================================
 // ERROR HANDLING TYPES (v2.0)
 // =============================================================================
 
