@@ -123,14 +123,25 @@ export function validatePipelineStep(step: any, stepId: string): true {
         }
     }
 
-    // Validate include array
-    if (step.include !== undefined) {
-        if (!Array.isArray(step.include)) {
-            throw new Error(`Step ${stepId} include field must be an array`);
+    // Validate prompts array
+    if (step.prompts !== undefined) {
+        if (!Array.isArray(step.prompts)) {
+            throw new Error(`Step ${stepId} prompts field must be an array`);
         }
         
-        if (!step.include.every((item: any) => typeof item === 'string')) {
-            throw new Error(`Step ${stepId} include paths must be strings`);
+        if (!step.prompts.every((item: any) => typeof item === 'string')) {
+            throw new Error(`Step ${stepId} prompt file paths must be strings`);
+        }
+    }
+
+    // Validate context array
+    if (step.context !== undefined) {
+        if (!Array.isArray(step.context)) {
+            throw new Error(`Step ${stepId} context field must be an array`);
+        }
+        
+        if (!step.context.every((item: any) => typeof item === 'string')) {
+            throw new Error(`Step ${stepId} context file paths must be strings`);
         }
     }
 

@@ -37,7 +37,7 @@ export function validateYamlRequest(yamlRequest: string, model: string): void {
             `Request too large: ${yamlRequest.length} bytes (max: ${CHAT_LIMITS.maxRequestSize} bytes)`,
             'Request exceeds OpenAI size limit',
             { requestSize: yamlRequest.length, maxSize: CHAT_LIMITS.maxRequestSize },
-            ['Reduce request content', 'Split large requests', 'Use fewer include files']
+            ['Reduce request content', 'Split large requests', 'Use fewer prompt/context files']
         );
     }
 
@@ -130,7 +130,7 @@ export function validateTokenCount(yamlRequest: string, maxTokens?: number): voi
             `Request may exceed token limit: ~${estimatedTokens} tokens (limit: ${limit})`,
             'Request might be too long for the model',
             { estimatedTokens, limit },
-            ['Reduce request content', 'Use fewer include files', 'Choose a model with higher token limit']
+            ['Reduce request content', 'Use fewer prompt/context files', 'Choose a model with higher token limit']
         );
     }
 }
