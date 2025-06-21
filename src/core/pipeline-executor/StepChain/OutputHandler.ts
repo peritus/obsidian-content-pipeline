@@ -129,38 +129,21 @@ export class OutputHandler {
         const outputPath = outputResult.resolvedPath;
 
         try {
-            // Generate standardized frontmatter with routing information
+            // Generate clean frontmatter with essential metadata only
             const metadata: FileMetadata = {
                 source: context.archivePath,
                 processed: new Date().toISOString(),
                 step: context.stepId,
-                nextStep: section.nextStep,
-                usedDefaultRouting: context.routingDecision?.usedDefaultFallback,
-                routingDecision: context.routingDecision ? {
-                    availableOptions: context.routingDecision.availableOptions,
-                    chosenOption: section.nextStep,
-                    fallbackUsed: context.routingDecision.usedDefaultFallback
-                } : undefined
+                nextStep: section.nextStep
             };
 
-            // Create frontmatter
+            // Create clean frontmatter
             const frontmatterLines = ['---'];
             frontmatterLines.push(`source: "[[${metadata.source}]]"`);
             frontmatterLines.push(`processed: "${metadata.processed}"`);
             frontmatterLines.push(`step: "${metadata.step}"`);
             if (metadata.nextStep) {
                 frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
-            }
-            if (metadata.usedDefaultRouting !== undefined) {
-                frontmatterLines.push(`usedDefaultRouting: ${metadata.usedDefaultRouting}`);
-            }
-            if (metadata.routingDecision) {
-                frontmatterLines.push(`routingDecision:`);
-                frontmatterLines.push(`  availableOptions: [${metadata.routingDecision.availableOptions.map(opt => `"${opt}"`).join(', ')}]`);
-                if (metadata.routingDecision.chosenOption) {
-                    frontmatterLines.push(`  chosenOption: "${metadata.routingDecision.chosenOption}"`);
-                }
-                frontmatterLines.push(`  fallbackUsed: ${metadata.routingDecision.fallbackUsed}`);
             }
             frontmatterLines.push('---');
             frontmatterLines.push('');
@@ -295,38 +278,21 @@ export class OutputHandler {
                     outputPath = PathResolver.resolvePath(outputPattern, pathContext).resolvedPath;
                 }
 
-                // Generate metadata with routing information
+                // Generate clean metadata with essential information only
                 const metadata: FileMetadata = {
                     source: context.archivePath,
                     processed: new Date().toISOString(),
                     step: context.stepId,
-                    nextStep: section.nextStep,
-                    usedDefaultRouting: context.routingDecision?.usedDefaultFallback,
-                    routingDecision: context.routingDecision ? {
-                        availableOptions: context.routingDecision.availableOptions,
-                        chosenOption: section.nextStep,
-                        fallbackUsed: context.routingDecision.usedDefaultFallback
-                    } : undefined
+                    nextStep: section.nextStep
                 };
 
-                // Create frontmatter
+                // Create clean frontmatter
                 const frontmatterLines = ['---'];
                 frontmatterLines.push(`source: "[[${metadata.source}]]"`);
                 frontmatterLines.push(`processed: "${metadata.processed}"`);
                 frontmatterLines.push(`step: "${metadata.step}"`);
                 if (metadata.nextStep) {
                     frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
-                }
-                if (metadata.usedDefaultRouting !== undefined) {
-                    frontmatterLines.push(`usedDefaultRouting: ${metadata.usedDefaultRouting}`);
-                }
-                if (metadata.routingDecision) {
-                    frontmatterLines.push(`routingDecision:`);
-                    frontmatterLines.push(`  availableOptions: [${metadata.routingDecision.availableOptions.map(opt => `"${opt}"`).join(', ')}]`);
-                    if (metadata.routingDecision.chosenOption) {
-                        frontmatterLines.push(`  chosenOption: "${metadata.routingDecision.chosenOption}"`);
-                    }
-                    frontmatterLines.push(`  fallbackUsed: ${metadata.routingDecision.fallbackUsed}`);
                 }
                 frontmatterLines.push('---');
                 frontmatterLines.push('');
