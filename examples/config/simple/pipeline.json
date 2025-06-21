@@ -7,7 +7,7 @@
       "default": "inbox/transcripts/{filename}-transcript.md"
     },
     "archive": "inbox/archive/audio",
-    "include": [
+    "prompts": [
       "prompts/transcriptionprompt.md"
     ],
     "description": "Transcribe audio files to text"
@@ -17,7 +17,7 @@
     "input": "inbox/transcripts",
     "output": "inbox/summaries/{filename}-summary.md",
     "archive": "inbox/archive/transcripts",
-    "include": [
+    "prompts": [
       "prompts/summarize-prompt.md"
     ],
     "description": "Create concise summaries of transcribed content"

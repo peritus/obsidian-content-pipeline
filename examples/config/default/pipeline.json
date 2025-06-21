@@ -9,7 +9,7 @@
       "default": "inbox/transcripts/{filename}-transcript.md"
     },
     "archive": "inbox/archive/audio",
-    "include": [
+    "prompts": [
       "prompts/transcriptionprompt.md"
     ],
     "description": "Transcribe audio files to text"
@@ -22,7 +22,7 @@
       "default": "inbox/process-thoughts/{filename}-processed.md"
     },
     "archive": "inbox/archive/transcripts",
-    "include": [
+    "prompts": [
       "prompts/process-thoughts-prompt.md"
     ],
     "description": "Process personal thoughts and reflections with emotional intelligence"
@@ -35,7 +35,7 @@
       "default": "inbox/process-tasks/{filename}-processed.md"
     },
     "archive": "inbox/archive/transcripts",
-    "include": [
+    "prompts": [
       "prompts/process-tasks-prompt.md"
     ],
     "description": "Process work content with focus on action items and project management"
@@ -49,7 +49,7 @@
       "default": "inbox/process-ideas/{filename}-processed.md"
     },
     "archive": "inbox/archive/transcripts",
-    "include": [
+    "prompts": [
       "prompts/process-ideas-prompt.md"
     ],
     "description": "Process innovative ideas with focus on development and connection"
@@ -59,9 +59,11 @@
     "input": "inbox/process-thoughts",
     "output": "inbox/summary-personal/",
     "archive": "inbox/archive/process-thoughts",
-    "include": [
-      "prompts/summary-personal-prompt.md",
-      "context/summary-personal/*"
+    "prompts": [
+      "prompts/summary-personal-prompt.md"
+    ],
+    "context": [
+      "context/summary-personal/sample-context.md"
     ],
     "description": "Create personal summaries and insights"
   },
@@ -70,9 +72,11 @@
     "input": "inbox/process-tasks",
     "output": "inbox/summary-work/",
     "archive": "inbox/archive/process-tasks",
-    "include": [
-      "prompts/summary-work-prompt.md",
-      "context/summary-work/*"
+    "prompts": [
+      "prompts/summary-work-prompt.md"
+    ],
+    "context": [
+      "context/summary-work/sample-context.md"
     ],
     "description": "Create work-focused summaries with action items"
   }
