@@ -56,7 +56,7 @@ const LOG_LEVEL_HIERARCHY: Record<LogLevel, number> = {
 /**
  * Logger class with build-time configuration
  */
-class Logger {
+export class Logger {
     private readonly component: string;
     private readonly config: LoggerConfig;
 

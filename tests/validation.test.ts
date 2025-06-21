@@ -1,8 +1,8 @@
 /**
  * Validation System Tests
  * 
- * Comprehensive test suite for all validation modules updated for v1.2 schema.
- * Updated for dual configuration system with models and pipeline configs.
+ * Comprehensive test suite for all validation modules updated for v2.0 schema.
+ * Updated for routing-aware output system without legacy 'next' field.
  */
 
 import { 
@@ -152,14 +152,14 @@ describe('File Pattern Validation', () => {
         });
 
         it('should reject invalid variables', () => {
-            expect(() => validateFilePattern('inbox/{invalidVar}')).toThrow('Unsupported variables');
-            expect(() => validateFilePattern('{stepId}/{invalid}/{filename}')).toThrow('Unsupported variables');
+            expect(() => validateFilePattern('inbox/{invalidVar}')).toThrow('File pattern contains unsupported variables');
+            expect(() => validateFilePattern('{stepId}/{invalid}/{filename}')).toThrow('File pattern contains unsupported variables');
         });
 
         it('should reject malformed variable syntax', () => {
-            expect(() => validateFilePattern('inbox/{unclosed')).toThrow('Unmatched brackets');
-            expect(() => validateFilePattern('inbox/unopened}')).toThrow('Unmatched brackets');
-            expect(() => validateFilePattern('inbox/{}')).toThrow('Empty variable');
+            expect(() => validateFilePattern('inbox/{unclosed')).toThrow('File pattern contains unmatched brackets');
+            expect(() => validateFilePattern('inbox/unopened}')).toThrow('File pattern contains unmatched brackets');
+            expect(() => validateFilePattern('inbox/{}')).toThrow('File pattern contains empty variable');
         });
 
         it('should reject invalid characters', () => {
@@ -207,7 +207,7 @@ describe('Pipeline Step Validation', () => {
 
         it('should reject invalid model config format', () => {
             const step = createMockPipelineStep({ modelConfig: '' });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('modelConfig must be');
+            expect(() => validatePipelineStep(step, 'test-step')).toThrow('Step test-step is missing required fields: modelConfig');
 
             // Test invalid format (note: this tests format validation, not existence validation)
             const step2 = createMockPipelineStep({ modelConfig: 'Invalid Model Config!' });
@@ -230,40 +230,43 @@ describe('Pipeline Step Validation', () => {
             expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow('include paths must be strings');
         });
 
-        it('should validate object-keyed next step configuration', () => {
+        it('should validate routing-aware output configuration', () => {
             const step = createMockPipelineStep({ 
-                next: { 
-                    'valid-step': 'If this condition is met, route to valid-step'
+                routingAwareOutput: { 
+                    'valid-step': 'inbox/valid/{filename}.md',
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
             expect(() => validatePipelineStep(step, 'test-step')).not.toThrow();
         });
 
-        it('should reject invalid next step format', () => {
+        it('should reject invalid routing-aware output format', () => {
             // Test with properly typed invalid values
             const invalidStep: any = createMockPipelineStep();
-            invalidStep.next = 'string-instead-of-object';
-            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('next field must be an object');
+            invalidStep.routingAwareOutput = 'string-instead-of-object';
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow();
 
             const invalidStep2: any = createMockPipelineStep();
-            invalidStep2.next = ['array-instead-of-object'];
-            expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow('next field must be an object');
+            invalidStep2.routingAwareOutput = ['array-instead-of-object'];
+            expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow();
         });
 
-        it('should validate next step routing prompts', () => {
+        it('should validate routing-aware output paths', () => {
             const step = createMockPipelineStep({ 
-                next: { 
-                    'step-id': '' // Empty routing prompt
+                routingAwareOutput: { 
+                    'step-id': '', // Empty path
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('Routing prompts must be non-empty strings');
+            expect(() => validatePipelineStep(step, 'test-step')).toThrow();
 
             const step2 = createMockPipelineStep({ 
-                next: { 
-                    '': 'Valid prompt but empty step ID'
+                routingAwareOutput: { 
+                    '': 'inbox/empty/{filename}.md', // Empty step ID
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
-            expect(() => validatePipelineStep(step2, 'test-step')).toThrow('Next step IDs must be non-empty strings');
+            expect(() => validatePipelineStep(step2, 'test-step')).toThrow();
         });
 
         it('should accept valid description field', () => {
@@ -292,7 +295,7 @@ describe('Pipeline Configuration Validation', () => {
         });
 
         it('should validate individual steps', () => {
-            const invalidStep: any = { modelConfig: 'invalid' }; // Missing required fields
+            const invalidStep: any = { }; // Completely invalid step
             const config = createMockPipelineConfig({
                 'invalid-step': invalidStep
             });
@@ -306,22 +309,31 @@ describe('Pipeline Configuration Validation', () => {
             expect(() => validatePipelineConfig(config)).toThrow('must start with a letter');
         });
 
-        it('should detect invalid next step references in object-keyed format', () => {
+        it('should detect invalid step references in routing-aware output', () => {
             const config = createMockPipelineConfig({
                 'step1': createMockPipelineStep({ 
-                    next: { 'non-existent-step': 'Route to non-existent step' }
+                    routingAwareOutput: { 
+                        'non-existent-step': 'inbox/non-existent/{filename}.md',
+                        'default': 'inbox/default/{filename}.md'
+                    }
                 })
             });
-            expect(() => validatePipelineConfig(config)).toThrow('reference non-existent');
+            expect(() => validatePipelineConfig(config)).toThrow('Step step1 references non-existent step');
         });
 
-        it('should detect circular references with object-keyed next steps', () => {
+        it('should detect circular references with routing-aware output', () => {
             const config = {
                 'step1': createMockPipelineStep({ 
-                    next: { 'step2': 'Route to step2' }
+                    routingAwareOutput: { 
+                        'step2': 'inbox/step1/{filename}.md',
+                        'default': 'inbox/step1/{filename}.md'
+                    }
                 }),
                 'step2': createMockPipelineStep({ 
-                    next: { 'step1': 'Route back to step1' }
+                    routingAwareOutput: { 
+                        'step1': 'inbox/step2/{filename}.md',
+                        'default': 'inbox/step2/{filename}.md'
+                    }
                 })
             };
             expect(() => validatePipelineConfig(config)).toThrow('circular references');
@@ -332,10 +344,16 @@ describe('Pipeline Configuration Validation', () => {
             // This is actually impossible in a finite system, so we test circular reference detection
             const config = {
                 'step1': createMockPipelineStep({ 
-                    next: { 'step2': 'Route to step2' }
+                    routingAwareOutput: { 
+                        'step2': 'inbox/step1/{filename}.md',
+                        'default': 'inbox/step1/{filename}.md'
+                    }
                 }),
                 'step2': createMockPipelineStep({ 
-                    next: { 'step1': 'Route back to step1' }
+                    routingAwareOutput: { 
+                        'step1': 'inbox/step2/{filename}.md',
+                        'default': 'inbox/step2/{filename}.md'
+                    }
                 })
             };
             // Since no entry points logically implies circular references in finite systems,
@@ -346,10 +364,20 @@ describe('Pipeline Configuration Validation', () => {
         it('should detect orphaned steps', () => {
             const config = {
                 'entry': createMockPipelineStep({ 
-                    next: { 'connected': 'Route to connected step' }
+                    input: 'inbox/input/{filename}.md', // Entry point (has input)
+                    routingAwareOutput: { 
+                        'connected': 'inbox/entry/{filename}.md',
+                        'default': 'inbox/entry/{filename}.md'
+                    }
                 }),
-                'connected': createMockPipelineStep(),
-                'orphaned': createMockPipelineStep()
+                'connected': createMockPipelineStep({
+                    // Remove input field - this step can only be reached via routing
+                    input: undefined
+                }),
+                'orphaned': createMockPipelineStep({
+                    // Remove input field - this makes it truly orphaned
+                    input: undefined
+                }) // This step is never referenced AND has no input field
             };
             expect(() => validatePipelineConfig(config)).toThrow('orphaned steps');
         });
@@ -362,33 +390,37 @@ describe('Pipeline Configuration Validation', () => {
             expect(() => validatePipelineConfig(config)).toThrow('too many pipeline steps');
         });
 
-        it('should validate complex routing configurations', () => {
+        it('should validate complex routing-aware output configurations', () => {
             const config = {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
-                    next: {
-                        'process-thoughts': 'If personal content is detected',
-                        'process-tasks': 'If work content is detected',
-                        'process-ideas': 'If innovative ideas are detected'
+                    routingAwareOutput: {
+                        'process-thoughts': 'inbox/transcripts/{filename}.md',
+                        'process-tasks': 'inbox/transcripts/{filename}.md',
+                        'process-ideas': 'inbox/transcripts/{filename}.md',
+                        'default': 'inbox/transcripts/{filename}.md'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    next: {
-                        'summary-personal': 'Always route personal content to personal summary'
+                    routingAwareOutput: {
+                        'summary-personal': 'inbox/thoughts/{filename}.md',
+                        'default': 'inbox/thoughts/{filename}.md'
                     }
                 }),
                 'process-tasks': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    next: {
-                        'summary-work': 'Always route work content to work summary'
+                    routingAwareOutput: {
+                        'summary-work': 'inbox/tasks/{filename}.md',
+                        'default': 'inbox/tasks/{filename}.md'
                     }
                 }),
                 'process-ideas': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    next: {
-                        'summary-personal': 'If personal ideas detected',
-                        'summary-work': 'If business ideas detected'
+                    routingAwareOutput: {
+                        'summary-personal': 'inbox/ideas/{filename}-personal.md',
+                        'summary-work': 'inbox/ideas/{filename}-work.md',
+                        'default': 'inbox/ideas/{filename}.md'
                     }
                 }),
                 'summary-personal': createMockPipelineStep({
@@ -416,7 +448,7 @@ describe('Validators Object', () => {
         expect(typeof Validators.pipelineStep).toBe('function');
         expect(typeof Validators.pipelineConfig).toBe('function');
         
-        // Category validation should no longer exist in v1.1 schema
+        // Category validation should no longer exist in v2.0 schema
         expect('category' in Validators).toBe(false);
     });
 
@@ -472,55 +504,58 @@ describe('validateCommon', () => {
     });
 });
 
-describe('Step Routing Validation', () => {
+describe('Routing-Aware Output Validation', () => {
     afterEach(() => {
         cleanup();
     });
 
-    describe('Object-Keyed Next Steps', () => {
-        it('should validate well-formed routing objects', () => {
+    describe('Routing-Aware Output Structure', () => {
+        it('should validate well-formed routing-aware output objects', () => {
             const step = createMockPipelineStep({
-                next: {
-                    'step1': 'Route to step1 when condition A is met',
-                    'step2': 'Route to step2 when condition B is met',
-                    'step3': 'Route to step3 when condition C is met'
+                routingAwareOutput: {
+                    'step1': 'inbox/step1/{filename}.md',
+                    'step2': 'inbox/step2/{filename}.md',
+                    'step3': 'inbox/step3/{filename}.md',
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
             
             expect(() => validatePipelineStep(step, 'test-step')).not.toThrow();
         });
 
-        it('should reject empty routing objects', () => {
+        it('should accept steps without routing-aware output (terminal steps)', () => {
             const step = createMockPipelineStep({
-                next: {}
+                output: 'inbox/terminal/{filename}.md'
+                // No routingAwareOutput - terminal step
             });
             
-            expect(() => validatePipelineStep(step, 'test-step')).toThrow('empty next step configuration');
+            expect(() => validatePipelineStep(step, 'test-step')).not.toThrow();
         });
 
-        it('should reject non-string step IDs', () => {
+        it('should reject non-string step IDs in routing-aware output', () => {
             const invalidStep: any = createMockPipelineStep();
-            invalidStep.next = {
-                123: 'Invalid numeric step ID'
+            invalidStep.routingAwareOutput = {
+                123: 'inbox/numeric/{filename}.md'
             };
             
-            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('Next step IDs must be non-empty strings');
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow();
         });
 
-        it('should reject non-string routing prompts', () => {
+        it('should reject non-string output paths in routing-aware output', () => {
             const invalidStep: any = createMockPipelineStep();
-            invalidStep.next = {
+            invalidStep.routingAwareOutput = {
                 'valid-step': 123
             };
             
-            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('Routing prompts must be non-empty strings');
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow();
         });
 
-        it('should validate step ID format in routing', () => {
+        it('should validate step ID format in routing-aware output', () => {
             const step = createMockPipelineStep({
-                next: {
-                    'valid-step-id': 'Valid routing prompt',
-                    'invalid step id': 'Invalid step ID with spaces'
+                routingAwareOutput: {
+                    'valid-step-id': 'inbox/valid/{filename}.md',
+                    'invalid step id': 'inbox/invalid/{filename}.md',
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
             

@@ -15,7 +15,7 @@ export function generateChatRequestId(): string {
 /**
  * Check if model is supported by the chat API
  */
-function isSupportedChatModel(model: string): boolean {
+export function isSupportedChatModel(model: string): boolean {
     return CHAT_LIMITS.supportedModels.includes(model as any);
 }
 

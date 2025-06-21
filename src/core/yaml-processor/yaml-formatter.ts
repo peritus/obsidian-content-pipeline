@@ -9,9 +9,7 @@ import {
     FileRole, 
     YamlRequestSection, 
     ProcessingContext,
-    StepRoutingInfo,
-    RoutingAwareOutput,
-    isRoutingAwareOutput
+    StepRoutingInfo
 } from '../../types';
 import { YamlProcessingOptions } from './yaml-processor';
 import { ErrorFactory } from '../../error-handler';
@@ -42,7 +40,7 @@ export class YamlFormatter {
         fileInfo: FileInfo,
         includeFiles: string[],
         context: ProcessingContext,
-        routingAwareOutput?: RoutingAwareOutput,
+        availableNextSteps?: { [stepId: string]: string },
         options: YamlProcessingOptions = {}
     ): Promise<string> {
         try {
@@ -62,23 +60,14 @@ export class YamlFormatter {
             const includeSections = await this.processIncludeFiles(includeFiles);
             sections.push(...includeSections);
 
-            // Add routing section if routing-aware output is available
-            if (routingAwareOutput && isRoutingAwareOutput(routingAwareOutput)) {
-                const routingSteps = Object.keys(routingAwareOutput).filter(key => key !== 'default');
-                if (routingSteps.length > 0) {
-                    // Convert routing-aware output to the expected format for routing info
-                    const nextSteps: { [stepId: string]: string } = {};
-                    routingSteps.forEach(stepId => {
-                        nextSteps[stepId] = `Route to ${stepId} processing`;
-                    });
-
-                    const routingSection: YamlRequestSection = {
-                        role: FileRole.ROUTING,
-                        filename: 'routing-info',
-                        content: this.formatRoutingInfo({ available_next_steps: nextSteps })
-                    };
-                    sections.push(routingSection);
-                }
+            // Add routing section if available next steps are provided
+            if (availableNextSteps && Object.keys(availableNextSteps).length > 0) {
+                const routingSection: YamlRequestSection = {
+                    role: FileRole.ROUTING,
+                    filename: 'routing-info',
+                    content: this.formatRoutingInfo({ available_next_steps: availableNextSteps })
+                };
+                sections.push(routingSection);
             }
 
             // Format all sections

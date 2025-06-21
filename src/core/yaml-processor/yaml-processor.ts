@@ -10,8 +10,7 @@ import { YamlParser } from './yaml-parser';
 import { 
     FileInfo, 
     ParsedYamlResponse,
-    ProcessingContext,
-    RoutingAwareOutput
+    ProcessingContext
 } from '../../types';
 import { createLogger } from '../../logger';
 
@@ -47,11 +46,11 @@ export class YamlProcessor {
         fileInfo: FileInfo,
         includeFiles: string[],
         context: ProcessingContext,
-        routingAwareOutput?: RoutingAwareOutput,
+        availableNextSteps?: { [stepId: string]: string },
         options: YamlProcessingOptions = {}
     ): Promise<string> {
         logger.debug(`Formatting YAML request for: ${fileInfo.path}`);
-        return await this.formatter.formatRequest(fileInfo, includeFiles, context, routingAwareOutput, options);
+        return await this.formatter.formatRequest(fileInfo, includeFiles, context, availableNextSteps, options);
     }
 
     /**

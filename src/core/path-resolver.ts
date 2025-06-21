@@ -22,6 +22,9 @@ const SUPPORTED_PATH_VARIABLES = Object.freeze([
     'stepId'
 ] as const);
 
+// Export the supported path variables for testing
+export { SUPPORTED_PATH_VARIABLES };
+
 type PathVariable = typeof SUPPORTED_PATH_VARIABLES[number];
 
 /**

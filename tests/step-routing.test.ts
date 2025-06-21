@@ -2,7 +2,7 @@
  * Step Routing Tests
  * 
  * Comprehensive test suite for step routing functionality introduced in v2.0 schema.
- * Tests intelligent step routing, object-keyed next step configuration, and YAML-based routing communication.
+ * Tests intelligent step routing, routing-aware output configuration, and YAML-based routing communication.
  */
 
 import { 
@@ -40,10 +40,10 @@ function validatePipelineStep(step: any, stepId: string, createValidPipeline: bo
         // Create a complete valid pipeline with the test step and referenced steps
         pipelineConfig = { [stepId]: step };
         
-        // Add any referenced next steps to make the pipeline valid
-        if (step.next) {
-            Object.keys(step.next).forEach(nextStepId => {
-                if (!pipelineConfig[nextStepId]) {
+        // Add any referenced routing steps to make the pipeline valid
+        if (step.routingAwareOutput && typeof step.routingAwareOutput === 'object') {
+            Object.keys(step.routingAwareOutput).forEach(nextStepId => {
+                if (nextStepId !== 'default' && !pipelineConfig[nextStepId]) {
                     pipelineConfig[nextStepId] = createMockPipelineStep({
                         modelConfig: 'openai-gpt',
                         output: `inbox/${nextStepId}/{filename}.md`
@@ -96,48 +96,53 @@ describe('Step Routing Configuration', () => {
         cleanup();
     });
 
-    describe('Object-Keyed Next Step Validation', () => {
-        it('should accept valid routing configurations', () => {
+    describe('Routing-Aware Output Validation', () => {
+        it('should accept valid routing-aware output configurations', () => {
             const step = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
                 output: 'inbox/test-step/{filename}.md',
-                next: {
-                    'step1': 'Route to step1 when condition A is met',
-                    'step2': 'Route to step2 when condition B is met',
-                    'step3': 'Route to step3 when condition C is met'
+                routingAwareOutput: {
+                    'step1': 'inbox/step1/{filename}.md',
+                    'step2': 'inbox/step2/{filename}.md',
+                    'step3': 'inbox/step3/{filename}.md',
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
 
             expect(() => validatePipelineStep(step, 'test-step', true)).not.toThrow();
         });
 
-        it('should reject non-object next configurations', () => {
-            const stepWithStringNext = createMockPipelineStep({
+        it('should accept simple string output configurations', () => {
+            const stepWithStringOutput = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                next: 'simple-string-instead-of-object' as any
+                output: 'inbox/simple/{filename}.md'
             });
 
-            expect(() => validatePipelineStep(stepWithStringNext, 'test-step'))
-                .toThrow();
+            expect(() => validatePipelineStep(stepWithStringOutput, 'test-step'))
+                .not.toThrow();
         });
 
-        it('should reject array next configurations', () => {
-            const stepWithArrayNext = createMockPipelineStep({
+        it('should reject invalid routing-aware output structure', () => {
+            const stepWithInvalidOutput = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                next: ['step1', 'step2', 'step3'] as any
+                routingAwareOutput: {
+                    'step1': 123 as any, // Invalid - should be string
+                    'default': 'inbox/fallback/{filename}.md'
+                }
             });
 
-            expect(() => validatePipelineStep(stepWithArrayNext, 'test-step'))
+            expect(() => validatePipelineStep(stepWithInvalidOutput, 'test-step'))
                 .toThrow();
         });
 
         it('should validate step ID format in routing keys', () => {
             const stepWithInvalidKeys = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                next: {
-                    'valid-step': 'Valid routing prompt',
-                    'invalid step with spaces': 'Invalid key format',
-                    '123-starts-with-number': 'Invalid key format'
+                routingAwareOutput: {
+                    'valid-step': 'inbox/valid/{filename}.md',
+                    'invalid step with spaces': 'inbox/invalid/{filename}.md',
+                    '123-starts-with-number': 'inbox/numeric/{filename}.md',
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
 
@@ -145,27 +150,15 @@ describe('Step Routing Configuration', () => {
                 .toThrow();
         });
 
-        it('should validate routing prompt values', () => {
-            const stepWithEmptyPrompts = createMockPipelineStep({
-                modelConfig: 'openai-gpt',
-                next: {
-                    'valid-step': '',
-                    'another-step': '   '
-                }
-            });
-
-            expect(() => validatePipelineStep(stepWithEmptyPrompts, 'test-step'))
-                .toThrow();
-        });
-
-        it('should accept complex routing descriptions', () => {
+        it('should accept complex routing-aware output paths', () => {
             const step = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
                 output: 'inbox/transcripts/{filename}.md',
-                next: {
-                    'process-thoughts': 'If the document contains personal thoughts, reflections, journal entries, creative ideas, or mentions private topics like children, home, hobbies, or family members Alice, Bob or Charlotte.',
-                    'process-tasks': 'If the document contains work-related content, meeting notes, action items, project planning, or business discussions.',
-                    'process-ideas': 'If the document contains innovative concepts, brainstorming sessions, conceptual discussions, or new ideas for development.'
+                routingAwareOutput: {
+                    'process-thoughts': 'inbox/thoughts/{filename}-processed.md',
+                    'process-tasks': 'inbox/tasks/{filename}-work.md',
+                    'process-ideas': 'inbox/ideas/{filename}-creative.md',
+                    'default': 'inbox/general/{filename}-default.md'
                 }
             });
 
@@ -185,7 +178,7 @@ describe('Step Routing Configuration', () => {
                 .toThrow();
         });
 
-        it('should detect circular references in object-keyed routing', () => {
+        it('should detect circular references in routing-aware output', () => {
             const configWithCircularReferences = createInvalidPipelineConfig('circular');
             expect(() => validatePipelineConfig(configWithCircularReferences))
                 .toThrow();
@@ -194,7 +187,7 @@ describe('Step Routing Configuration', () => {
         it('should identify entry points correctly', () => {
             const complexConfig = createComplexPipelineConfig();
             // In the complex config, 'transcribe' should be the only entry point
-            // since it's not referenced in any other step's 'next' configuration
+            // since it's not referenced in any other step's routing-aware output
             expect(() => validatePipelineConfig(complexConfig)).not.toThrow();
         });
 
@@ -211,32 +204,36 @@ describe('Step Routing Configuration', () => {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
                     output: 'inbox/transcripts/{filename}.md',
-                    next: {
-                        'process-thoughts': 'For personal content',
-                        'process-tasks': 'For work content',
-                        'process-ideas': 'For innovative content'
+                    routingAwareOutput: {
+                        'process-thoughts': 'inbox/transcripts/{filename}.md',
+                        'process-tasks': 'inbox/transcripts/{filename}.md',
+                        'process-ideas': 'inbox/transcripts/{filename}.md',
+                        'default': 'inbox/transcripts/{filename}.md'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/thoughts/{filename}.md',
-                    next: {
-                        'summary-personal': 'Always summarize thoughts'
+                    routingAwareOutput: {
+                        'summary-personal': 'inbox/thoughts/{filename}.md',
+                        'default': 'inbox/thoughts/{filename}.md'
                     }
                 }),
                 'process-tasks': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/tasks/{filename}.md',
-                    next: {
-                        'summary-work': 'Always summarize tasks'
+                    routingAwareOutput: {
+                        'summary-work': 'inbox/tasks/{filename}.md',
+                        'default': 'inbox/tasks/{filename}.md'
                     }
                 }),
                 'process-ideas': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/ideas/{filename}.md',
-                    next: {
-                        'summary-personal': 'If personal ideas',
-                        'summary-work': 'If business ideas'
+                    routingAwareOutput: {
+                        'summary-personal': 'inbox/ideas/{filename}-personal.md',
+                        'summary-work': 'inbox/ideas/{filename}-work.md',
+                        'default': 'inbox/ideas/{filename}.md'
                     }
                 }),
                 'summary-personal': createMockPipelineStep({
@@ -257,17 +254,26 @@ describe('Step Routing Configuration', () => {
                 'input1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/input1/{filename}.md',
-                    next: { 'processor': 'Route from input1' }
+                    routingAwareOutput: {
+                        'processor': 'inbox/input1/{filename}.md',
+                        'default': 'inbox/input1/{filename}.md'
+                    }
                 }),
                 'input2': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/input2/{filename}.md',
-                    next: { 'processor': 'Route from input2' }
+                    routingAwareOutput: {
+                        'processor': 'inbox/input2/{filename}.md',
+                        'default': 'inbox/input2/{filename}.md'
+                    }
                 }),
                 'processor': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/processed/{filename}.md',
-                    next: { 'output': 'Route to final output' }
+                    routingAwareOutput: {
+                        'output': 'inbox/processed/{filename}.md',
+                        'default': 'inbox/processed/{filename}.md'
+                    }
                 }),
                 'output': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
@@ -283,20 +289,27 @@ describe('Step Routing Configuration', () => {
                 'start': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/start/{filename}.md',
-                    next: {
-                        'branch1': 'Take branch 1',
-                        'branch2': 'Take branch 2'
+                    routingAwareOutput: {
+                        'branch1': 'inbox/start/{filename}.md',
+                        'branch2': 'inbox/start/{filename}.md',
+                        'default': 'inbox/start/{filename}.md'
                     }
                 }),
                 'branch1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/branch1/{filename}.md',
-                    next: { 'merge': 'Merge from branch 1' }
+                    routingAwareOutput: {
+                        'merge': 'inbox/branch1/{filename}.md',
+                        'default': 'inbox/branch1/{filename}.md'
+                    }
                 }),
                 'branch2': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/branch2/{filename}.md',
-                    next: { 'merge': 'Merge from branch 2' }
+                    routingAwareOutput: {
+                        'merge': 'inbox/branch2/{filename}.md',
+                        'default': 'inbox/branch2/{filename}.md'
+                    }
                 }),
                 'merge': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
@@ -305,59 +318,6 @@ describe('Step Routing Configuration', () => {
             };
 
             expect(() => validatePipelineConfig(diamondConfig)).not.toThrow();
-        });
-    });
-
-    describe('Routing-Aware Output Validation', () => {
-        it('should accept routing-aware output configurations', () => {
-            const stepWithRoutingOutput = createMockPipelineStep({
-                modelConfig: 'openai-gpt',
-                next: {
-                    'step1': 'Route to step1',
-                    'step2': 'Route to step2'
-                },
-                output: {
-                    'step1': 'inbox/step1/{filename}.md',
-                    'step2': 'inbox/step2/{filename}.md',
-                    'default': 'inbox/fallback/{filename}.md'
-                }
-            });
-
-            expect(() => validatePipelineStep(stepWithRoutingOutput, 'test-step', true)).not.toThrow();
-        });
-
-        it('should validate routing-aware output structure', () => {
-            const stepWithInvalidOutput = createMockPipelineStep({
-                modelConfig: 'openai-gpt',
-                next: {
-                    'step1': 'Route to step1'
-                },
-                output: {
-                    'step1': 123 as any, // Invalid - should be string
-                    'default': 'inbox/fallback/{filename}.md'
-                }
-            });
-
-            expect(() => validatePipelineStep(stepWithInvalidOutput, 'test-step'))
-                .toThrow();
-        });
-
-        it('should validate all next steps have corresponding output paths', () => {
-            const stepWithMissingOutputPaths = createMockPipelineStep({
-                modelConfig: 'openai-gpt',
-                next: {
-                    'step1': 'Route to step1',
-                    'step2': 'Route to step2'
-                },
-                output: {
-                    'step1': 'inbox/step1/{filename}.md'
-                    // Missing step2 output path
-                }
-            });
-
-            // This should generate validation errors for missing output paths
-            expect(() => validatePipelineStep(stepWithMissingOutputPaths, 'test-step'))
-                .toThrow();
         });
     });
 });
@@ -524,10 +484,10 @@ describe('Step Routing Error Handling', () => {
     });
 
     describe('Configuration Errors', () => {
-        it('should detect malformed routing objects', () => {
+        it('should detect malformed routing-aware output objects', () => {
             const malformedStep = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                next: null as any
+                routingAwareOutput: null as any
             });
 
             // This should pass basic parsing but may fail at runtime validation
@@ -535,24 +495,24 @@ describe('Step Routing Error Handling', () => {
                 .not.toThrow(); // Configuration validator may not catch this specific issue
         });
 
-        it('should detect empty routing objects', () => {
-            const emptyRoutingStep = createMockPipelineStep({
+        it('should accept steps without routing-aware output (terminal steps)', () => {
+            const terminalStep = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                next: {}
+                output: 'inbox/terminal/{filename}.md'
+                // No routingAwareOutput - this is a terminal step
             });
 
-            // Empty next objects are actually valid (step becomes terminal)
-            expect(() => validatePipelineStep(emptyRoutingStep, 'test-step'))
+            expect(() => validatePipelineStep(terminalStep, 'test-step'))
                 .not.toThrow();
         });
 
         it('should provide helpful error messages for routing issues', () => {
             const stepWithInvalidRouting = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                next: {
-                    'valid-step': 'Valid prompt',
-                    '': 'Empty step ID',
-                    'valid-step-2': ''
+                routingAwareOutput: {
+                    'valid-step': 'inbox/valid/{filename}.md',
+                    '': 'inbox/empty/{filename}.md', // Empty step ID
+                    'invalid-step': '' // Empty path
                 }
             });
 
@@ -620,16 +580,17 @@ describe('Advanced Routing Scenarios', () => {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
                     output: 'inbox/transcripts/{filename}.md',
-                    next: {
-                        'process-thoughts': 'If mentions family members Alice, Bob, Charlotte, or personal topics like hobbies',
-                        'process-tasks': 'If contains work keywords like meeting, action items, deadlines',
-                        'process-ideas': 'If contains innovation keywords like brainstorm, concept, development'
+                    routingAwareOutput: {
+                        'process-thoughts': 'inbox/transcripts/{filename}.md',
+                        'process-tasks': 'inbox/transcripts/{filename}.md',
+                        'process-ideas': 'inbox/transcripts/{filename}.md',
+                        'default': 'inbox/transcripts/{filename}.md'
                     }
                 })
             };
 
-            expect(Object.keys(contentBasedRouting.transcribe.next!)).toHaveLength(3);
-            expect(contentBasedRouting.transcribe.next!['process-thoughts']).toContain('Alice, Bob, Charlotte');
+            expect(Object.keys(contentBasedRouting.transcribe.routingAwareOutput!)).toHaveLength(4);
+            expect(contentBasedRouting.transcribe.routingAwareOutput!['process-thoughts']).toContain('transcripts');
         });
 
         it('should support priority-based routing', () => {
@@ -637,16 +598,17 @@ describe('Advanced Routing Scenarios', () => {
                 'classifier': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/classified/{filename}.md',
-                    next: {
-                        'urgent-processor': 'If urgent or high-priority content detected',
-                        'standard-processor': 'If standard priority content',
-                        'low-priority-processor': 'If low priority or background content'
+                    routingAwareOutput: {
+                        'urgent-processor': 'inbox/classified/{filename}.md',
+                        'standard-processor': 'inbox/classified/{filename}.md',
+                        'low-priority-processor': 'inbox/classified/{filename}.md',
+                        'default': 'inbox/classified/{filename}.md'
                     }
                 })
             };
 
-            expect(Object.keys(priorityRouting.classifier.next!)).toHaveLength(3);
-            expect(priorityRouting.classifier.next!['urgent-processor']).toContain('urgent');
+            expect(Object.keys(priorityRouting.classifier.routingAwareOutput!)).toHaveLength(4);
+            expect(priorityRouting.classifier.routingAwareOutput!['urgent-processor']).toContain('classified');
         });
 
         it('should support topic-based routing', () => {
@@ -654,16 +616,17 @@ describe('Advanced Routing Scenarios', () => {
                 'topic-classifier': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/topics/{filename}.md',
-                    next: {
-                        'health-processor': 'If health, fitness, or medical topics',
-                        'finance-processor': 'If financial, investment, or money topics',
-                        'tech-processor': 'If technology, software, or development topics',
-                        'general-processor': 'If general or uncategorized topics'
+                    routingAwareOutput: {
+                        'health-processor': 'inbox/topics/{filename}.md',
+                        'finance-processor': 'inbox/topics/{filename}.md',
+                        'tech-processor': 'inbox/topics/{filename}.md',
+                        'general-processor': 'inbox/topics/{filename}.md',
+                        'default': 'inbox/topics/{filename}.md'
                     }
                 })
             };
 
-            expect(Object.keys(topicRouting['topic-classifier'].next!)).toHaveLength(4);
+            expect(Object.keys(topicRouting['topic-classifier'].routingAwareOutput!)).toHaveLength(5);
         });
     });
 
@@ -673,30 +636,34 @@ describe('Advanced Routing Scenarios', () => {
                 'stage1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/stage1/{filename}.md',
-                    next: {
-                        'stage2a': 'Route A path',
-                        'stage2b': 'Route B path'
+                    routingAwareOutput: {
+                        'stage2a': 'inbox/stage1/{filename}.md',
+                        'stage2b': 'inbox/stage1/{filename}.md',
+                        'default': 'inbox/stage1/{filename}.md'
                     }
                 }),
                 'stage2a': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/stage2a/{filename}.md',
-                    next: {
-                        'stage3': 'Merge from route A'
+                    routingAwareOutput: {
+                        'stage3': 'inbox/stage2a/{filename}.md',
+                        'default': 'inbox/stage2a/{filename}.md'
                     }
                 }),
                 'stage2b': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/stage2b/{filename}.md',
-                    next: {
-                        'stage3': 'Merge from route B'
+                    routingAwareOutput: {
+                        'stage3': 'inbox/stage2b/{filename}.md',
+                        'default': 'inbox/stage2b/{filename}.md'
                     }
                 }),
                 'stage3': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/stage3/{filename}.md',
-                    next: {
-                        'final': 'Route to final stage'
+                    routingAwareOutput: {
+                        'final': 'inbox/stage3/{filename}.md',
+                        'default': 'inbox/stage3/{filename}.md'
                     }
                 }),
                 'final': createMockPipelineStep({
@@ -713,26 +680,36 @@ describe('Advanced Routing Scenarios', () => {
                 'splitter': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/splitter/{filename}.md',
-                    next: {
-                        'parallel1': 'Process in parallel branch 1',
-                        'parallel2': 'Process in parallel branch 2',
-                        'parallel3': 'Process in parallel branch 3'
+                    routingAwareOutput: {
+                        'parallel1': 'inbox/splitter/{filename}.md',
+                        'parallel2': 'inbox/splitter/{filename}.md',
+                        'parallel3': 'inbox/splitter/{filename}.md',
+                        'default': 'inbox/splitter/{filename}.md'
                     }
                 }),
                 'parallel1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/parallel1/{filename}.md',
-                    next: { 'merger': 'Merge from parallel1' }
+                    routingAwareOutput: {
+                        'merger': 'inbox/parallel1/{filename}.md',
+                        'default': 'inbox/parallel1/{filename}.md'
+                    }
                 }),
                 'parallel2': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/parallel2/{filename}.md',
-                    next: { 'merger': 'Merge from parallel2' }
+                    routingAwareOutput: {
+                        'merger': 'inbox/parallel2/{filename}.md',
+                        'default': 'inbox/parallel2/{filename}.md'
+                    }
                 }),
                 'parallel3': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     output: 'inbox/parallel3/{filename}.md',
-                    next: { 'merger': 'Merge from parallel3' }
+                    routingAwareOutput: {
+                        'merger': 'inbox/parallel3/{filename}.md',
+                        'default': 'inbox/parallel3/{filename}.md'
+                    }
                 }),
                 'merger': createMockPipelineStep({
                     modelConfig: 'openai-gpt',

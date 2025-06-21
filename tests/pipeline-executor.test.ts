@@ -1,8 +1,8 @@
 /**
  * Pipeline Executor Tests
  * 
- * Test suite for the pipeline execution engine and its components updated for v1.2 schema.
- * Updated for dual configuration system with models and pipeline configs.
+ * Test suite for the pipeline execution engine and its components updated for v2.0 schema.
+ * Updated for routing-aware output system without legacy 'next' field.
  */
 
 import { PipelineExecutor, ExecutionState, StepChain } from '../src/core/pipeline-executor';
@@ -14,13 +14,13 @@ import { ContentPipelineSettings, ProcessingStatus } from '../src/types';
 // Mock app for testing
 const mockApp = {} as App;
 
-// Mock settings with dual configuration for v1.2 schema
+// Mock settings with dual configuration for v2.0 schema
 const mockSettings: ContentPipelineSettings = {
     modelsConfig: '{"test-model": {"baseUrl": "https://api.openai.com/v1", "apiKey": "test-key", "implementation": "chatgpt", "model": "gpt-4"}}',
     pipelineConfig: '{}',
     parsedPipelineConfig: createMockPipelineConfig(),
     debugMode: true,
-    version: '1.2.0'
+    version: '2.0'
 };
 
 describe('Pipeline Executor', () => {
@@ -62,7 +62,7 @@ describe('Pipeline Executor', () => {
                 .rejects.toThrow('Configuration validation failed');
         });
 
-        it('should validate object-keyed pipeline configuration', () => {
+        it('should validate routing-aware output pipeline configuration', () => {
             const complexConfig = createComplexPipelineConfig();
             const settingsWithComplexConfig: ContentPipelineSettings = {
                 ...mockSettings,
@@ -79,9 +79,10 @@ describe('Pipeline Executor', () => {
             const routingConfig = {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
-                    next: {
-                        'process-thoughts': 'If personal content detected',
-                        'process-tasks': 'If work content detected'
+                    routingAwareOutput: {
+                        'process-thoughts': 'inbox/transcripts/{filename}.md',
+                        'process-tasks': 'inbox/transcripts/{filename}.md',
+                        'default': 'inbox/transcripts/{filename}.md'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
@@ -103,12 +104,12 @@ describe('Pipeline Executor', () => {
             expect(executorWithRouting).toBeDefined();
         });
 
-        it('should handle pipeline completion when no nextStep is specified', async () => {
+        it('should handle pipeline completion when no routing is specified', async () => {
             // This would be tested with actual execution, but we're testing the structure
             const finalStepConfig = {
                 'final-step': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    // No next field means this is a terminal step
+                    // No routingAwareOutput means this is a terminal step
                 })
             };
 
@@ -123,7 +124,7 @@ describe('Pipeline Executor', () => {
     });
 
     describe('Entry Point Detection', () => {
-        it('should identify entry points correctly in object-keyed configuration', () => {
+        it('should identify entry points correctly in routing-aware configuration', () => {
             const complexConfig = createComplexPipelineConfig();
             const settingsWithComplexConfig: ContentPipelineSettings = {
                 ...mockSettings,
@@ -132,7 +133,7 @@ describe('Pipeline Executor', () => {
             
             const executorWithComplexConfig = new PipelineExecutor(mockApp, settingsWithComplexConfig);
             // The transcribe step should be identified as the entry point
-            // since no other steps reference it in their 'next' configuration
+            // since no other steps reference it in their routing-aware output
             expect(executorWithComplexConfig).toBeDefined();
         });
 
@@ -141,12 +142,18 @@ describe('Pipeline Executor', () => {
                 'audio-entry': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
                     input: 'inbox/audio',
-                    next: { 'audio-process': 'Route audio to processing' }
+                    routingAwareOutput: {
+                        'audio-process': 'inbox/audio/{filename}.md',
+                        'default': 'inbox/audio/{filename}.md'
+                    }
                 }),
                 'text-entry': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     input: 'inbox/text',
-                    next: { 'text-process': 'Route text to processing' }
+                    routingAwareOutput: {
+                        'text-process': 'inbox/text/{filename}.md',
+                        'default': 'inbox/text/{filename}.md'
+                    }
                 }),
                 'audio-process': createMockPipelineStep({
                     modelConfig: 'openai-gpt'
@@ -331,7 +338,7 @@ describe('Step Chain', () => {
             const singleStepConfig = {
                 'final-step': createMockPipelineStep({
                     modelConfig: 'openai-gpt'
-                    // No next field
+                    // No routingAwareOutput field means terminal step
                 })
             };
 
@@ -356,17 +363,18 @@ describe('Step Chain', () => {
         });
 
         it('should validate routing decisions against available next steps', () => {
-            // This tests the validation logic for nextStep values
+            // This tests the validation logic for nextStep values in routing-aware output
             const stepWithRouting = createMockPipelineStep({
-                next: {
-                    'valid-step': 'Valid routing prompt',
-                    'another-valid-step': 'Another valid routing prompt'
+                routingAwareOutput: {
+                    'valid-step': 'inbox/valid/{filename}.md',
+                    'another-valid-step': 'inbox/another/{filename}.md',
+                    'default': 'inbox/default/{filename}.md'
                 }
             });
 
-            expect(stepWithRouting.next).toBeDefined();
-            expect(Object.keys(stepWithRouting.next!)).toContain('valid-step');
-            expect(Object.keys(stepWithRouting.next!)).toContain('another-valid-step');
+            expect(stepWithRouting.routingAwareOutput).toBeDefined();
+            expect(Object.keys(stepWithRouting.routingAwareOutput!)).toContain('valid-step');
+            expect(Object.keys(stepWithRouting.routingAwareOutput!)).toContain('another-valid-step');
         });
     });
 
