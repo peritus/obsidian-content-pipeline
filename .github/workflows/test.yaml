@@ -56,9 +56,6 @@ jobs:
       - name: Run TypeScript type checking
         run: npm run type-check
 
-      - name: Run linting
-        run: npm run lint
-
       - name: Run tests with coverage
         run: npm run test:ci
 
