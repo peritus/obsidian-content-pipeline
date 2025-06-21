@@ -17,7 +17,6 @@ import {
 } from '../types';
 import { validateModelsConfig } from './models-config';
 import { getClientClass } from './models-config';
-import * as path from 'path';
 
 /**
  * Configuration resolver for managing dual configuration system with routing-aware outputs
@@ -25,68 +24,10 @@ import * as path from 'path';
 class ConfigurationResolver {
     private modelsConfig: ModelsConfig;
     private pipelineConfig: PipelineConfiguration;
-    private configBasePath: string;
 
-    constructor(modelsConfig: ModelsConfig, pipelineConfig: PipelineConfiguration, configBasePath: string = '') {
+    constructor(modelsConfig: ModelsConfig, pipelineConfig: PipelineConfiguration) {
         this.modelsConfig = modelsConfig;
         this.pipelineConfig = pipelineConfig;
-        this.configBasePath = configBasePath;
-    }
-
-    /**
-     * Resolve prompt file paths relative to config location
-     * 
-     * @param prompts - Array of prompt file paths
-     * @returns Array of resolved absolute paths
-     */
-    private async resolvePromptFiles(prompts: string[]): Promise<string[]> {
-        const resolvedPaths: string[] = [];
-        
-        for (const promptFile of prompts) {
-            if (!promptFile || typeof promptFile !== 'string') {
-                throw ErrorFactory.validation(
-                    'Invalid prompt file path - must be non-empty string',
-                    'Prompt file path must be a valid string',
-                    { promptFile },
-                    ['Provide valid prompt file paths', 'Check prompt configuration']
-                );
-            }
-            
-            const resolvedPath = this.configBasePath ? 
-                path.resolve(this.configBasePath, promptFile) : 
-                path.resolve(promptFile);
-            resolvedPaths.push(resolvedPath);
-        }
-        
-        return resolvedPaths;
-    }
-
-    /**
-     * Resolve context file paths relative to config location
-     * 
-     * @param context - Array of context file paths
-     * @returns Array of resolved absolute paths
-     */
-    private async resolveContextFiles(context: string[]): Promise<string[]> {
-        const resolvedPaths: string[] = [];
-        
-        for (const contextFile of context) {
-            if (!contextFile || typeof contextFile !== 'string') {
-                throw ErrorFactory.validation(
-                    'Invalid context file path - must be non-empty string',
-                    'Context file path must be a valid string',
-                    { contextFile },
-                    ['Provide valid context file paths', 'Check context configuration']
-                );
-            }
-            
-            const resolvedPath = this.configBasePath ? 
-                path.resolve(this.configBasePath, contextFile) : 
-                path.resolve(contextFile);
-            resolvedPaths.push(resolvedPath);
-        }
-        
-        return resolvedPaths;
     }
 
     /**
@@ -150,7 +91,7 @@ class ConfigurationResolver {
      * @returns Resolved pipeline step with model config and resolved output path
      * @throws ContentPipelineError if step or model config not found
      */
-    async resolveStep(stepId: string, nextStep?: string): Promise<ResolvedPipelineStep> {
+    resolveStep(stepId: string, nextStep?: string): ResolvedPipelineStep {
         // Get pipeline step
         const step = this.pipelineConfig[stepId];
         if (!step) {
@@ -187,12 +128,6 @@ class ConfigurationResolver {
             // The error will be thrown when actually trying to use the output path
         }
 
-        // Resolve prompt and context files
-        const resolvedPrompts = step.prompts ? 
-            await this.resolvePromptFiles(step.prompts) : [];
-        const resolvedContext = step.context ?
-            await this.resolveContextFiles(step.context) : [];
-
         return {
             stepId,
             modelConfig,
@@ -201,8 +136,8 @@ class ConfigurationResolver {
             resolvedOutputPath,
             routingAwareOutput,
             archive: step.archive,
-            prompts: resolvedPrompts,
-            context: resolvedContext,
+            prompts: step.prompts || [],
+            context: step.context || [],
             description: step.description
         };
     }
@@ -214,8 +149,8 @@ class ConfigurationResolver {
      * @returns Client class name for the step's model implementation
      * @throws ContentPipelineError if step or model config not found
      */
-    async getClientClass(stepId: string): Promise<string> {
-        const resolvedStep = await this.resolveStep(stepId);
+    getClientClass(stepId: string): string {
+        const resolvedStep = this.resolveStep(stepId);
         return getClientClass(resolvedStep.modelConfig.implementation);
     }
 
@@ -625,14 +560,12 @@ class ConfigurationResolver {
  * 
  * @param modelsConfigText - JSON string of models configuration
  * @param pipelineConfigText - JSON string of pipeline configuration
- * @param configBasePath - Base path for resolving relative file paths
  * @returns Configuration resolver instance
  * @throws ContentPipelineError if JSON parsing fails
  */
 export function createConfigurationResolver(
     modelsConfigText: string, 
-    pipelineConfigText: string,
-    configBasePath: string = ''
+    pipelineConfigText: string
 ): ConfigurationResolver {
     let modelsConfig: ModelsConfig;
     let pipelineConfig: PipelineConfiguration;
@@ -661,5 +594,5 @@ export function createConfigurationResolver(
         );
     }
 
-    return new ConfigurationResolver(modelsConfig, pipelineConfig, configBasePath);
+    return new ConfigurationResolver(modelsConfig, pipelineConfig);
 }

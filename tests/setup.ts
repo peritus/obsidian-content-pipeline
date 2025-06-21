@@ -109,13 +109,13 @@ export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): M
     ...overrides
 });
 
-// Factory for creating mock pipeline steps (v2.0) - no longer includes 'next' field
+// Factory for creating mock pipeline steps (v2.0) - now uses prompts/context instead of include
 export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): PipelineStep => ({
     modelConfig: 'test-model',  // Reference to models config
     input: 'inbox/audio',
     output: 'inbox/results/{filename}.md',
     archive: 'inbox/archive/test-step',
-    include: ['prompt.md'],
+    prompts: ['prompt.md'],
     description: 'Test pipeline step for automated testing',
     ...overrides
 });
@@ -203,7 +203,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
             'default': 'inbox/transcripts/{filename}-transcript.md'
         },
         archive: 'inbox/archive/transcribe',
-        include: ['transcriptionprompt.md'],
+        prompts: ['transcriptionprompt.md'],
         description: 'Transcribe audio files to text'
     }),
     'process-thoughts': createMockPipelineStep({
@@ -215,7 +215,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
             'default': 'inbox/process-thoughts/{filename}-processed.md'
         },
         archive: 'inbox/archive/process-thoughts',
-        include: ['process-thoughts-prompt.md'],
+        prompts: ['process-thoughts-prompt.md'],
         description: 'Process personal thoughts and reflections'
     }),
     'process-tasks': createMockPipelineStep({
@@ -227,7 +227,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
             'default': 'inbox/process-tasks/{filename}-processed.md'
         },
         archive: 'inbox/archive/process-tasks',
-        include: ['process-tasks-prompt.md'],
+        prompts: ['process-tasks-prompt.md'],
         description: 'Process work content and action items'
     }),
     'process-ideas': createMockPipelineStep({
@@ -240,7 +240,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
             'default': 'inbox/process-ideas/{filename}-processed.md'
         },
         archive: 'inbox/archive/process-ideas',
-        include: ['process-ideas-prompt.md'],
+        prompts: ['process-ideas-prompt.md'],
         description: 'Process innovative ideas and concepts'
     }),
     'summary-personal': createMockPipelineStep({
@@ -248,7 +248,8 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         input: 'inbox/process-thoughts',
         output: 'inbox/summary-personal/',
         archive: 'inbox/archive/summary-personal',
-        include: ['summary-personal-prompt.md', 'inbox/summary-personal/*'],
+        prompts: ['summary-personal-prompt.md'],
+        context: ['inbox/summary-personal/*'],
         description: 'Create personal summaries and insights'
     }),
     'summary-work': createMockPipelineStep({
@@ -256,7 +257,8 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
         input: 'inbox/process-tasks',
         output: 'inbox/summary-work/',
         archive: 'inbox/archive/summary-work',
-        include: ['summary-work-prompt.md', 'inbox/summary-work/*'],
+        prompts: ['summary-work-prompt.md'],
+        context: ['inbox/summary-work/*'],
         description: 'Create work-focused summaries with action items'
     })
 });

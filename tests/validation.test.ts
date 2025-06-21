@@ -219,15 +219,24 @@ describe('Pipeline Step Validation', () => {
             expect(() => validatePipelineStep(step, 'test-step')).toThrow('input pattern is invalid');
         });
 
-        it('should validate include array', () => {
-            // Test with properly typed invalid values
+        it('should validate prompts and context arrays', () => {
+            // Test with properly typed invalid values for prompts
             const invalidStep: any = createMockPipelineStep();
-            invalidStep.include = 'not-an-array';
-            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('include field must be an array');
+            invalidStep.prompts = 'not-an-array';
+            expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow('prompts field must be an array');
 
             const invalidStep2: any = createMockPipelineStep();
-            invalidStep2.include = [123];
-            expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow('include paths must be strings');
+            invalidStep2.prompts = [123];
+            expect(() => validatePipelineStep(invalidStep2, 'test-step')).toThrow('prompt file paths must be strings');
+
+            // Test with properly typed invalid values for context
+            const invalidStep3: any = createMockPipelineStep();
+            invalidStep3.context = 'not-an-array';
+            expect(() => validatePipelineStep(invalidStep3, 'test-step')).toThrow('context field must be an array');
+
+            const invalidStep4: any = createMockPipelineStep();
+            invalidStep4.context = [123];
+            expect(() => validatePipelineStep(invalidStep4, 'test-step')).toThrow('context file paths must be strings');
         });
 
         it('should validate routing-aware output configuration', () => {
