@@ -17,6 +17,7 @@ import {
 } from '../types';
 import { validateModelsConfig } from './models-config';
 import { getClientClass } from './models-config';
+import * as path from 'path';
 
 /**
  * Configuration resolver for managing dual configuration system with routing-aware outputs
@@ -24,10 +25,68 @@ import { getClientClass } from './models-config';
 class ConfigurationResolver {
     private modelsConfig: ModelsConfig;
     private pipelineConfig: PipelineConfiguration;
+    private configBasePath: string;
 
-    constructor(modelsConfig: ModelsConfig, pipelineConfig: PipelineConfiguration) {
+    constructor(modelsConfig: ModelsConfig, pipelineConfig: PipelineConfiguration, configBasePath: string = '') {
         this.modelsConfig = modelsConfig;
         this.pipelineConfig = pipelineConfig;
+        this.configBasePath = configBasePath;
+    }
+
+    /**
+     * Resolve prompt file paths relative to config location
+     * 
+     * @param prompts - Array of prompt file paths
+     * @returns Array of resolved absolute paths
+     */
+    private async resolvePromptFiles(prompts: string[]): Promise<string[]> {
+        const resolvedPaths: string[] = [];
+        
+        for (const promptFile of prompts) {
+            if (!promptFile || typeof promptFile !== 'string') {
+                throw ErrorFactory.validation(
+                    'Invalid prompt file path - must be non-empty string',
+                    'Prompt file path must be a valid string',
+                    { promptFile },
+                    ['Provide valid prompt file paths', 'Check prompt configuration']
+                );
+            }
+            
+            const resolvedPath = this.configBasePath ? 
+                path.resolve(this.configBasePath, promptFile) : 
+                path.resolve(promptFile);
+            resolvedPaths.push(resolvedPath);
+        }
+        
+        return resolvedPaths;
+    }
+
+    /**
+     * Resolve context file paths relative to config location
+     * 
+     * @param context - Array of context file paths
+     * @returns Array of resolved absolute paths
+     */
+    private async resolveContextFiles(context: string[]): Promise<string[]> {
+        const resolvedPaths: string[] = [];
+        
+        for (const contextFile of context) {
+            if (!contextFile || typeof contextFile !== 'string') {
+                throw ErrorFactory.validation(
+                    'Invalid context file path - must be non-empty string',
+                    'Context file path must be a valid string',
+                    { contextFile },
+                    ['Provide valid context file paths', 'Check context configuration']
+                );
+            }
+            
+            const resolvedPath = this.configBasePath ? 
+                path.resolve(this.configBasePath, contextFile) : 
+                path.resolve(contextFile);
+            resolvedPaths.push(resolvedPath);
+        }
+        
+        return resolvedPaths;
     }
 
     /**
@@ -91,7 +150,7 @@ class ConfigurationResolver {
      * @returns Resolved pipeline step with model config and resolved output path
      * @throws ContentPipelineError if step or model config not found
      */
-    resolveStep(stepId: string, nextStep?: string): ResolvedPipelineStep {
+    async resolveStep(stepId: string, nextStep?: string): Promise<ResolvedPipelineStep> {
         // Get pipeline step
         const step = this.pipelineConfig[stepId];
         if (!step) {
@@ -128,6 +187,12 @@ class ConfigurationResolver {
             // The error will be thrown when actually trying to use the output path
         }
 
+        // Resolve prompt and context files
+        const resolvedPrompts = step.prompts ? 
+            await this.resolvePromptFiles(step.prompts) : [];
+        const resolvedContext = step.context ?
+            await this.resolveContextFiles(step.context) : [];
+
         return {
             stepId,
             modelConfig,
@@ -136,7 +201,8 @@ class ConfigurationResolver {
             resolvedOutputPath,
             routingAwareOutput,
             archive: step.archive,
-            include: step.include,
+            prompts: resolvedPrompts,
+            context: resolvedContext,
             description: step.description
         };
     }
@@ -148,8 +214,8 @@ class ConfigurationResolver {
      * @returns Client class name for the step's model implementation
      * @throws ContentPipelineError if step or model config not found
      */
-    getClientClass(stepId: string): string {
-        const resolvedStep = this.resolveStep(stepId);
+    async getClientClass(stepId: string): Promise<string> {
+        const resolvedStep = await this.resolveStep(stepId);
         return getClientClass(resolvedStep.modelConfig.implementation);
     }
 
@@ -446,7 +512,7 @@ class ConfigurationResolver {
 
     /**
      * Validate basic pipeline step structure without model resolution
-     * Updated to handle routing-aware output configurations
+     * Updated to handle routing-aware output configurations and explicit prompt/context arrays
      * 
      * @param step - Pipeline step to validate
      * @param stepId - Step ID for error context
@@ -462,8 +528,8 @@ class ConfigurationResolver {
             );
         }
 
-        // Check required fields
-        const requiredFields = ['modelConfig', 'input', 'output', 'archive', 'include'];
+        // Check required fields (prompts and context are optional)
+        const requiredFields = ['modelConfig', 'input', 'output', 'archive'];
         const missingFields = requiredFields.filter(field => !(field in step));
         
         if (missingFields.length > 0) {
@@ -504,14 +570,52 @@ class ConfigurationResolver {
             );
         }
 
-        // Validate include is an array
-        if (!Array.isArray(step.include)) {
+        // Validate prompts is an array (if present)
+        if (step.prompts !== undefined && !Array.isArray(step.prompts)) {
             throw ErrorFactory.validation(
-                `Invalid include field in step ${stepId} - include field must be an array`,
-                `Pipeline step "${stepId}" include field must be an array`,
-                { stepId, include: step.include },
-                ['Change include to an array', 'Use [] for empty includes', 'Example: ["prompt.md"]']
+                `Invalid prompts field in step ${stepId} - prompts field must be an array`,
+                `Pipeline step "${stepId}" prompts field must be an array`,
+                { stepId, prompts: step.prompts },
+                ['Change prompts to an array', 'Use [] for empty prompts', 'Example: ["prompt.md"]']
             );
+        }
+
+        // Validate context is an array (if present)
+        if (step.context !== undefined && !Array.isArray(step.context)) {
+            throw ErrorFactory.validation(
+                `Invalid context field in step ${stepId} - context field must be an array`,
+                `Pipeline step "${stepId}" context field must be an array`,
+                { stepId, context: step.context },
+                ['Change context to an array', 'Use [] for empty context', 'Example: ["context.md"]']
+            );
+        }
+
+        // Validate prompt file paths
+        if (step.prompts) {
+            step.prompts.forEach((promptFile, index) => {
+                if (!promptFile || typeof promptFile !== 'string' || promptFile.trim().length === 0) {
+                    throw ErrorFactory.validation(
+                        `Invalid prompt file at index ${index} in step ${stepId} - must be non-empty string`,
+                        `Pipeline step "${stepId}" prompt file at index ${index} must be a non-empty string`,
+                        { stepId, index, promptFile },
+                        ['Provide valid prompt file paths', 'Remove empty prompt entries']
+                    );
+                }
+            });
+        }
+
+        // Validate context file paths
+        if (step.context) {
+            step.context.forEach((contextFile, index) => {
+                if (!contextFile || typeof contextFile !== 'string' || contextFile.trim().length === 0) {
+                    throw ErrorFactory.validation(
+                        `Invalid context file at index ${index} in step ${stepId} - must be non-empty string`,
+                        `Pipeline step "${stepId}" context file at index ${index} must be a non-empty string`,
+                        { stepId, index, contextFile },
+                        ['Provide valid context file paths', 'Remove empty context entries']
+                    );
+                }
+            });
         }
     }
 }
@@ -521,12 +625,14 @@ class ConfigurationResolver {
  * 
  * @param modelsConfigText - JSON string of models configuration
  * @param pipelineConfigText - JSON string of pipeline configuration
+ * @param configBasePath - Base path for resolving relative file paths
  * @returns Configuration resolver instance
  * @throws ContentPipelineError if JSON parsing fails
  */
 export function createConfigurationResolver(
     modelsConfigText: string, 
-    pipelineConfigText: string
+    pipelineConfigText: string,
+    configBasePath: string = ''
 ): ConfigurationResolver {
     let modelsConfig: ModelsConfig;
     let pipelineConfig: PipelineConfiguration;
@@ -555,5 +661,5 @@ export function createConfigurationResolver(
         );
     }
 
-    return new ConfigurationResolver(modelsConfig, pipelineConfig);
+    return new ConfigurationResolver(modelsConfig, pipelineConfig, configBasePath);
 }
