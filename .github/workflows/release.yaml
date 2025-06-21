@@ -6,30 +6,65 @@ on:
       - "*"
 
 jobs:
-  build:
+  test:
+    name: Run tests before release
+    uses: ./.github/workflows/test.yaml
+    with:
+      node-version: '["18.x"]'  # Only test on Node 18 for releases
+      upload-coverage: false     # Skip coverage upload for releases
+      upload-artifacts: false    # We'll build again in release job
+      artifact-retention-days: 1
+
+  release:
+    name: Create release
     runs-on: ubuntu-latest
+    needs: test
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "18.x"
+          cache: 'npm'
 
-      - name: Build plugin
-        run: |
-          npm install
-          npm run build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin for release
+        run: npm run build
+
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
-
+          tag="${{ steps.extract_tag.outputs.tag }}"
+          
+          # Create release with proper release notes
           gh release create "$tag" \
-            --title="$tag" \
+            --title="Release $tag" \
+            --generate-notes \
             --draft \
             main.js manifest.json styles.css
+
+      - name: Upload additional release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.extract_tag.outputs.tag }}"
+          
+          # Upload additional files if they exist
+          if [ -f "README.md" ]; then
+            gh release upload "$tag" README.md
+          fi
+          
+          if [ -f "LICENSE" ]; then
+            gh release upload "$tag" LICENSE
+          fi

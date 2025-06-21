@@ -1,0 +1,17 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test and Build
+    uses: ./.github/workflows/test.yaml
+    with:
+      node-version: '["20.x"]'
+      upload-coverage: true
+      upload-artifacts: true
+      artifact-retention-days: 30
