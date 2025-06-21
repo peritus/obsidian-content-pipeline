@@ -3,7 +3,7 @@
     "baseUrl": "https://api.openai.com/v1",
     "apiKey": "",
     "implementation": "chatgpt",
-    "model": "gpt-4",
+    "model": "gpt-4o",
     "organization": ""
   },
   "openai-whisper": {

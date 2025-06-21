@@ -108,7 +108,7 @@ export const DEFAULT_CHAT_CONFIG = {
     baseUrl: 'https://api.openai.com/v1',
     timeout: 60000,
     maxRetries: 3,
-    model: 'gpt-4',
+    model: 'gpt-4o',
     temperature: 0.1,
     maxTokens: 4000
 };
@@ -116,5 +116,5 @@ export const DEFAULT_CHAT_CONFIG = {
 export const CHAT_LIMITS = {
     maxRequestSize: 8 * 1024 * 1024, // 8MB
     maxTokens: 128000, // GPT-4 context limit
-    supportedModels: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'] as const
+    supportedModels: ['gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'] as const
 };

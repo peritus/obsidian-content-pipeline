@@ -16,7 +16,7 @@ describe('Chat API Integration', () => {
             });
             
             expect(client).toBeInstanceOf(ChatClient);
-            expect(client.getAvailableModels()).toContain('gpt-4');
+            expect(client.getAvailableModels()).toContain('gpt-4o');
         });
 
         test('should throw error without API key', () => {
@@ -38,9 +38,9 @@ describe('Chat API Integration', () => {
     describe('YAML Utilities for v1.1 Schema', () => {
         test('should validate YAML requests', () => {
             const validRequest = 'This is a test request';
-            expect(() => validateYamlRequest(validRequest, 'gpt-4')).not.toThrow();
+            expect(() => validateYamlRequest(validRequest, 'gpt-4o')).not.toThrow();
             
-            expect(() => validateYamlRequest('', 'gpt-4')).toThrow(/empty/);
+            expect(() => validateYamlRequest('', 'gpt-4o')).toThrow(/empty/);
             expect(() => validateYamlRequest('test', 'invalid-model')).toThrow(/Unsupported model/);
         });
 
@@ -158,7 +158,7 @@ Previous summary for context: This provides background information.`;
         });
 
         test('should validate supported models', () => {
-            expect(isSupportedChatModel('gpt-4')).toBe(true);
+            expect(isSupportedChatModel('gpt-4-turbo')).toBe(true);
             expect(isSupportedChatModel('gpt-3.5-turbo')).toBe(true);
             expect(isSupportedChatModel('gpt-4o')).toBe(true);
             expect(isSupportedChatModel('invalid-model')).toBe(false);
@@ -253,11 +253,11 @@ Action items and meeting notes.`;
             expect(DEFAULT_CHAT_CONFIG.baseUrl).toBe('https://api.openai.com/v1');
             expect(DEFAULT_CHAT_CONFIG.timeout).toBe(60000);
             expect(DEFAULT_CHAT_CONFIG.maxRetries).toBe(3);
-            expect(DEFAULT_CHAT_CONFIG.model).toBe('gpt-4');
+            expect(DEFAULT_CHAT_CONFIG.model).toBe('gpt-4o');
         });
 
         test('should support updated model list for v1.1', () => {
-            const supportedModels = ['gpt-4', 'gpt-3.5-turbo', 'gpt-4o'];
+            const supportedModels = ['gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'];
             
             supportedModels.forEach(model => {
                 expect(isSupportedChatModel(model)).toBe(true);

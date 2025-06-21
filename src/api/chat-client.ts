@@ -142,6 +142,8 @@ export class ChatClient {
                 type: "string",
                 enum: availableNextSteps
             };
+            // CRITICAL FIX: Add nextStep to required array for strict schema compliance
+            required.push("nextStep");
         }
 
         const schema = {
@@ -226,7 +228,7 @@ export class ChatClient {
         try {
             const testPrompt = 'Generate a simple test response.';
             await this.processStructuredRequest(testPrompt, [], { 
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-4o',
                 maxTokens: 50,
                 temperature: 0
             });
@@ -240,6 +242,6 @@ export class ChatClient {
      * Get available models (placeholder - would need separate API call in real implementation)
      */
     getAvailableModels(): string[] {
-        return ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'];
+        return ['gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'];
     }
 }
