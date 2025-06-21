@@ -1,3 +1,5 @@
+## Todo-Extraktion aus Transkript
+
 Extrahiere alle Todo-Einträge, Aufgaben und offene Punkte aus diesem Transkript.
 
 ## Aufgabe:
@@ -11,7 +13,7 @@ Finde alle Aufgaben im Transkript:
 
 ## Ausgabeformat:
 
-Erstelle eine einfache Liste ohne Gruppierung:
+Erstelle eine einfache Markdown-Liste:
 
 ```markdown
 - [ ] Aufgabe 1
@@ -22,14 +24,8 @@ Erstelle eine einfache Liste ohne Gruppierung:
 ## Wichtige Hinweise:
 
 - **KEINE GRUPPIERUNG** - erstelle nur eine einfache Liste
-- **ANTWORTE NUR MIT DER EXTRAHIERTEN TODO-LISTE** - wiederhole NICHT den Input
 - **Falls keine Todos gefunden werden:** Erstelle eine leere Liste mit "Keine Aufgaben gefunden."
 - **Behalte die ursprüngliche Formulierung bei** und füge nur wichtige Details in Klammern hinzu
-- **Verwende YAML-Frontmatter:**
+- **Verwende deutsche Sprache** für die Aufgabenbeschreibungen
 
-```
----
-filename: [Wählen Sie einen beschreibenden Dateinamen basierend auf dem Inhalt, wie "Wochenend Einkaufsliste.md" oder "Projekt Meeting Aufgaben.md"]
----
-- [ ] [Deine extrahierten Todos hier]
-```
+Wähle einen beschreibenden Dateinamen basierend auf dem Inhalt, wie "Wochenend Einkaufsliste.md" oder "Projekt Meeting Aufgaben.md".

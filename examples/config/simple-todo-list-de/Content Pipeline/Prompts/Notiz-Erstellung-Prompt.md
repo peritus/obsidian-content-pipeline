@@ -1,6 +1,4 @@
-Erstelle eine strukturierte, hilfreiche Notiz aus diesem Transkript.
-
-## Deine Aufgabe:
+## Strukturierte Notiz erstellen
 
 Transformiere den transkribierten Inhalt in eine gut organisierte, nützliche Notiz, die später einfach zu verstehen und zu verwenden ist.
 
@@ -11,30 +9,19 @@ Transformiere den transkribierten Inhalt in eine gut organisierte, nützliche No
 3. **Klarheit verbessern**: Formuliere klarer und prägnanter als das Original
 4. **Kontext hinzufügen**: Ergänze hilfreiche Details oder Erklärungen wo nötig
 
-## Ausgabeformat:
+## Aufbau der Notiz:
 
-```
----
-filename: [wähle einen beschreibenden deutschen Dateinamen wie "Projektideen Meeting.md" oder "Interessante Fakten über KI.md"]
----
+### Zusammenfassung
+2-3 Sätze die den Kerninhalt zusammenfassen
 
-## Zusammenfassung
+### Hauptpunkte
+Die wichtigsten Informationen strukturiert aufgelistet
 
-[2-3 Sätze die den Kerninhalt zusammenfassen]
+### Details
+Zusätzliche relevante Informationen, Beispiele, oder Kontext
 
-## Hauptpunkte
-
-[Die wichtigsten Informationen strukturiert aufgelistet]
-
-## Details
-
-[Zusätzliche relevante Informationen, Beispiele, oder Kontext]
-
-## Notizen
-
-[Zusätzliche Gedanken, Verbindungen zu anderen Themen, oder Fragen die sich ergeben]
-
-```
+### Notizen
+Zusätzliche Gedanken, Verbindungen zu anderen Themen, oder Fragen die sich ergeben
 
 ## Qualitätskriterien:
 
@@ -68,3 +55,5 @@ filename: [wähle einen beschreibenden deutschen Dateinamen wie "Projektideen Me
 - **Behalte die deutsche Sprache bei** und verbessere sie wo nötig
 - **Mache es besser als das Original** - strukturierter und klarer
 - **Füge Wert hinzu** durch bessere Organisation und Klarheit
+
+Wähle einen beschreibenden deutschen Dateinamen wie "Projektideen Meeting.md" oder "Interessante Fakten über KI.md".

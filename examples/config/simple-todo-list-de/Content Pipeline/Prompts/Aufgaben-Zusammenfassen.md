@@ -1,82 +1,48 @@
-⚠️ **CRITICAL FORMATTING REQUIREMENT - READ CAREFULLY** ⚠️
+## Aufgabenliste konsolidieren
 
-YOU MUST ALWAYS respond with this EXACT YAML frontmatter format:
+Konsolidiere die bereitgestellten deutschen TODO-Listen durch Gruppierung und Entfernung von Duplikaten.
 
-```
----
-filename: Aufgaben-Liste.md
----
-[Your German content here]
-```
+**WICHTIG: Falls bereits eine konsolidierte TODO-Liste existiert, füge neue TODOs hinzu und entferne Duplikate.**
 
-**NO EXCEPTIONS. DO NOT respond with plain text. DO NOT omit the YAML frontmatter.**
+## Anweisungen:
 
-## Response Format Verification Checklist:
-Before submitting your response, verify:
-- [ ] Does my response start with exactly "---"?
-- [ ] Does it include exactly "filename: Aufgaben-Liste.md"?
-- [ ] Does it have a closing "---" before content?
-- [ ] Is the content in German?
+1. **Bestehende Liste prüfen:** Falls bereits eine TODO-Liste existiert, verwende sie als Basis
+2. **Neue TODOs sammeln:** Gehe durch alle bereitgestellten Dokumente und sammle alle TODO-Einträge
+3. **Duplikate entfernen:** Vergleiche TODOs und entferne identische oder sehr ähnliche Einträge
+4. **Thematisch gruppieren:** Organisiere TODOs unter passenden deutschen Kategorien:
+   - Arbeitsbereich/Projekt
+   - Zeitrahmen (heute, diese Woche, später)
+   - Verantwortlichkeit
+   - Thematische Bereiche (z.B. "Einkaufsliste", "Arbeit", "Persönlich")
 
-If ANY answer is NO, rewrite your response.
+## Deutsche Ausgabeanforderungen:
 
-## Task: TODO List Consolidation
+- Behalte ALLE TODO-Texte auf Deutsch bei
+- Verwende deutsche Kategorienamen
+- Befolge deutsche Formatierungskonventionen
+- Übersetze TODO-Einträge NICHT ins Englische
 
-Consolidate the provided German TODO lists by grouping and removing duplicates.
+## Inhaltsregeln:
 
-**IMPORTANT: If a consolidated TODO list already exists, add new TODOs and remove duplicates.**
+- **NUR GRUPPIEREN UND KONSOLIDIEREN** - ändere nicht den Wortlaut der TODOs
+- **Falls keine neuen TODOs:** Gib die bestehende Liste unverändert zurück
+- **Falls keine bestehende Liste:** Gruppiere alle gefundenen TODOs
+- **Duplikate vermeiden:** Vergleiche sorgfältig und behalte nur einzigartige TODOs
 
-## Instructions:
+## Beispiel-Ausgabe:
 
-1. **Check existing list:** If a TODO list already exists, use it as the base
-2. **Collect new TODOs:** Go through all provided documents and collect all TODO entries
-3. **Remove duplicates:** Compare TODOs and remove identical or very similar entries
-4. **Group thematically:** Organize TODOs under appropriate German categories:
-   - Work area/Project (Arbeitsbereich/Projekt)
-   - Timeframe (Zeitrahmen: heute, diese Woche, später)
-   - Responsibility (Verantwortlichkeit)
-   - Thematic areas (Thematische Bereiche)
-5. **Format as structured German markdown list**
-
-## German Output Requirements:
-
-- Keep ALL TODO text in German
-- Use German category names (e.g., "Einkaufsliste", "Arbeit", "Heute", "Diese Woche")
-- Maintain German formatting conventions
-- DO NOT translate TODO items to English
-
-## Content Rules:
-
-- **ONLY GROUP AND CONSOLIDATE** - do not change the wording of TODOs
-- **RESPOND ONLY WITH THE CONSOLIDATED TODO LIST** - do NOT repeat the input
-- **If no new TODOs:** Return the existing list unchanged
-- **If no existing list:** Group all found TODOs
-- **Avoid duplicates:** Compare carefully and keep only unique TODOs
-
-## ❌ WRONG Response Format (NEVER do this):
-```
+```markdown
 ## Einkaufsliste
-- [ ] Kaufe Milch
+- [ ] Milch kaufen
+- [ ] Brot besorgen
+
+## Arbeit
+- [ ] Präsentation vorbereiten
+- [ ] Meeting mit Team planen
+
+## Heute
+- [ ] Termine bestätigen
+- [ ] E-Mails beantworten
 ```
 
-## ✅ CORRECT Response Format (ALWAYS do this):
-```
----
-filename: Aufgaben-Liste.md
----
-## Einkaufsliste
-- [ ] Kaufe Milch
-```
-
-## MANDATORY RESPONSE STEPS:
-
-**STEP 1:** Start with exactly "---"
-**STEP 2:** Add exactly "filename: Aufgaben-Liste.md"  
-**STEP 3:** Add exactly "---"
-**STEP 4:** Add your German consolidated TODO content
-
-## Final Reminder:
-
-This is a technical formatting task requiring EXACT compliance. Your response MUST start with YAML frontmatter or the system will malfunction. The filename MUST be "Aufgaben-Liste.md" to ensure proper consolidation.
-
-**Response format is CRITICAL for system functionality. Failure to follow the YAML format will break the entire pipeline.**
+Der Dateiname für die konsolidierte Liste soll immer "Aufgaben-Liste.md" sein.
