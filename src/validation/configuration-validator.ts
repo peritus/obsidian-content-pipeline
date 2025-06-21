@@ -2,7 +2,7 @@
  * Centralized Configuration Validation Service (v2.0)
  * 
  * Provides unified configuration validation for all components,
- * including routing-aware output path validation.
+ * including routing-aware output path validation and explicit prompt/context validation.
  */
 
 import { 
@@ -10,13 +10,20 @@ import {
     PipelineConfiguration, 
     ConfigValidationResult,
     isRoutingAwareOutput,
-    isValidRoutingAwareOutput 
+    isValidRoutingAwareOutput,
+    PipelineStep
 } from '../types';
 import { createConfigurationResolver } from '../validation/configuration-resolver';
 import { ErrorFactory } from '../error-handler';
 import { createLogger } from '../logger';
 
 const logger = createLogger('ConfigurationValidator');
+
+interface ValidationIssue {
+    type: 'error' | 'warning';
+    message: string;
+    path: string;
+}
 
 interface ConfigurationValidationResult {
     isValid: boolean;
@@ -32,6 +39,80 @@ class ConfigurationValidator {
 
     constructor(settings: ContentPipelineSettings) {
         this.settings = settings;
+    }
+
+    /**
+     * Validate prompt files for a step
+     * 
+     * @param prompts - Array of prompt file paths
+     * @param stepId - Step ID for error context
+     * @returns Array of validation issues
+     */
+    private validatePromptFiles(prompts: string[], stepId: string): ValidationIssue[] {
+        const issues: ValidationIssue[] = [];
+        
+        if (!prompts || prompts.length === 0) {
+            issues.push({
+                type: 'warning',
+                message: `Step '${stepId}' has no prompt files. This may result in poor LLM performance.`,
+                path: `steps.${stepId}.prompts`
+            });
+        }
+        
+        for (const prompt of prompts) {
+            if (!prompt || typeof prompt !== 'string') {
+                issues.push({
+                    type: 'error', 
+                    message: `Invalid prompt file path in step '${stepId}'`,
+                    path: `steps.${stepId}.prompts`
+                });
+            }
+        }
+        
+        return issues;
+    }
+
+    /**
+     * Validate context files for a step
+     * 
+     * @param context - Array of context file paths
+     * @param stepId - Step ID for error context
+     * @returns Array of validation issues
+     */
+    private validateContextFiles(context: string[], stepId: string): ValidationIssue[] {
+        const issues: ValidationIssue[] = [];
+        
+        // Context files are optional, so no error if empty
+        for (const contextFile of context || []) {
+            if (!contextFile || typeof contextFile !== 'string') {
+                issues.push({
+                    type: 'error',
+                    message: `Invalid context file path in step '${stepId}'`, 
+                    path: `steps.${stepId}.context`
+                });
+            }
+        }
+        
+        return issues;
+    }
+
+    /**
+     * Validate a pipeline step
+     * 
+     * @param stepId - Step ID
+     * @param step - Pipeline step configuration
+     * @returns Array of validation issues
+     */
+    validateStep(stepId: string, step: PipelineStep): ValidationIssue[] {
+        const issues: ValidationIssue[] = [];
+        
+        // Add prompts validation
+        issues.push(...this.validatePromptFiles(step.prompts || [], stepId));
+        
+        // Add context validation
+        issues.push(...this.validateContextFiles(step.context || [], stepId));
+        
+        return issues;
     }
 
     /**
