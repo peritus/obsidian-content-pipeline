@@ -179,7 +179,7 @@ export interface ProcessingContext {
 }
 
 /**
- * File metadata stored in frontmatter with routing information
+ * File metadata stored in frontmatter (cleaned for end-user files)
  */
 export interface FileMetadata {
     /** Path to archived source file */
@@ -190,14 +190,6 @@ export interface FileMetadata {
     step: string;
     /** Chosen next step for processing (if applicable) */
     nextStep?: string;
-    /** Whether default routing fallback was used */
-    usedDefaultRouting?: boolean;
-    /** Routing decision metadata */
-    routingDecision?: {
-        availableOptions: string[];
-        chosenOption?: string;
-        fallbackUsed: boolean;
-    };
     /** Pipeline identifier (for future multi-pipeline support) */
     pipeline?: string;
     /** Template version (for future template evolution) */
