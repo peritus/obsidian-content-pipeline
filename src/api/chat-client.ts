@@ -128,6 +128,22 @@ export class ChatClient {
     }
 
     private buildResponseSchema(availableNextSteps: string[]): any {
+        // Build item properties conditionally
+        const itemProperties: any = {
+            filename: { type: "string" },
+            content: { type: "string" }
+        };
+
+        const required = ["filename", "content"];
+
+        // Add nextStep property only if routing is available
+        if (availableNextSteps.length > 0) {
+            itemProperties.nextStep = {
+                type: "string",
+                enum: availableNextSteps
+            };
+        }
+
         const schema = {
             type: "object",
             properties: {
@@ -135,11 +151,8 @@ export class ChatClient {
                     type: "array",
                     items: {
                         type: "object",
-                        properties: {
-                            filename: { type: "string" },
-                            content: { type: "string" }
-                        },
-                        required: ["filename", "content"],
+                        properties: itemProperties,
+                        required: required,
                         additionalProperties: false
                     }
                 }
@@ -147,14 +160,6 @@ export class ChatClient {
             required: ["sections"],
             additionalProperties: false
         };
-        
-        // Add nextStep property only if routing is available
-        if (availableNextSteps.length > 0) {
-            schema.properties.sections.items.properties.nextStep = {
-                type: "string",
-                enum: availableNextSteps
-            };
-        }
         
         return schema;
     }
