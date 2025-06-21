@@ -1,5 +1,5 @@
 /**
- * OpenAI Chat API Client for YAML Processing
+ * OpenAI Chat API Client for YAML Processing and Structured Output
  */
 
 import { createLogger } from '../logger';
@@ -12,6 +12,7 @@ import {
     ChatResult, 
     OpenAIChatRequest, 
     OpenAIChatResponse,
+    ProcessedResponse,
     DEFAULT_CHAT_CONFIG 
 } from './chat-types';
 import { 
@@ -119,6 +120,132 @@ export class ChatClient {
                 ['Check connection', 'Verify API key', 'Check request format']
             );
         }
+    }
+
+    async processStructuredRequest(
+        prompt: string,
+        availableNextSteps: string[] = [],
+        options: ChatOptions = {}
+    ): Promise<ProcessedResponse> {
+        const requestId = generateChatRequestId();
+        const startTime = Date.now();
+        const model = options.model || DEFAULT_CHAT_CONFIG.model;
+
+        try {
+            logger.info(`Processing structured request with ${model}`, { requestId, promptSize: prompt.length });
+            
+            // Build JSON schema for response
+            const schema = this.buildResponseSchema(availableNextSteps);
+            
+            // Create request with structured output
+            const request: OpenAIChatRequest = {
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: options.temperature ?? DEFAULT_CHAT_CONFIG.temperature,
+                max_tokens: options.maxTokens ?? DEFAULT_CHAT_CONFIG.maxTokens,
+                top_p: options.topP,
+                frequency_penalty: options.frequencyPenalty,
+                presence_penalty: options.presencePenalty,
+                stop: options.stop,
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: "content_pipeline_response",
+                        strict: true,
+                        schema
+                    }
+                }
+            };
+
+            // Debug logging: Raw LLM Request
+            logger.debug("Raw LLM Structured Request", { 
+                model: model,
+                promptSize: prompt.length,
+                schema: schema,
+                availableNextSteps: availableNextSteps
+            });
+            
+            // Make API request
+            const response = await this.makeRequestWithRetry(request, requestId);
+            const responseData: OpenAIChatResponse = await response.json();
+            
+            if (!responseData.choices?.[0]?.message?.content) {
+                throw ErrorFactory.api('Empty response', 'No content in structured response', { requestId, responseData });
+            }
+
+            const jsonContent = responseData.choices[0].message.content;
+            const jsonResponse = JSON.parse(jsonContent);
+            
+            // Debug logging: Raw LLM Response
+            logger.debug("Raw LLM Structured Response", {
+                responseBody: jsonContent,
+                responseSize: jsonContent.length,
+                parsedSections: jsonResponse.sections?.length || 0,
+                model: responseData.model,
+                usage: responseData.usage
+            });
+            
+            const processedResponse: ProcessedResponse = {
+                sections: jsonResponse.sections,
+                isMultiFile: jsonResponse.sections.length > 1,
+                rawResponse: jsonContent
+            };
+            
+            logger.info(`Structured request complete`, { 
+                requestId, 
+                duration: Date.now() - startTime,
+                sectionsReturned: processedResponse.sections.length,
+                isMultiFile: processedResponse.isMultiFile
+            });
+
+            return processedResponse;
+
+        } catch (error) {
+            logger.error(`Structured request failed`, { requestId, error, duration: Date.now() - startTime });
+            
+            if (error instanceof Error && error.name === 'ContentPipelineError') {
+                throw error;
+            }
+
+            throw ErrorFactory.api(
+                `Structured request failed: ${error instanceof Error ? error.message : String(error)}`,
+                'Failed to process structured request',
+                { requestId, model, promptSize: prompt.length },
+                ['Check connection', 'Verify API key', 'Check JSON schema compatibility']
+            );
+        }
+    }
+
+    private buildResponseSchema(availableNextSteps: string[]): any {
+        const schema = {
+            type: "object",
+            properties: {
+                sections: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            filename: { type: "string" },
+                            content: { type: "string" }
+                        },
+                        required: ["filename", "content"],
+                        additionalProperties: false
+                    }
+                }
+            },
+            required: ["sections"],
+            additionalProperties: false
+        };
+        
+        // Add nextStep property only if routing is available
+        if (availableNextSteps.length > 0) {
+            schema.properties.sections.items.properties.nextStep = {
+                type: "string",
+                enum: availableNextSteps
+            };
+        }
+        
+        return schema;
     }
 
     private async makeChatRequest(
