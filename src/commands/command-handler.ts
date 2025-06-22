@@ -172,6 +172,79 @@ export class CommandHandler {
     }
 
     /**
+     * Process all available files automatically until none remain
+     */
+    async processAllFiles(): Promise<void> {
+        try {
+            logger.info('Process All Files command triggered');
+            
+            // Check if both configurations are available and valid using centralized configuration service
+            const configService = createConfigurationService(this.settings);
+            const validationResult = configService.validateConfigurations();
+            if (!validationResult.isValid) {
+                new Notice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
+                logger.error('Configuration validation failed:', validationResult.error);
+                return;
+            }
+
+            // Show processing started notification
+            new Notice('🔄 Processing all files...', 3000);
+            
+            let processedCount = 0;
+            let executor: PipelineExecutor | null = null;
+            
+            // Process files until no more are available
+            while (true) {
+                try {
+                    // Create fresh executor for each iteration to ensure clean state
+                    executor = new PipelineExecutor(this.app, this.settings);
+                    const result = await executor.processNextFile();
+                    
+                    // Check if no more files are available
+                    if (result.status === ProcessingStatus.SKIPPED) {
+                        break;
+                    }
+                    
+                    // Handle other results (completed, failed)
+                    if (result.status === ProcessingStatus.COMPLETED) {
+                        processedCount++;
+                        logger.info(`File ${processedCount} processed: ${result.inputFile.name}`);
+                    } else if (result.status === ProcessingStatus.FAILED) {
+                        logger.warn(`File processing failed: ${result.error}`);
+                        // Continue processing other files even if one fails
+                    }
+                    
+                } catch (error) {
+                    logger.error('Error during file processing iteration:', error);
+                    // Continue processing other files even if one iteration fails
+                }
+            }
+            
+            // Show completion notification
+            if (processedCount > 0) {
+                new Notice(`✅ Successfully processed ${processedCount} file(s)`, 6000);
+                logger.info(`Process All Files completed: ${processedCount} files processed`);
+            } else {
+                new Notice('ℹ️ No files found to process. Place audio files in inbox/audio/ folder.', 6000);
+                logger.info('Process All Files completed: No files available');
+            }
+            
+        } catch (error) {
+            logger.error('Process All Files command failed:', error);
+            
+            // Show user-friendly error message
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            new Notice(`❌ Failed to process files: ${errorMessage}`, 8000);
+            
+            // Log detailed error information
+            logger.error('Command execution error details:', {
+                error: errorMessage,
+                stack: error instanceof Error ? error.stack : undefined
+            });
+        }
+    }
+
+    /**
      * Handle processing results consistently across commands
      */
     private handleProcessingResult(result: any, contextDescription: string): void {

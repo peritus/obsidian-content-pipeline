@@ -55,6 +55,12 @@ export default class ContentPipelinePlugin extends Plugin {
             callback: () => this.commandHandler.processNextFile()
         });
 
+        this.addCommand({
+            id: 'process-all-files',
+            name: 'Process All Files',
+            callback: () => this.commandHandler.processAllFiles()
+        });
+
         // Register settings tab
         this.addSettingTab(new SettingsTab(this.app, this));
 
