@@ -16,7 +16,8 @@ import {
     ProcessingStatus,
     ProcessingContext,
     isRoutingAwareOutput,
-    RoutingAwareOutput
+    RoutingAwareOutput,
+    ContentPipelineSettings
 } from '../../../types';
 import { ErrorFactory } from '../../../error-handler';
 import { createLogger } from '../../../logger';
@@ -29,9 +30,9 @@ export class ChatStepExecutor {
     private fileOps: FileOperations;
     private outputHandler: OutputHandler;
 
-    constructor(app: App) {
+    constructor(app: App, settings?: ContentPipelineSettings) {
         this.app = app;
-        this.promptBuilder = new PromptBuilder(app);
+        this.promptBuilder = new PromptBuilder(app, settings);
         this.fileOps = new FileOperations(app);
         this.outputHandler = new OutputHandler(app);
     }

@@ -7,7 +7,7 @@
 
 import { App } from 'obsidian';
 import { FileOperations, FileUtils } from '../file-operations';
-import { FileInfo, ProcessingContext, ResolvedPipelineStep } from '../../types';
+import { FileInfo, ProcessingContext, ResolvedPipelineStep, ContentPipelineSettings } from '../../types';
 import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
 
@@ -15,9 +15,11 @@ const logger = createLogger('PromptBuilder');
 
 export class PromptBuilder {
     private fileOps: FileOperations;
+    private settings?: ContentPipelineSettings;
 
-    constructor(app: App) {
+    constructor(app: App, settings?: ContentPipelineSettings) {
         this.fileOps = FileUtils.create(app);
+        this.settings = settings;
         logger.debug('PromptBuilder initialized');
     }
 
@@ -105,10 +107,34 @@ export class PromptBuilder {
 
     private async readFileContent(filePath: string): Promise<string> {
         try {
+            // First, try to read from vault
             return await this.fileOps.readFile(filePath);
         } catch (error) {
-            logger.warn(`Could not read file: ${filePath}`, error);
-            return `[File not found: ${filePath}]`;
+            logger.debug(`File not found in vault: ${filePath}, checking example prompts`);
+            
+            // If vault read fails, try to find it in imported example prompts
+            if (this.settings?.importedExamplePrompts) {
+                // Extract filename from path for lookup
+                const filename = filePath.split('/').pop() || filePath;
+                
+                // Try exact filename match only
+                if (this.settings.importedExamplePrompts[filename]) {
+                    logger.debug(`Found example prompt for: ${filename}`);
+                    return this.settings.importedExamplePrompts[filename];
+                }
+            }
+            
+            // If no match found, throw error to abort processing
+            throw ErrorFactory.parsing(
+                `Prompt file not found: ${filePath}`,
+                `Required prompt file "${filePath}" was not found in vault or example prompts`,
+                { filePath, availableExamplePrompts: this.settings?.importedExamplePrompts ? Object.keys(this.settings.importedExamplePrompts) : [] },
+                [
+                    'Create the prompt file in your vault', 
+                    'Check the file path is correct',
+                    'Ensure example prompts are properly imported if using configurations'
+                ]
+            );
         }
     }
 

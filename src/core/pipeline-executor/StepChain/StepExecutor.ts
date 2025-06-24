@@ -28,7 +28,7 @@ export class StepExecutor {
         this.app = app;
         this.settings = settings;
         this.whisperProcessor = new WhisperStepProcessor(app);
-        this.chatExecutor = new ChatStepExecutor(app);
+        this.chatExecutor = new ChatStepExecutor(app, settings);
     }
 
     async execute(
