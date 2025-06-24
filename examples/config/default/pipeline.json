@@ -1,83 +1,57 @@
 {
   "transcribe": {
     "modelConfig": "openai-whisper",
-    "input": "inbox/audio",
-    "output": {
-      "process-thoughts": "inbox/transcripts/{filename}-transcript.md",
-      "process-tasks": "inbox/transcripts/{filename}-transcript.md",
-      "process-ideas": "inbox/transcripts/{filename}-transcript.md",
-      "default": "inbox/transcripts/{filename}-transcript.md"
-    },
-    "archive": "inbox/archive/audio",
+    "input": "Content Pipeline/Audio-Inbox/",
+    "archive": "Content Pipeline/Archive/Audio/",
+    "output": "Content Pipeline/Transcripts/{filename}.md",
     "prompts": [
-      "prompts/transcriptionprompt.md"
-    ],
-    "description": "Transcribe audio files to text"
+      "Content Pipeline/Prompts/transcribe.md"
+    ]
   },
-  "process-thoughts": {
+  "analyze-content": {
     "modelConfig": "openai-gpt",
-    "input": "inbox/transcripts",
+    "input": "Content Pipeline/Transcripts/",
     "output": {
-      "summary-personal": "inbox/process-thoughts/{filename}-processed.md",
-      "default": "inbox/process-thoughts/{filename}-processed.md"
+      "extract-todos": "Content Pipeline/Text-Todos/{filename}.md",
+      "create-note": "Content Pipeline/Text-Notes/{filename}.md",
+      "default": "Content Pipeline/Unclassified/{filename}.md"
     },
-    "archive": "inbox/archive/transcripts",
+    "archive": "Content Pipeline/Archive/Transcripts/",
     "prompts": [
-      "prompts/process-thoughts-prompt.md"
-    ],
-    "description": "Process personal thoughts and reflections with emotional intelligence"
+      "Content Pipeline/Prompts/analyze-content.md"
+    ]
   },
-  "process-tasks": {
+  "extract-todos": {
     "modelConfig": "openai-gpt",
-    "input": "inbox/transcripts",
+    "input": "Content Pipeline/Text-Todos/",
     "output": {
-      "summary-work": "inbox/process-tasks/{filename}-processed.md",
-      "default": "inbox/process-tasks/{filename}-processed.md"
+      "summarize": "Content Pipeline/Extracted-Todos/{filename}.md",
+      "default": "Content Pipeline/Extracted-Todos/{filename}.md"
     },
-    "archive": "inbox/archive/transcripts",
+    "archive": "Content Pipeline/Archive/Text-Todos/",
     "prompts": [
-      "prompts/process-tasks-prompt.md"
-    ],
-    "description": "Process work content with focus on action items and project management"
+      "Content Pipeline/Prompts/extract-todos.md"
+    ]
   },
-  "process-ideas": {
+  "create-note": {
     "modelConfig": "openai-gpt",
-    "input": "inbox/transcripts",
-    "output": {
-      "summary-personal": "inbox/process-ideas/{filename}-processed.md",
-      "summary-work": "inbox/process-ideas/{filename}-processed.md",
-      "default": "inbox/process-ideas/{filename}-processed.md"
-    },
-    "archive": "inbox/archive/transcripts",
+    "input": "Content Pipeline/Text-Notes/",
+    "output": "Content Pipeline/Notes/{filename}.md",
+    "archive": "Content Pipeline/Archive/Text-Notes/",
     "prompts": [
-      "prompts/process-ideas-prompt.md"
-    ],
-    "description": "Process innovative ideas with focus on development and connection"
+      "Content Pipeline/Prompts/create-note.md"
+    ]
   },
-  "summary-personal": {
+  "summarize": {
     "modelConfig": "openai-gpt",
-    "input": "inbox/process-thoughts",
-    "output": "inbox/summary-personal/",
-    "archive": "inbox/archive/process-thoughts",
+    "input": "Content Pipeline/Extracted-Todos/",
+    "output": "Content Pipeline/Summary/",
+    "archive": "Content Pipeline/Archive/Extracted-Todos/",
     "prompts": [
-      "prompts/summary-personal-prompt.md"
+      "Content Pipeline/Prompts/summarize.md"
     ],
     "context": [
-      "context/summary-personal/sample-context.md"
-    ],
-    "description": "Create personal summaries and insights"
-  },
-  "summary-work": {
-    "modelConfig": "openai-gpt",
-    "input": "inbox/process-tasks",
-    "output": "inbox/summary-work/",
-    "archive": "inbox/archive/process-tasks",
-    "prompts": [
-      "prompts/summary-work-prompt.md"
-    ],
-    "context": [
-      "context/summary-work/sample-context.md"
-    ],
-    "description": "Create work-focused summaries with action items"
+      "Content Pipeline/Summary/Task-List.md"
+    ]
   }
 }
