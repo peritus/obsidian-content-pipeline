@@ -5,7 +5,7 @@
     "archive": "Content Pipeline/Archiv/Audio/",
     "output": "Content Pipeline/Transkripte/{filename}.md",
     "prompts": [
-      "Content Pipeline/Prompts/Transkription-Prompt.md"
+      "Content Pipeline/Prompts/transcribe.md"
     ]
   },
   "analyze-content": {
@@ -18,7 +18,7 @@
     },
     "archive": "Content Pipeline/Archiv/Transkripte/",
     "prompts": [
-      "Content Pipeline/Prompts/Inhalts-Analyse-Prompt.md"
+      "Content Pipeline/Prompts/analyze-content.md"
     ]
   },
   "extract-todos": {
@@ -30,7 +30,7 @@
     },
     "archive": "Content Pipeline/Archiv/Text-Todos/",
     "prompts": [
-      "Content Pipeline/Prompts/Todo-Extraktion-Prompt.md"
+      "Content Pipeline/Prompts/extract-todos.md"
     ]
   },
   "create-note": {
@@ -39,7 +39,7 @@
     "output": "Content Pipeline/Notizen/{filename}.md",
     "archive": "Content Pipeline/Archiv/Text-Notizen/",
     "prompts": [
-      "Content Pipeline/Prompts/Notiz-Erstellung-Prompt.md"
+      "Content Pipeline/Prompts/create-note.md"
     ]
   },
   "summarize": {
@@ -48,7 +48,7 @@
     "output": "Content Pipeline/Zusammenfassung/",
     "archive": "Content Pipeline/Archiv/Extrahierte-Todos/",
     "prompts": [
-      "Content Pipeline/Prompts/Aufgaben-Zusammenfassen.md"
+      "Content Pipeline/Prompts/summarize.md"
     ],
     "context": [
       "Content Pipeline/Zusammenfassung/Aufgaben-Liste.md"
