@@ -5,6 +5,7 @@ main.js
 main.js.map
 *.js
 !esbuild.config.js
+!install-dev.js
 
 node_modules/
 

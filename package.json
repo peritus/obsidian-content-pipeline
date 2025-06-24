@@ -10,6 +10,8 @@
     "build:info": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=info node esbuild.config.js",
     "build:warn": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=warn node esbuild.config.js",
     "build:error": "npm run build:configs && OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL=error node esbuild.config.js",
+    "build-and-install": "npm run build:debug && node install-dev.js",
+    "preview-dev-manifest": "node install-dev.js --preview",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
