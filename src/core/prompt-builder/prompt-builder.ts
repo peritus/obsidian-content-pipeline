@@ -112,15 +112,11 @@ export class PromptBuilder {
         } catch (error) {
             logger.debug(`File not found in vault: ${filePath}, checking example prompts`);
             
-            // If vault read fails, try to find it in imported example prompts
+            // If vault read fails, try to find it in imported example prompts with exact path match
             if (this.settings?.importedExamplePrompts) {
-                // Extract filename from path for lookup
-                const filename = filePath.split('/').pop() || filePath;
-                
-                // Try exact filename match only
-                if (this.settings.importedExamplePrompts[filename]) {
-                    logger.debug(`Found example prompt for: ${filename}`);
-                    return this.settings.importedExamplePrompts[filename];
+                if (this.settings.importedExamplePrompts[filePath]) {
+                    logger.debug(`Found example prompt for exact path: ${filePath}`);
+                    return this.settings.importedExamplePrompts[filePath];
                 }
             }
             
