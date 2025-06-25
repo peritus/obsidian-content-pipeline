@@ -6,11 +6,16 @@ import { Setting, TextAreaComponent } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
 import { DEFAULT_MODELS_CONFIG } from './default-config';
+import { getOpenAIConfigSummary } from './openai-config-utils';
 
 export class ModelsConfigSection {
     private plugin: ContentPipelinePlugin;
     private modelsTextarea: TextAreaComponent | null = null;
     private onChangeCallback: (value: string) => void;
+    private isExpanded: boolean = false;
+    private contentContainer: HTMLElement | null = null;
+    private toggleButton: HTMLElement | null = null;
+    private summaryEl: HTMLElement | null = null;
 
     constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
@@ -21,16 +26,52 @@ export class ModelsConfigSection {
      * Render the models configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Models configuration header
-        const modelsHeaderEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header' });
+        // Models configuration header with toggle
+        const headerEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header content-pipeline-collapsible-header' });
         
-        const modelsHeader = modelsHeaderEl.createEl('h4', { text: '🔐 Models Configuration (Private)' });
+        const titleRow = headerEl.createEl('div', { cls: 'content-pipeline-header-row' });
         
-        const modelsDesc = modelsHeaderEl.createEl('div', { cls: 'content-pipeline-section-description' });
-        modelsDesc.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
+        // Toggle button
+        this.toggleButton = titleRow.createEl('button', { 
+            cls: 'content-pipeline-toggle-button',
+            text: '▶'
+        });
+        this.toggleButton.onclick = () => this.toggleExpanded();
+        
+        // Title
+        const title = titleRow.createEl('h4', { 
+            text: '🔐 Models Configuration (Advanced)',
+            cls: 'content-pipeline-collapsible-title'
+        });
+        title.onclick = () => this.toggleExpanded();
+        
+        const desc = headerEl.createEl('div', { cls: 'content-pipeline-section-description' });
+        desc.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
+
+        // Summary when collapsed
+        this.summaryEl = headerEl.createEl('div', { cls: 'content-pipeline-config-summary' });
+        this.updateSummary();
+
+        // Collapsible content container
+        this.contentContainer = containerEl.createEl('div', { 
+            cls: 'content-pipeline-collapsible-content'
+        });
+        this.contentContainer.style.display = 'none'; // Start collapsed
+
+        this.renderContent();
+    }
+
+    /**
+     * Render the main content (textarea and buttons)
+     */
+    private renderContent(): void {
+        if (!this.contentContainer) return;
+
+        // Clear existing content
+        this.contentContainer.empty();
 
         // Models configuration textarea
-        const modelsSetting = new Setting(containerEl)
+        const modelsSetting = new Setting(this.contentContainer)
             .setName('Models Configuration (JSON)')
             .setDesc('Configure API credentials and model settings for each provider.');
 
@@ -44,13 +85,59 @@ export class ModelsConfigSection {
             
             text.onChange((value) => {
                 this.onChangeCallback(value);
+                this.updateSummary(); // Update summary when config changes
             });
             
             return text;
         });
 
         // Add default config button for models
-        this.renderDefaultConfigButton(containerEl);
+        this.renderDefaultConfigButton(this.contentContainer);
+    }
+
+    /**
+     * Toggle the expanded/collapsed state
+     */
+    private toggleExpanded(): void {
+        this.isExpanded = !this.isExpanded;
+        this.updateDisplay();
+    }
+
+    /**
+     * Update the display based on expanded state
+     */
+    private updateDisplay(): void {
+        if (!this.contentContainer || !this.toggleButton || !this.summaryEl) return;
+
+        if (this.isExpanded) {
+            this.contentContainer.style.display = 'block';
+            this.summaryEl.style.display = 'none';
+            this.toggleButton.textContent = '▼';
+            this.toggleButton.setAttribute('aria-expanded', 'true');
+        } else {
+            this.contentContainer.style.display = 'none';
+            this.summaryEl.style.display = 'block';
+            this.toggleButton.textContent = '▶';
+            this.toggleButton.setAttribute('aria-expanded', 'false');
+            this.updateSummary();
+        }
+    }
+
+    /**
+     * Update the summary display when collapsed
+     */
+    private updateSummary(): void {
+        if (!this.summaryEl) return;
+
+        try {
+            const openAISummary = getOpenAIConfigSummary(this.plugin.settings.modelsConfig);
+            const config = JSON.parse(this.plugin.settings.modelsConfig || '{}');
+            const totalConfigs = Object.keys(config).length;
+            
+            this.summaryEl.textContent = `${totalConfigs} model configuration(s) • ${openAISummary}`;
+        } catch (error) {
+            this.summaryEl.textContent = 'Invalid configuration format';
+        }
     }
 
     /**
@@ -86,5 +173,31 @@ export class ModelsConfigSection {
         if (this.modelsTextarea) {
             this.modelsTextarea.setValue(value);
         }
+        this.updateSummary();
+    }
+
+    /**
+     * Expand the section programmatically
+     */
+    expand(): void {
+        if (!this.isExpanded) {
+            this.toggleExpanded();
+        }
+    }
+
+    /**
+     * Collapse the section programmatically
+     */
+    collapse(): void {
+        if (this.isExpanded) {
+            this.toggleExpanded();
+        }
+    }
+
+    /**
+     * Check if the section is currently expanded
+     */
+    isCurrentlyExpanded(): boolean {
+        return this.isExpanded;
     }
 }
