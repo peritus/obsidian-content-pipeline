@@ -13,6 +13,10 @@ export class PipelineConfigSection {
     private onChangeCallback: (value: string) => void;
     private onExportCallback: () => void;
     private onImportCallback: () => void;
+    private isExpanded: boolean = false;
+    private contentContainer: HTMLElement | null = null;
+    private toggleButton: HTMLElement | null = null;
+    private descriptionEl: HTMLElement | null = null;
 
     constructor(
         plugin: ContentPipelinePlugin, 
@@ -30,16 +34,49 @@ export class PipelineConfigSection {
      * Render the pipeline configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Pipeline configuration header
-        const pipelineHeaderEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header' });
+        // Pipeline configuration header with toggle
+        const headerEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header content-pipeline-collapsible-header' });
         
-        const pipelineHeader = pipelineHeaderEl.createEl('h4', { text: '🔄 Pipeline Configuration (Shareable)' });
+        const titleRow = headerEl.createEl('div', { cls: 'content-pipeline-header-row' });
         
-        const pipelineDesc = pipelineHeaderEl.createEl('div', { cls: 'content-pipeline-section-description' });
-        pipelineDesc.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
+        // Toggle button - plain text style
+        this.toggleButton = titleRow.createEl('span', { 
+            cls: 'content-pipeline-toggle-text',
+            text: '▶'
+        });
+        this.toggleButton.onclick = () => this.toggleExpanded();
+        
+        // Title
+        const title = titleRow.createEl('h4', { 
+            text: '🔄 Pipeline Configuration (Advanced)',
+            cls: 'content-pipeline-collapsible-title'
+        });
+        title.onclick = () => this.toggleExpanded();
+
+        // Collapsible content container
+        this.contentContainer = containerEl.createEl('div', { 
+            cls: 'content-pipeline-collapsible-content'
+        });
+        this.contentContainer.style.display = 'none'; // Start collapsed
+
+        this.renderContent();
+    }
+
+    /**
+     * Render the main content (textarea and buttons)
+     */
+    private renderContent(): void {
+        if (!this.contentContainer) return;
+
+        // Clear existing content
+        this.contentContainer.empty();
+
+        // Add description as first element in collapsible content
+        this.descriptionEl = this.contentContainer.createEl('div', { cls: 'content-pipeline-section-description' });
+        this.descriptionEl.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
 
         // Pipeline configuration textarea
-        const pipelineSetting = new Setting(containerEl)
+        const pipelineSetting = new Setting(this.contentContainer)
             .setName('Pipeline Configuration (JSON)')
             .setDesc('Configure workflow steps, routing logic, and file processing patterns.');
 
@@ -59,7 +96,32 @@ export class PipelineConfigSection {
         });
 
         // Add action buttons for pipeline
-        this.renderActionButtons(containerEl);
+        this.renderActionButtons(this.contentContainer);
+    }
+
+    /**
+     * Toggle the expanded/collapsed state
+     */
+    private toggleExpanded(): void {
+        this.isExpanded = !this.isExpanded;
+        this.updateDisplay();
+    }
+
+    /**
+     * Update the display based on expanded state
+     */
+    private updateDisplay(): void {
+        if (!this.contentContainer || !this.toggleButton) return;
+
+        if (this.isExpanded) {
+            this.contentContainer.style.display = 'block';
+            this.toggleButton.textContent = '▼';
+            this.toggleButton.setAttribute('aria-expanded', 'true');
+        } else {
+            this.contentContainer.style.display = 'none';
+            this.toggleButton.textContent = '▶';
+            this.toggleButton.setAttribute('aria-expanded', 'false');
+        }
     }
 
     /**
@@ -104,5 +166,30 @@ export class PipelineConfigSection {
         if (this.pipelineTextarea) {
             this.pipelineTextarea.setValue(value);
         }
+    }
+
+    /**
+     * Expand the section programmatically
+     */
+    expand(): void {
+        if (!this.isExpanded) {
+            this.toggleExpanded();
+        }
+    }
+
+    /**
+     * Collapse the section programmatically
+     */
+    collapse(): void {
+        if (this.isExpanded) {
+            this.toggleExpanded();
+        }
+    }
+
+    /**
+     * Check if the section is currently expanded
+     */
+    isCurrentlyExpanded(): boolean {
+        return this.isExpanded;
     }
 }
