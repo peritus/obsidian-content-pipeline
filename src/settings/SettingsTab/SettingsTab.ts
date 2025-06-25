@@ -56,6 +56,9 @@ export class SettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
+        // Configuration Validation Section (at the very top)
+        this.renderValidationSection(containerEl);
+
         // Example Prompts Setup Section (moved above configuration sections)
         // Initialize with imported prompts if available
         this.examplePromptsManager.setImportedPrompts(this.plugin.settings.importedExamplePrompts);
@@ -68,9 +71,6 @@ export class SettingsTab extends PluginSettingTab {
 
         // Pipeline visualization
         this.pipelineVisualization.render(containerEl);
-
-        // Control buttons
-        this.renderControlButtons(containerEl);
 
         // Folder Setup Section
         const folderSection = new FolderSetupSection(this.plugin, this.fileOps);
@@ -110,15 +110,24 @@ export class SettingsTab extends PluginSettingTab {
 
 
     /**
-     * Render control buttons section (inlined from ControlButtons)
+     * Render validation section at the top
      */
-    private renderControlButtons(containerEl: HTMLElement): void {
-        const buttonContainer = containerEl.createEl('div', { cls: 'content-pipeline-button-container' });
-
-        // Validate configuration button
-        const validateBtn = buttonContainer.createEl('button', { text: 'Validate Configuration' });
+    private renderValidationSection(containerEl: HTMLElement): void {
+        // Create the validation section
+        const validationSection = containerEl.createEl('div', { cls: 'content-pipeline-validation-section' });
+        
+        // Section title
+        validationSection.createEl('h3', { text: 'Configuration' });
+        
+        // Validate button
+        const validateBtn = validationSection.createEl('button', { 
+            text: 'Validate Configuration',
+            cls: 'content-pipeline-validate-button'
+        });
         validateBtn.onclick = () => this.validateAndUpdate(true);
     }
+
+
 
     /**
      * Handle models configuration changes with debouncing and auto-save
