@@ -148,9 +148,10 @@ export class FolderSetupSection {
         // Top row: folder path and button
         const topRow = folderEl.createEl('div', { cls: 'content-pipeline-folder-top-row' });
 
-        // Left side: folder path (ensure path starts with /)
+        // Left side: folder path (ensure path starts with / and ends with /)
         const pathEl = topRow.createEl('div', { cls: 'content-pipeline-folder-path' });
-        const displayPath = folderStatus.inputPath.startsWith('/') ? folderStatus.inputPath : `/${folderStatus.inputPath}`;
+        let displayPath = folderStatus.inputPath.startsWith('/') ? folderStatus.inputPath : `/${folderStatus.inputPath}`;
+        displayPath = displayPath.endsWith('/') ? displayPath : `${displayPath}/`;
         pathEl.textContent = displayPath;
 
         // Right side: button
