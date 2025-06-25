@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Notice } from 'obsidian';
+import { App, PluginSettingTab, Notice, Setting } from 'obsidian';
 import ContentPipelinePlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { ModelsConfigSection } from '../ModelsConfigSection';
@@ -110,8 +110,8 @@ export class SettingsTab extends PluginSettingTab {
         // Create the validation section
         const validationSection = containerEl.createEl('div', { cls: 'content-pipeline-validation-section' });
         
-        // Section title
-        validationSection.createEl('h3', { text: 'Configuration' });
+        // Section title using proper Obsidian heading method
+        new Setting(validationSection).setName('Configuration').setHeading();
         
         // Validate button
         const validateBtn = validationSection.createEl('button', { 

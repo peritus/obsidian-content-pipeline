@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import { Notice, Setting } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { FileOperations } from '../core/file-operations';
 import { DirectoryManager } from '../core/file-operations/directory-manager';
@@ -69,8 +69,8 @@ export class FolderSetupSection {
 
             // Only show the section if there are missing folders
             if (missingFolders.length > 0) {
-                // Create the heading
-                this.foldersContainer.createEl('h3', { text: 'Entry Point Folders' });
+                // Create the heading using proper Obsidian heading method
+                new Setting(this.foldersContainer).setName('Entry Point Folders').setHeading();
                 
                 // Create a content section within the container
                 const contentSection = this.foldersContainer.createEl('div');
@@ -89,7 +89,7 @@ export class FolderSetupSection {
         } catch (error) {
             // If there's an error checking status, show error in the container
             this.foldersContainer.empty();
-            this.foldersContainer.createEl('h3', { text: 'Entry Point Folders' });
+            new Setting(this.foldersContainer).setName('Entry Point Folders').setHeading();
             this.handleError(this.foldersContainer, error);
         }
     }

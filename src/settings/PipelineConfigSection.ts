@@ -34,6 +34,9 @@ export class PipelineConfigSection {
      * Render the pipeline configuration section
      */
     render(containerEl: HTMLElement): void {
+        // Create section heading using proper Obsidian method
+        new Setting(containerEl).setName('🔄 Pipeline Configuration (Advanced)').setHeading();
+
         // Pipeline configuration header with toggle
         const headerEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header content-pipeline-collapsible-header' });
         
@@ -46,12 +49,12 @@ export class PipelineConfigSection {
         });
         this.toggleButton.onclick = () => this.toggleExpanded();
         
-        // Title
-        const title = titleRow.createEl('h4', { 
-            text: '🔄 Pipeline Configuration (Advanced)',
-            cls: 'content-pipeline-collapsible-title'
+        // Toggle text without heading element - just styled text
+        const toggleText = titleRow.createEl('span', { 
+            text: 'Click to expand configuration',
+            cls: 'content-pipeline-toggle-label'
         });
-        title.onclick = () => this.toggleExpanded();
+        toggleText.onclick = () => this.toggleExpanded();
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 

@@ -1,4 +1,4 @@
-import { App } from 'obsidian';
+import { App, Setting } from 'obsidian';
 import { PromptFileOperations } from '../prompt-file-operations';
 import { DEFAULT_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
@@ -108,8 +108,8 @@ export class ExamplePromptsManager {
 
             // Always show the section if we have prompts
             if (Object.keys(currentPrompts).length > 0) {
-                // Create the heading - just "Prompts"
-                this.promptsContainer.createEl('h3', { text: 'Prompts' });
+                // Create the heading using proper Obsidian heading method
+                new Setting(this.promptsContainer).setName('Prompts').setHeading();
                 
                 // Create a content section within the container
                 const contentSection = this.promptsContainer.createEl('div');
@@ -141,7 +141,7 @@ export class ExamplePromptsManager {
         } catch (error) {
             // If there's an error checking status, show error in the container
             this.promptsContainer.empty();
-            this.promptsContainer.createEl('h3', { text: 'Prompts' });
+            new Setting(this.promptsContainer).setName('Prompts').setHeading();
             this.handleOverallError(this.promptsContainer, error);
         }
     }
