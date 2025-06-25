@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Notice } from 'obsidian';
 import ContentPipelinePlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { ModelsConfigSection } from '../ModelsConfigSection';
+import { OpenAIApiKeySection } from '../OpenAIApiKeySection';
 import { PipelineConfigSection } from '../PipelineConfigSection';
 import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
 import { PipelineVisualization } from '../PipelineVisualization';
@@ -20,6 +21,7 @@ export class SettingsTab extends PluginSettingTab {
     private debounceTimer: NodeJS.Timeout | null = null;
 
     // Components
+    private openAISection: OpenAIApiKeySection;
     private modelsSection: ModelsConfigSection;
     private pipelineSection: PipelineConfigSection;
     private importExportManager: ImportExportManager;
@@ -38,6 +40,7 @@ export class SettingsTab extends PluginSettingTab {
         };
 
         // Initialize components
+        this.openAISection = new OpenAIApiKeySection(plugin, (value) => this.handleModelsConfigChange(value));
         this.modelsSection = new ModelsConfigSection(plugin, (value) => this.handleModelsConfigChange(value));
         this.pipelineSection = new PipelineConfigSection(
             plugin,
@@ -59,6 +62,7 @@ export class SettingsTab extends PluginSettingTab {
         this.examplePromptsManager.render(containerEl);
 
         // Configuration sections
+        this.openAISection.render(containerEl);
         this.modelsSection.render(containerEl);
         this.pipelineSection.render(containerEl);
 
@@ -146,6 +150,10 @@ export class SettingsTab extends PluginSettingTab {
      */
     private handleModelsConfigChange(value: string): void {
         this.plugin.settings.modelsConfig = value;
+        
+        // Refresh the OpenAI section to update its summary and status
+        this.openAISection.refresh();
+        
         this.debounceValidationAndAutoSave();
     }
 
