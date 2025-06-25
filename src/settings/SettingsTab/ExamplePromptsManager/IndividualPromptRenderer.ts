@@ -49,9 +49,10 @@ export class IndividualPromptRenderer {
         // Top row: filename and button
         const topRow = promptEl.createEl('div', { cls: 'content-pipeline-prompt-top-row' });
 
-        // Left side: filename
+        // Left side: filename (ensure path starts with /)
         const filenameEl = topRow.createEl('div', { cls: 'content-pipeline-prompt-filename' });
-        filenameEl.textContent = prompt.path;
+        const displayPath = prompt.path.startsWith('/') ? prompt.path : `/${prompt.path}`;
+        filenameEl.textContent = displayPath;
 
         // Right side: button
         const moveBtn = topRow.createEl('button', { 
@@ -74,9 +75,10 @@ export class IndividualPromptRenderer {
         // Top row: filename and button
         const topRow = promptEl.createEl('div', { cls: 'content-pipeline-prompt-top-row' });
 
-        // Left side: filename
+        // Left side: filename (ensure path starts with /)
         const filenameEl = topRow.createEl('div', { cls: 'content-pipeline-prompt-filename' });
-        filenameEl.textContent = prompt.path;
+        const displayPath = prompt.path.startsWith('/') ? prompt.path : `/${prompt.path}`;
+        filenameEl.textContent = displayPath;
 
         // Right side: button
         const viewBtn = topRow.createEl('button', { 
