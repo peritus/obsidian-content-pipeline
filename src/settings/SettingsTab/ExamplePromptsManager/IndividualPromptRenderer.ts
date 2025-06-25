@@ -10,7 +10,10 @@ export class IndividualPromptRenderer {
      * Render config-based prompts (not in vault yet)
      */
     renderConfigBasedPrompts(containerEl: HTMLElement, configBasedPrompts: PromptStatus[], onMoveToVault: (prompt: PromptStatus) => void): void {
-        for (const prompt of configBasedPrompts) {
+        // Sort prompts by filename (path)
+        const sortedPrompts = [...configBasedPrompts].sort((a, b) => a.path.localeCompare(b.path));
+        
+        for (const prompt of sortedPrompts) {
             this.renderConfigBasedPrompt(containerEl, prompt, onMoveToVault);
         }
     }
@@ -19,7 +22,10 @@ export class IndividualPromptRenderer {
      * Render vault-based prompts (exist in vault)
      */
     renderVaultBasedPrompts(containerEl: HTMLElement, vaultBasedPrompts: PromptStatus[], onViewInVault: (prompt: PromptStatus) => void): void {
-        for (const prompt of vaultBasedPrompts) {
+        // Sort prompts by filename (path)
+        const sortedPrompts = [...vaultBasedPrompts].sort((a, b) => a.path.localeCompare(b.path));
+        
+        for (const prompt of sortedPrompts) {
             this.renderVaultBasedPrompt(containerEl, prompt, onViewInVault);
         }
     }
@@ -29,7 +35,9 @@ export class IndividualPromptRenderer {
      */
     renderIndividualPrompts(containerEl: HTMLElement, missingPrompts: PromptStatus[], onCreateSingle: (prompt: PromptStatus) => void): void {
         // This method is kept for compatibility but now delegates to the config-based rendering
-        this.renderConfigBasedPrompts(containerEl, missingPrompts, onCreateSingle);
+        // Sort prompts by filename for consistency
+        const sortedPrompts = [...missingPrompts].sort((a, b) => a.path.localeCompare(b.path));
+        this.renderConfigBasedPrompts(containerEl, sortedPrompts, onCreateSingle);
     }
 
     /**
