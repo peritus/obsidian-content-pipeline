@@ -14,16 +14,16 @@ export class PromptStatusChecker {
     }
 
     /**
-     * Separate prompts by their status
+     * Separate prompts by their status - config-based vs vault-based
      */
     categorizePrompts(promptsStatus: PromptStatus[]): {
-        missing: PromptStatus[];
-        existing: PromptStatus[];
+        configBased: PromptStatus[];
+        vaultBased: PromptStatus[];
         errors: PromptStatus[];
     } {
         return {
-            missing: promptsStatus.filter(p => !p.exists && !p.error),
-            existing: promptsStatus.filter(p => p.exists),
+            configBased: promptsStatus.filter(p => !p.exists && !p.error),
+            vaultBased: promptsStatus.filter(p => p.exists),
             errors: promptsStatus.filter(p => p.error)
         };
     }

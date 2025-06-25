@@ -101,32 +101,37 @@ export class ExamplePromptsManager {
 
         try {
             const promptsStatus = await this.statusChecker.checkPromptsStatus(currentPrompts);
-            const { missing, errors } = this.statusChecker.categorizePrompts(promptsStatus);
+            const { configBased, vaultBased, errors } = this.statusChecker.categorizePrompts(promptsStatus);
 
             // Clear the container
             this.promptsContainer.empty();
 
-            // Only populate the container if there are missing prompts or errors
-            if (missing.length > 0 || errors.length > 0) {
-                // Create the heading with indicator if using imported prompts
-                const headingText = this.importedPrompts ? 'Prompts (imported)' : 'Prompts';
-                this.promptsContainer.createEl('h3', { text: headingText });
+            // Always show the section if we have prompts
+            if (Object.keys(currentPrompts).length > 0) {
+                // Create the heading - just "Prompts"
+                this.promptsContainer.createEl('h3', { text: 'Prompts' });
                 
                 // Create a content section within the container
                 const contentSection = this.promptsContainer.createEl('div');
 
-                // Show info about imported prompts if applicable
-                if (this.importedPrompts) {
+                // Show info about the current prompt source
+                const sourceInfo = this.getPromptSourceInfo();
+                if (sourceInfo) {
                     const infoEl = contentSection.createEl('p', { cls: 'content-pipeline-prompts-info' });
-                    infoEl.textContent = `Using ${Object.keys(this.importedPrompts).length} example prompts from imported configuration.`;
+                    infoEl.textContent = sourceInfo;
                 }
 
                 // Render error prompts if any
                 this.renderErrorPrompts(contentSection, errors);
                 
-                // Render missing prompts if any
-                if (missing.length > 0) {
-                    this.renderMissingPrompts(contentSection, missing);
+                // Render config-based prompts (not in vault)
+                if (configBased.length > 0) {
+                    this.renderConfigBasedPrompts(contentSection, configBased);
+                }
+
+                // Render vault-based prompts (exist in vault)
+                if (vaultBased.length > 0) {
+                    this.renderVaultBasedPrompts(contentSection, vaultBased);
                 }
             } else {
                 // If no prompts to show, hide the container completely
@@ -136,30 +141,73 @@ export class ExamplePromptsManager {
         } catch (error) {
             // If there's an error checking status, show error in the container
             this.promptsContainer.empty();
-            const headingText = this.importedPrompts ? 'Prompts (imported)' : 'Prompts';
-            this.promptsContainer.createEl('h3', { text: headingText });
+            this.promptsContainer.createEl('h3', { text: 'Prompts' });
             this.handleOverallError(this.promptsContainer, error);
         }
     }
 
     /**
-     * Render missing prompts section
+     * Get info text about the current prompt source
      */
-    private renderMissingPrompts(contentEl: HTMLElement, missingPrompts: any[]): void {
-        this.individualRenderer.renderIndividualPrompts(
+    private getPromptSourceInfo(): string | null {
+        if (this.importedPrompts) {
+            return `Using ${Object.keys(this.importedPrompts).length} prompts from imported configuration.`;
+        }
+        
+        const defaultConfig = this.getExamplePrompts();
+        if (defaultConfig) {
+            return `Using ${Object.keys(defaultConfig).length} prompts from configuration.`;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Render config-based prompts (not in vault yet)
+     */
+    private renderConfigBasedPrompts(contentEl: HTMLElement, configBasedPrompts: any[]): void {
+        this.individualRenderer.renderConfigBasedPrompts(
             contentEl, 
-            missingPrompts, 
-            (prompt) => this.createSinglePrompt(prompt)
+            configBasedPrompts, 
+            (prompt) => this.movePromptToVault(prompt)
         );
     }
 
     /**
-     * Create a single prompt
+     * Render vault-based prompts (exist in vault)
      */
-    private async createSinglePrompt(prompt: any): Promise<void> {
-        await this.promptCreator.createSinglePrompt(prompt);
+    private renderVaultBasedPrompts(contentEl: HTMLElement, vaultBasedPrompts: any[]): void {
+        this.individualRenderer.renderVaultBasedPrompts(
+            contentEl, 
+            vaultBasedPrompts, 
+            (prompt) => this.viewPromptInVault(prompt)
+        );
+    }
+
+    /**
+     * Move a prompt from config to vault (replaces createSinglePrompt)
+     */
+    private async movePromptToVault(prompt: any): Promise<void> {
+        await this.promptCreator.movePromptToVault(prompt);
         // Re-render the status in the same container
         this.updatePromptsStatus();
+    }
+
+    /**
+     * View a prompt that exists in the vault
+     */
+    private async viewPromptInVault(prompt: any): Promise<void> {
+        try {
+            // Open the file in Obsidian
+            const file = this.app.vault.getAbstractFileByPath(prompt.path);
+            if (file) {
+                await this.app.workspace.openLinkText(prompt.path, '', false);
+            } else {
+                console.error(`File not found: ${prompt.path}`);
+            }
+        } catch (error) {
+            console.error(`Failed to open prompt file ${prompt.path}:`, error);
+        }
     }
 
     /**

@@ -288,6 +288,12 @@
     border-left: 4px solid var(--interactive-accent);
 }
 
+/* Vault-based prompt styling (slight visual distinction) */
+.content-pipeline-prompt-vault-based {
+    border-left-color: var(--text-accent);
+    background-color: var(--background-primary);
+}
+
 .content-pipeline-prompt-top-row {
     display: flex;
     align-items: center;
@@ -313,6 +319,21 @@
 }
 
 .content-pipeline-prompt-create-button:hover {
+    opacity: 0.9;
+}
+
+.content-pipeline-prompt-view-button {
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.content-pipeline-prompt-view-button:hover {
     opacity: 0.9;
 }
 
