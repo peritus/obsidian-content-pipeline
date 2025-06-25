@@ -5,7 +5,6 @@ import { ModelsConfigSection } from '../ModelsConfigSection';
 import { OpenAIApiKeySection } from '../OpenAIApiKeySection';
 import { PipelineConfigSection } from '../PipelineConfigSection';
 import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
-import { PipelineVisualization } from '../PipelineVisualization';
 import { FolderSetupSection } from '../folder-setup-section';
 import { ExamplePromptsManager } from './ExamplePromptsManager';
 import { createConfigurationResolver } from '../../validation/configuration-resolver';
@@ -25,7 +24,6 @@ export class SettingsTab extends PluginSettingTab {
     private modelsSection: ModelsConfigSection;
     private pipelineSection: PipelineConfigSection;
     private importExportManager: ImportExportManager;
-    private pipelineVisualization: PipelineVisualization;
 
     constructor(app: App, plugin: ContentPipelinePlugin) {
         super(app, plugin);
@@ -49,7 +47,6 @@ export class SettingsTab extends PluginSettingTab {
             () => this.importPipelineConfig()
         );
         this.importExportManager = new ImportExportManager(importExportCallbacks);
-        this.pipelineVisualization = new PipelineVisualization();
     }
 
     display(): void {
@@ -68,9 +65,6 @@ export class SettingsTab extends PluginSettingTab {
         this.openAISection.render(containerEl);
         this.modelsSection.render(containerEl);
         this.pipelineSection.render(containerEl);
-
-        // Pipeline visualization
-        this.pipelineVisualization.render(containerEl);
 
         // Folder Setup Section
         const folderSection = new FolderSetupSection(this.plugin, this.fileOps);
@@ -167,10 +161,6 @@ export class SettingsTab extends PluginSettingTab {
      */
     private async performValidationAndAutoSave(): Promise<void> {
         const validationResult = this.validateConfigurations();
-        this.pipelineVisualization.update(
-            this.plugin.settings.modelsConfig,
-            this.plugin.settings.pipelineConfig
-        );
 
         if (validationResult.isValid) {
             await this.saveValidConfiguration(validationResult);
@@ -184,10 +174,6 @@ export class SettingsTab extends PluginSettingTab {
      */
     private validateAndUpdate(showNotice: boolean = false): void {
         const validationResult = this.validateConfigurations();
-        this.pipelineVisualization.update(
-            this.plugin.settings.modelsConfig,
-            this.plugin.settings.pipelineConfig
-        );
 
         if (showNotice) {
             if (validationResult.isValid) {
