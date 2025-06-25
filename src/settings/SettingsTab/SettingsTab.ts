@@ -107,19 +107,7 @@ export class SettingsTab extends PluginSettingTab {
         }
     }
 
-    /**
-     * Clear imported example prompts (e.g., when loading default config)
-     */
-    private async clearImportedExamplePrompts(): Promise<void> {
-        this.plugin.settings.importedExamplePrompts = undefined;
-        this.examplePromptsManager.clearImportedPrompts();
-        
-        try {
-            await this.plugin.saveSettings();
-        } catch (error) {
-            console.error('Failed to clear imported example prompts:', error);
-        }
-    }
+
 
     /**
      * Render control buttons section (inlined from ControlButtons)
@@ -134,15 +122,6 @@ export class SettingsTab extends PluginSettingTab {
         // Create initial folders button
         const createFoldersBtn = buttonContainer.createEl('button', { text: 'Create Initial Folders' });
         createFoldersBtn.onclick = () => this.createInitialFolders();
-
-        // Clear imported prompts button (only shown if imported prompts exist)
-        if (this.plugin.settings.importedExamplePrompts) {
-            const clearPromptsBtn = buttonContainer.createEl('button', { 
-                text: 'Clear Imported Prompts',
-                cls: 'content-pipeline-accent-button'
-            });
-            clearPromptsBtn.onclick = () => this.clearImportedExamplePrompts();
-        }
     }
 
     /**
