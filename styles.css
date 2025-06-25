@@ -34,6 +34,108 @@
     border-left: 3px solid var(--interactive-accent);
 }
 
+/* OpenAI API Key Section Styles */
+
+.content-pipeline-openai-status {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.content-pipeline-openai-status.content-pipeline-openai-success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.content-pipeline-openai-status.content-pipeline-openai-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.content-pipeline-openai-status.content-pipeline-openai-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.content-pipeline-openai-status.content-pipeline-openai-ready {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+}
+
+.content-pipeline-openai-help {
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.content-pipeline-openai-help a {
+    color: var(--interactive-accent);
+    text-decoration: none;
+}
+
+.content-pipeline-openai-help a:hover {
+    text-decoration: underline;
+}
+
+/* Collapsible Models Configuration Styles */
+
+.content-pipeline-collapsible-header {
+    cursor: pointer;
+}
+
+.content-pipeline-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.content-pipeline-toggle-button {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    min-width: 20px;
+    text-align: center;
+}
+
+.content-pipeline-toggle-button:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.content-pipeline-collapsible-title {
+    margin: 0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    flex-grow: 1;
+}
+
+.content-pipeline-collapsible-title:hover {
+    color: var(--interactive-accent);
+}
+
+.content-pipeline-config-summary {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.content-pipeline-collapsible-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
 /* Example Prompts Manager Styles - Error Handling Only */
 
 .example-prompts-config-error {
