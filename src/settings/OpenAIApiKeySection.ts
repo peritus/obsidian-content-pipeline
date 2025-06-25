@@ -2,23 +2,18 @@
  * OpenAI API Key configuration section
  */
 
-import { Setting, TextComponent, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { 
     extractOpenAIConfigs, 
     updateOpenAIApiKeys, 
-    isValidOpenAIApiKey,
-    getOpenAIConfigSummary,
     createUserFriendlyError
 } from './openai-config-utils';
 
 export class OpenAIApiKeySection {
     private plugin: ContentPipelinePlugin;
-    private apiKeyInput: TextComponent | null = null;
     private onChangeCallback: (value: string) => void;
-    private currentApiKey: string = '';
-    private saveButton: HTMLButtonElement | null = null;
-    private statusEl: HTMLElement | null = null;
+    private apiKeyInput: HTMLInputElement | null = null;
 
     constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
@@ -26,135 +21,63 @@ export class OpenAIApiKeySection {
     }
 
     render(containerEl: HTMLElement): void {
-        // Header
-        const headerEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header' });
-        headerEl.createEl('h4', { text: '🔑 OpenAI API Key' });
+        // Create the setting item
+        const settingItem = containerEl.createEl('div', { cls: 'setting-item' });
         
-        const desc = headerEl.createEl('div', { cls: 'content-pipeline-section-description' });
-        desc.innerHTML = 'Simplified configuration for OpenAI services. Updates all OpenAI model configurations.';
-
-        // API Key input
-        const setting = new Setting(containerEl)
-            .setName('API key')
-            .setDesc(this.createDescription());
-
-        setting.addText(text => {
-            this.apiKeyInput = text;
-            text.setPlaceholder('sk-proj-...');
-            text.inputEl.type = 'password';
-            text.inputEl.style.width = '300px';
-            
-            this.loadCurrentApiKey();
-            text.setValue(this.currentApiKey);
-            
-            text.onChange((value) => {
-                this.currentApiKey = value;
-                this.updateButton();
-                this.updateStatus();
-            });
-            
-            return text;
-        });
-
-        setting.addButton(button => {
-            this.saveButton = button.buttonEl;
-            button
-                .setButtonText('Save')
-                .setTooltip('Update all OpenAI configurations with this API key')
-                .onClick(() => this.saveApiKey());
-            
-            this.updateButton();
-            return button;
-        });
-
-        // Status
-        this.statusEl = containerEl.createEl('div', { cls: 'content-pipeline-openai-status' });
-        this.updateStatus();
-
-        // Help link
-        const helpEl = containerEl.createEl('div', { cls: 'content-pipeline-openai-help' });
-        const link = helpEl.createEl('a', {
+        // Setting item info
+        const settingInfo = settingItem.createEl('div', { cls: 'setting-item-info' });
+        settingInfo.createEl('div', { cls: 'setting-item-name', text: 'OpenAI API key' });
+        
+        const settingDesc = settingInfo.createEl('div', { cls: 'setting-item-description' });
+        const link = settingDesc.createEl('a', {
             text: 'Get your API key from OpenAI Platform →',
             href: 'https://platform.openai.com/api-keys'
         });
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-    }
-
-    private createDescription(): DocumentFragment {
-        const fragment = document.createDocumentFragment();
-        const summary = getOpenAIConfigSummary(this.plugin.settings.modelsConfig);
-        fragment.appendText(`Enter your OpenAI API key to update all OpenAI configurations. Current status: ${summary}`);
-        return fragment;
+        
+        // Setting item control
+        const settingControl = settingItem.createEl('div', { cls: 'setting-item-control' });
+        
+        // Password input
+        this.apiKeyInput = settingControl.createEl('input', {
+            type: 'password'
+        }) as HTMLInputElement;
+        this.apiKeyInput.spellcheck = false;
+        this.apiKeyInput.placeholder = 'sk-proj-...';
+        this.apiKeyInput.style.width = '300px';
+        
+        // Load current API key
+        this.loadCurrentApiKey();
+        
+        // Save button
+        const saveButton = settingControl.createEl('button', {
+            text: 'Save'
+        });
+        saveButton.setAttribute('aria-label', 'Update all OpenAI configurations with this API key');
+        saveButton.style.backgroundColor = 'var(--interactive-accent)';
+        
+        saveButton.onclick = () => this.saveApiKey();
     }
 
     private loadCurrentApiKey(): void {
+        if (!this.apiKeyInput) return;
+        
         const extraction = extractOpenAIConfigs(this.plugin.settings.modelsConfig);
-        this.currentApiKey = extraction.currentApiKey || '';
-    }
-
-    private updateButton(): void {
-        if (!this.saveButton) return;
-
-        const hasValue = this.currentApiKey?.trim();
-        const isValid = hasValue ? isValidOpenAIApiKey(this.currentApiKey) : true;
-        
-        this.saveButton.disabled = !hasValue || !isValid;
-        
-        if (hasValue && !isValid) {
-            this.saveButton.textContent = 'Invalid format';
-            this.saveButton.style.backgroundColor = 'var(--background-modifier-error)';
-        } else {
-            this.saveButton.textContent = 'Save';
-            this.saveButton.style.backgroundColor = hasValue ? 'var(--interactive-accent)' : '';
-        }
-    }
-
-    private updateStatus(): void {
-        if (!this.statusEl) return;
-
-        const extraction = extractOpenAIConfigs(this.plugin.settings.modelsConfig);
-        
-        if (!extraction.hasOpenAIConfigs) {
-            this.statusEl.textContent = 'No OpenAI configurations found';
-            this.statusEl.className = 'content-pipeline-openai-status content-pipeline-openai-warning';
-            return;
-        }
-
-        const hasCurrentKey = extraction.currentApiKey?.trim();
-        const hasInputKey = this.currentApiKey?.trim();
-        
-        let text: string;
-        let className: string;
-
-        if (hasCurrentKey) {
-            text = `${extraction.count} OpenAI config(s) with API key configured`;
-            className = 'content-pipeline-openai-status content-pipeline-openai-success';
-        } else if (hasInputKey) {
-            if (isValidOpenAIApiKey(this.currentApiKey)) {
-                text = `Ready to update ${extraction.count} OpenAI config(s)`;
-                className = 'content-pipeline-openai-status content-pipeline-openai-ready';
-            } else {
-                text = 'Invalid API key format';
-                className = 'content-pipeline-openai-status content-pipeline-openai-error';
-            }
-        } else {
-            text = `${extraction.count} OpenAI config(s) found, no API key configured`;
-            className = 'content-pipeline-openai-status content-pipeline-openai-warning';
-        }
-
-        this.statusEl.textContent = text;
-        this.statusEl.className = className;
+        this.apiKeyInput.value = extraction.currentApiKey || '';
     }
 
     private async saveApiKey(): Promise<void> {
-        if (!this.currentApiKey?.trim()) {
+        if (!this.apiKeyInput) return;
+        
+        const apiKey = this.apiKeyInput.value.trim();
+        if (!apiKey) {
             new Notice('Please enter an API key', 3000);
             return;
         }
 
         try {
-            const result = updateOpenAIApiKeys(this.plugin.settings.modelsConfig, this.currentApiKey);
+            const result = updateOpenAIApiKeys(this.plugin.settings.modelsConfig, apiKey);
             
             if (!result.success) {
                 new Notice(`❌ ${result.error || 'Failed to update API keys'}`, 5000);
@@ -166,33 +89,22 @@ export class OpenAIApiKeySection {
             const configText = result.updatedCount === 1 ? 'configuration' : 'configurations';
             new Notice(`✅ Updated ${result.updatedCount} OpenAI ${configText}`, 3000);
             
-            this.updateStatus();
-            this.updateButton();
-            
         } catch (error) {
             new Notice(`❌ Failed to update API keys: ${createUserFriendlyError(error)}`, 5000);
         }
     }
 
     getValue(): string {
-        return this.currentApiKey;
+        return this.apiKeyInput?.value || '';
     }
 
     setValue(value: string): void {
-        this.currentApiKey = value;
         if (this.apiKeyInput) {
-            this.apiKeyInput.setValue(value);
+            this.apiKeyInput.value = value;
         }
-        this.updateButton();
-        this.updateStatus();
     }
 
     refresh(): void {
         this.loadCurrentApiKey();
-        if (this.apiKeyInput) {
-            this.apiKeyInput.setValue(this.currentApiKey);
-        }
-        this.updateButton();
-        this.updateStatus();
     }
 }

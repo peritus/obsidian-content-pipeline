@@ -6,7 +6,6 @@ import { Setting, TextAreaComponent } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
 import { DEFAULT_MODELS_CONFIG } from './default-config';
-import { getOpenAIConfigSummary } from './openai-config-utils';
 
 export class ModelsConfigSection {
     private plugin: ContentPipelinePlugin;
@@ -15,7 +14,7 @@ export class ModelsConfigSection {
     private isExpanded: boolean = false;
     private contentContainer: HTMLElement | null = null;
     private toggleButton: HTMLElement | null = null;
-    private summaryEl: HTMLElement | null = null;
+    private descriptionEl: HTMLElement | null = null;
 
     constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
@@ -31,9 +30,9 @@ export class ModelsConfigSection {
         
         const titleRow = headerEl.createEl('div', { cls: 'content-pipeline-header-row' });
         
-        // Toggle button
-        this.toggleButton = titleRow.createEl('button', { 
-            cls: 'content-pipeline-toggle-button',
+        // Toggle button - plain text style
+        this.toggleButton = titleRow.createEl('span', { 
+            cls: 'content-pipeline-toggle-text',
             text: '▶'
         });
         this.toggleButton.onclick = () => this.toggleExpanded();
@@ -44,13 +43,6 @@ export class ModelsConfigSection {
             cls: 'content-pipeline-collapsible-title'
         });
         title.onclick = () => this.toggleExpanded();
-        
-        const desc = headerEl.createEl('div', { cls: 'content-pipeline-section-description' });
-        desc.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
-
-        // Summary when collapsed
-        this.summaryEl = headerEl.createEl('div', { cls: 'content-pipeline-config-summary' });
-        this.updateSummary();
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 
@@ -70,10 +62,12 @@ export class ModelsConfigSection {
         // Clear existing content
         this.contentContainer.empty();
 
+        // Add description as first element in collapsible content
+        this.descriptionEl = this.contentContainer.createEl('div', { cls: 'content-pipeline-section-description' });
+        this.descriptionEl.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
+
         // Models configuration textarea
-        const modelsSetting = new Setting(this.contentContainer)
-            .setName('Models Configuration (JSON)')
-            .setDesc('Configure API credentials and model settings for each provider.');
+        const modelsSetting = new Setting(this.contentContainer);
 
         TextareaStyler.styleSettingElement(modelsSetting.settingEl);
         
@@ -85,7 +79,6 @@ export class ModelsConfigSection {
             
             text.onChange((value) => {
                 this.onChangeCallback(value);
-                this.updateSummary(); // Update summary when config changes
             });
             
             return text;
@@ -107,36 +100,16 @@ export class ModelsConfigSection {
      * Update the display based on expanded state
      */
     private updateDisplay(): void {
-        if (!this.contentContainer || !this.toggleButton || !this.summaryEl) return;
+        if (!this.contentContainer || !this.toggleButton) return;
 
         if (this.isExpanded) {
             this.contentContainer.style.display = 'block';
-            this.summaryEl.style.display = 'none';
             this.toggleButton.textContent = '▼';
             this.toggleButton.setAttribute('aria-expanded', 'true');
         } else {
             this.contentContainer.style.display = 'none';
-            this.summaryEl.style.display = 'block';
             this.toggleButton.textContent = '▶';
             this.toggleButton.setAttribute('aria-expanded', 'false');
-            this.updateSummary();
-        }
-    }
-
-    /**
-     * Update the summary display when collapsed
-     */
-    private updateSummary(): void {
-        if (!this.summaryEl) return;
-
-        try {
-            const openAISummary = getOpenAIConfigSummary(this.plugin.settings.modelsConfig);
-            const config = JSON.parse(this.plugin.settings.modelsConfig || '{}');
-            const totalConfigs = Object.keys(config).length;
-            
-            this.summaryEl.textContent = `${totalConfigs} model configuration(s) • ${openAISummary}`;
-        } catch (error) {
-            this.summaryEl.textContent = 'Invalid configuration format';
         }
     }
 
@@ -173,7 +146,6 @@ export class ModelsConfigSection {
         if (this.modelsTextarea) {
             this.modelsTextarea.setValue(value);
         }
-        this.updateSummary();
     }
 
     /**
