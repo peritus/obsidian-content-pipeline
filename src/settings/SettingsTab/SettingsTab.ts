@@ -118,10 +118,6 @@ export class SettingsTab extends PluginSettingTab {
         // Validate configuration button
         const validateBtn = buttonContainer.createEl('button', { text: 'Validate Configuration' });
         validateBtn.onclick = () => this.validateAndUpdate(true);
-
-        // Create initial folders button
-        const createFoldersBtn = buttonContainer.createEl('button', { text: 'Create Initial Folders' });
-        createFoldersBtn.onclick = () => this.createInitialFolders();
     }
 
     /**
@@ -302,40 +298,5 @@ export class SettingsTab extends PluginSettingTab {
         this.importExportManager.importPipelineConfig();
     }
 
-    /**
-     * Create initial folder structure (inlined from ControlButtons)
-     */
-    private async createInitialFolders(): Promise<void> {
-        const validationResult = this.validateConfigurations();
 
-        if (!validationResult.isValid) {
-            this.showValidationError(validationResult);
-            return;
-        }
-
-        try {
-            const resolver = createConfigurationResolver(
-                this.plugin.settings.modelsConfig,
-                this.plugin.settings.pipelineConfig
-            );
-
-            const entryPoints = resolver.findEntryPoints();
-            let foldersCreated = 0;
-
-            for (const stepId of entryPoints) {
-                const resolvedStep = resolver.resolveStep(stepId);
-                const inputPath = resolvedStep.input;
-                
-                if (!(await this.plugin.app.vault.adapter.exists(inputPath))) {
-                    await this.plugin.app.vault.createFolder(inputPath);
-                    foldersCreated++;
-                }
-            }
-
-            new Notice(`Created ${foldersCreated} initial folders for entry points`, 3000);
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            new Notice(`Failed to create folders: ${errorMessage}`, 6000);
-        }
-    }
 }
