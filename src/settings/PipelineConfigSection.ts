@@ -15,7 +15,7 @@ export class PipelineConfigSection {
     private onImportCallback: () => void;
     private isExpanded: boolean = false;
     private contentContainer: HTMLElement | null = null;
-    private toggleButton: HTMLElement | null = null;
+    private headingElement: HTMLElement | null = null;
     private descriptionEl: HTMLElement | null = null;
 
     constructor(
@@ -39,17 +39,11 @@ export class PipelineConfigSection {
             .setName('🔄 Pipeline (Advanced)')
             .setHeading();
         
-        // Make the entire heading clickable and style it
-        const headingEl = headingSetting.settingEl;
-        headingEl.addClass('content-pipeline-clickable-heading');
-        headingEl.onclick = () => this.toggleExpanded();
-        
-        // Add toggle indicator to the heading
-        const headingNameEl = headingEl.querySelector('.setting-item-name') as HTMLElement;
-        this.toggleButton = headingNameEl.createEl('span', { 
-            cls: 'content-pipeline-toggle-indicator',
-            text: ' ▶'
-        });
+        // Make the entire heading clickable with CSS toggle classes
+        this.headingElement = headingSetting.settingEl;
+        this.headingElement.addClass('content-pipeline-clickable-heading');
+        this.headingElement.addClass('content-pipeline-toggle-heading'); // CSS handles toggle indicators
+        this.headingElement.onclick = () => this.toggleExpanded();
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 
@@ -109,16 +103,16 @@ export class PipelineConfigSection {
      * Update the display based on expanded state
      */
     private updateDisplay(): void {
-        if (!this.contentContainer || !this.toggleButton) return;
+        if (!this.contentContainer || !this.headingElement) return;
 
         if (this.isExpanded) {
             this.contentContainer.style.display = 'block';
-            this.toggleButton.textContent = ' ▼';
-            this.toggleButton.setAttribute('aria-expanded', 'true');
+            this.headingElement.addClass('expanded');
+            this.headingElement.setAttribute('aria-expanded', 'true');
         } else {
             this.contentContainer.style.display = 'none';
-            this.toggleButton.textContent = ' ▶';
-            this.toggleButton.setAttribute('aria-expanded', 'false');
+            this.headingElement.removeClass('expanded');
+            this.headingElement.setAttribute('aria-expanded', 'false');
         }
     }
 

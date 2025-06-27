@@ -49,10 +49,16 @@
     user-select: none;
 }
 
-.content-pipeline-toggle-indicator {
+/* CSS-only toggle indicators using pseudo-elements */
+.content-pipeline-toggle-heading .setting-item-name:after {
+    content: " ▶";
     color: var(--text-muted);
     font-size: 0.9em;
     margin-left: 4px;
+}
+
+.content-pipeline-toggle-heading.expanded .setting-item-name:after {
+    content: " ▼";
 }
 
 .content-pipeline-collapsible-content {
