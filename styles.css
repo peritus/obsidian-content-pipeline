@@ -34,66 +34,19 @@
     border-left: 3px solid var(--interactive-accent);
 }
 
-/* Collapsible Models Configuration Styles */
+/* Collapsible Configuration Styles */
 
-.content-pipeline-collapsible-header {
+.content-pipeline-clickable-heading {
     cursor: pointer;
+    transition: opacity 0.2s ease;
 }
 
-.content-pipeline-header-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 5px;
+.content-pipeline-clickable-heading:hover {
+    opacity: 0.8;
 }
 
-/* New toggle area styles */
-.content-pipeline-toggle-area {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    padding: 4px 0;
-}
-
-.content-pipeline-toggle-text {
-    font-size: 14px;
-    color: var(--text-normal);
-    cursor: pointer;
-    min-width: 20px;
-    text-align: center;
+.content-pipeline-clickable-heading .setting-item-name {
     user-select: none;
-    border: none;
-    background: none;
-    box-shadow: none;
-    outline: none;
-    text-shadow: none;
-    font-weight: normal;
-    text-decoration: none;
-}
-
-.content-pipeline-toggle-label {
-    color: var(--text-muted);
-    font-size: 13px;
-    cursor: pointer;
-    user-select: none;
-    transition: color 0.2s ease;
-}
-
-.content-pipeline-toggle-label:hover {
-    color: var(--interactive-accent);
-}
-
-.content-pipeline-collapsible-title {
-    margin: 0;
-    cursor: pointer;
-    transition: color 0.2s ease;
-    flex-grow: 1;
-}
-
-.content-pipeline-collapsible-title:hover {
-    color: var(--interactive-accent);
 }
 
 .content-pipeline-collapsible-content {

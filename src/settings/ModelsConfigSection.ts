@@ -25,25 +25,18 @@ export class ModelsConfigSection {
      * Render the models configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Create section heading using proper Obsidian method
-        new Setting(containerEl).setName('🔐 Models Configuration').setHeading();
-
-        // Toggle control area
-        const toggleArea = containerEl.createEl('div', { cls: 'content-pipeline-toggle-area' });
+        // Create heading with inline toggle using Obsidian's method
+        const headingSetting = new Setting(containerEl)
+            .setName('🔐 Models (Advanced) ▶')
+            .setHeading();
         
-        // Toggle button and text in a row
-        this.toggleButton = toggleArea.createEl('span', { 
-            cls: 'content-pipeline-toggle-text',
-            text: '▶'
-        });
-        this.toggleButton.onclick = () => this.toggleExpanded();
+        // Make the entire heading clickable and style it
+        const headingEl = headingSetting.settingEl;
+        headingEl.addClass('content-pipeline-clickable-heading');
+        headingEl.onclick = () => this.toggleExpanded();
         
-        // Simple toggle label
-        const toggleLabel = toggleArea.createEl('span', { 
-            text: 'Advanced configuration',
-            cls: 'content-pipeline-toggle-label'
-        });
-        toggleLabel.onclick = () => this.toggleExpanded();
+        // Find and store reference to the toggle indicator for updates
+        this.toggleButton = headingEl.querySelector('.setting-item-name') as HTMLElement;
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 
@@ -105,11 +98,11 @@ export class ModelsConfigSection {
 
         if (this.isExpanded) {
             this.contentContainer.style.display = 'block';
-            this.toggleButton.textContent = '▼';
+            this.toggleButton.textContent = '🔐 Models (Advanced) ▼';
             this.toggleButton.setAttribute('aria-expanded', 'true');
         } else {
             this.contentContainer.style.display = 'none';
-            this.toggleButton.textContent = '▶';
+            this.toggleButton.textContent = '🔐 Models (Advanced) ▶';
             this.toggleButton.setAttribute('aria-expanded', 'false');
         }
     }
