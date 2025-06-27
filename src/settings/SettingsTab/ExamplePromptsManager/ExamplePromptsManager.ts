@@ -1,4 +1,4 @@
-import { App, Setting } from 'obsidian';
+import { App, Notice, Setting } from 'obsidian';
 import { PromptFileOperations } from '../prompt-file-operations';
 import { DEFAULT_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
@@ -180,6 +180,24 @@ export class ExamplePromptsManager {
             }
         } catch (error) {
             console.error(`Failed to open prompt file ${prompt.path}:`, error);
+        }
+    }
+
+    /**
+     * Move a prompt from config to vault by creating the file
+     */
+    private async movePromptToVault(prompt: any): Promise<void> {
+        try {
+            // Use the file operations directly instead of the prompt creator
+            await this.fileOps.createPromptFile(prompt.path, prompt.content);
+            
+            // Show success message with instruction to refresh
+            new Notice(`✅ Created prompt: ${prompt.filename}. Reload settings to update the list.`, 5000);
+            
+        } catch (error) {
+            const errorMsg = `Failed to create prompt ${prompt.filename}: ${error instanceof Error ? error.message : String(error)}`;
+            new Notice(`❌ ${errorMsg}`, 5000);
+            console.error(errorMsg, error);
         }
     }
 }
