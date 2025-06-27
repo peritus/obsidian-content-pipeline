@@ -139,11 +139,24 @@ export class ExamplePromptsManager {
     }
 
     /**
+     * Extract filename from a file path
+     */
+    private getFilenameFromPath(path: string): string {
+        if (!path) return 'Unknown file';
+        
+        // Split by both forward and backward slashes and get the last part
+        const parts = path.split(/[/\\]/);
+        return parts[parts.length - 1] || 'Unknown file';
+    }
+
+    /**
      * Render a single config-based prompt using Setting structure
      */
     private renderConfigBasedPrompt(containerEl: HTMLElement, prompt: any): void {
+        const filename = this.getFilenameFromPath(prompt.path);
+        
         new Setting(containerEl)
-            .setName(`📄 ${prompt.filename}`)
+            .setName(`📄 ${filename}`)
             .setDesc(`Create this prompt file in your vault`)
             .addButton(button => {
                 button
@@ -156,8 +169,10 @@ export class ExamplePromptsManager {
      * Render a single vault-based prompt using Setting structure
      */
     private renderVaultBasedPrompt(containerEl: HTMLElement, prompt: any): void {
+        const filename = this.getFilenameFromPath(prompt.path);
+        
         new Setting(containerEl)
-            .setName(`✅ ${prompt.filename}`)
+            .setName(`✅ ${filename}`)
             .setDesc(`Already exists in vault`)
             .addButton(button => {
                 button
@@ -191,11 +206,15 @@ export class ExamplePromptsManager {
             // Use the file operations directly instead of the prompt creator
             await this.fileOps.createPromptFile(prompt.path, prompt.content);
             
+            // Extract filename for user feedback
+            const filename = this.getFilenameFromPath(prompt.path);
+            
             // Show success message with instruction to refresh
-            new Notice(`✅ Created prompt: ${prompt.filename}. Reload settings to update the list.`, 5000);
+            new Notice(`✅ Created prompt: ${filename}. Reload settings to update the list.`, 5000);
             
         } catch (error) {
-            const errorMsg = `Failed to create prompt ${prompt.filename}: ${error instanceof Error ? error.message : String(error)}`;
+            const filename = this.getFilenameFromPath(prompt.path);
+            const errorMsg = `Failed to create prompt ${filename}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);
             console.error(errorMsg, error);
         }
