@@ -158,8 +158,13 @@ export class SettingsTab extends PluginSettingTab {
     private handleModelsConfigChange(value: string): void {
         this.plugin.settings.modelsConfig = value;
         
-        // Refresh the OpenAI section to update its summary and status
-        this.openAISection.refresh();
+        // Update both sections to keep them in sync
+        this.openAISection.refresh(); // Updates the API key field
+        
+        // Only update the models textarea if the value is different to avoid unnecessary updates
+        if (this.modelsSection.getValue() !== value) {
+            this.modelsSection.setValue(value); // Updates the JSON textarea
+        }
         
         this.debounceValidationAndAutoSave();
     }
