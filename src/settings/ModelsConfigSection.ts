@@ -109,19 +109,21 @@ export class ModelsConfigSection {
      * Render the default config button
      */
     private renderDefaultConfigButton(containerEl: HTMLElement): void {
-        const modelsButtonContainer = containerEl.createEl('div', { cls: 'content-pipeline-config-button-container' });
-        
-        const loadDefaultModelsBtn = modelsButtonContainer.createEl('button', { 
-            text: 'Load Default Models Config',
-            cls: 'content-pipeline-config-button'
-        });
-        loadDefaultModelsBtn.onclick = () => {
-            const defaultConfig = JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2);
-            if (this.modelsTextarea) {
-                this.modelsTextarea.setValue(defaultConfig);
-                this.onChangeCallback(defaultConfig);
-            }
-        };
+        new Setting(containerEl)
+            .setName('Load default configuration')
+            .setDesc('Reset to the default models configuration with placeholders for API keys.')
+            .addButton(button => {
+                button
+                    .setButtonText('Load default')
+                    .setTooltip('Replace current configuration with default template')
+                    .onClick(() => {
+                        const defaultConfig = JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2);
+                        if (this.modelsTextarea) {
+                            this.modelsTextarea.setValue(defaultConfig);
+                            this.onChangeCallback(defaultConfig);
+                        }
+                    });
+            });
     }
 
     /**

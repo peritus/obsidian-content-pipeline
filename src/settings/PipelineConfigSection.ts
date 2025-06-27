@@ -120,28 +120,41 @@ export class PipelineConfigSection {
      * Render the action buttons for pipeline configuration
      */
     private renderActionButtons(containerEl: HTMLElement): void {
-        const pipelineButtonContainer = containerEl.createEl('div', { cls: 'content-pipeline-config-button-container' });
-        
-        const loadDefaultPipelineBtn = pipelineButtonContainer.createEl('button', { 
-            text: 'Load Default Pipeline Config',
-            cls: 'content-pipeline-config-button'
-        });
-        loadDefaultPipelineBtn.onclick = () => {
-            const defaultConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
-            if (this.pipelineTextarea) {
-                this.pipelineTextarea.setValue(defaultConfig);
-                this.onChangeCallback(defaultConfig);
-            }
-        };
+        new Setting(containerEl)
+            .setName('Load default configuration')
+            .setDesc('Reset to the default pipeline configuration with basic workflow steps.')
+            .addButton(button => {
+                button
+                    .setButtonText('Load default')
+                    .setTooltip('Replace current configuration with default template')
+                    .onClick(() => {
+                        const defaultConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
+                        if (this.pipelineTextarea) {
+                            this.pipelineTextarea.setValue(defaultConfig);
+                            this.onChangeCallback(defaultConfig);
+                        }
+                    });
+            });
 
-        const exportBtn = pipelineButtonContainer.createEl('button', { 
-            text: 'Export Pipeline Config',
-            cls: 'content-pipeline-config-button'
-        });
-        exportBtn.onclick = this.onExportCallback;
+        new Setting(containerEl)
+            .setName('Export configuration')
+            .setDesc('Download your pipeline configuration as a JSON file to share or backup.')
+            .addButton(button => {
+                button
+                    .setButtonText('Export')
+                    .setTooltip('Download pipeline configuration as JSON file')
+                    .onClick(this.onExportCallback);
+            });
 
-        const importBtn = pipelineButtonContainer.createEl('button', { text: 'Import Pipeline Config' });
-        importBtn.onclick = this.onImportCallback;
+        new Setting(containerEl)
+            .setName('Import configuration')
+            .setDesc('Upload and apply a pipeline configuration from a JSON file.')
+            .addButton(button => {
+                button
+                    .setButtonText('Import')
+                    .setTooltip('Upload and apply pipeline configuration from JSON file')
+                    .onClick(this.onImportCallback);
+            });
     }
 
     /**
