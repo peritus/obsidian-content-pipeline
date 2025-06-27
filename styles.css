@@ -1,5 +1,16 @@
 /* Content Pipeline Plugin Styles */
 
+/* 
+   OPTIONAL: Remove borders from setting items if desired
+   Obsidian adds these borders by default to separate settings visually
+   Uncomment the lines below to remove them:
+
+.content-pipeline-settings .setting-item {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+*/
+
 .content-pipeline-container {
     padding: 10px;
     border-radius: 5px;
