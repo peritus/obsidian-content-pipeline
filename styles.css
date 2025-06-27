@@ -11,6 +11,41 @@
 }
 */
 
+/* Validation Message Styles */
+.content-pipeline-validation-message {
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-weight: 500;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border-left: 4px solid;
+    cursor: default;
+}
+
+.content-pipeline-validation-message.valid {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.content-pipeline-validation-message.invalid {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+    cursor: help;
+}
+
+/* Dark theme adjustments */
+.theme-dark .content-pipeline-validation-message.valid {
+    background-color: rgba(40, 167, 69, 0.15);
+    color: #8fd19e;
+}
+
+.theme-dark .content-pipeline-validation-message.invalid {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #f1aeb5;
+}
+
 .content-pipeline-container {
     padding: 10px;
     border-radius: 5px;

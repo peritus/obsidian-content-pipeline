@@ -18,6 +18,7 @@ export class SettingsTab extends PluginSettingTab {
     private fileOps: FileOperations;
     private examplePromptsManager: ExamplePromptsManager;
     private debounceTimer: NodeJS.Timeout | null = null;
+    private validationMessageEl: HTMLElement | null = null;
 
     // Components
     private openAISection: OpenAIApiKeySection;
@@ -69,9 +70,6 @@ export class SettingsTab extends PluginSettingTab {
         // Initialize with imported prompts if available
         this.examplePromptsManager.setImportedPrompts(this.plugin.settings.importedExamplePrompts);
         this.examplePromptsManager.render(containerEl);
-
-        // Initial validation
-        this.validateAndUpdate();
     }
 
     /**
@@ -113,12 +111,46 @@ export class SettingsTab extends PluginSettingTab {
         // Section title using proper Obsidian heading method
         new Setting(validationSection).setName('Configuration').setHeading();
         
-        // Validate button
-        const validateBtn = validationSection.createEl('button', { 
-            text: 'Validate Configuration',
-            cls: 'content-pipeline-validate-button'
+        // Validation message (instead of button)
+        this.validationMessageEl = validationSection.createEl('div', { 
+            cls: 'content-pipeline-validation-message'
         });
-        validateBtn.onclick = () => this.validateAndUpdate(true);
+        
+        // Set initial message
+        this.updateValidationMessage();
+    }
+
+    /**
+     * Update the validation message based on current configuration state
+     */
+    private updateValidationMessage(): void {
+        if (!this.validationMessageEl) return;
+        
+        const validationResult = this.validateConfigurations();
+        
+        if (validationResult.isValid) {
+            this.validationMessageEl.textContent = '✅ Configuration is valid';
+            this.validationMessageEl.className = 'content-pipeline-validation-message valid';
+        } else {
+            // Collect all errors for the message
+            const allErrors = [
+                ...validationResult.modelsErrors,
+                ...validationResult.pipelineErrors,
+                ...validationResult.crossRefErrors,
+                ...validationResult.outputRoutingErrors
+            ];
+            
+            if (allErrors.length > 0) {
+                // Show the first error as the main message
+                this.validationMessageEl.textContent = `❌ ${allErrors[0]}`;
+                if (allErrors.length > 1) {
+                    this.validationMessageEl.title = `${allErrors.length} errors: ${allErrors.join('; ')}`;
+                }
+            } else {
+                this.validationMessageEl.textContent = '❌ Configuration validation failed';
+            }
+            this.validationMessageEl.className = 'content-pipeline-validation-message invalid';
+        }
     }
 
 
@@ -162,6 +194,9 @@ export class SettingsTab extends PluginSettingTab {
     private async performValidationAndAutoSave(): Promise<void> {
         const validationResult = this.validateConfigurations();
 
+        // Update the validation message
+        this.updateValidationMessage();
+
         if (validationResult.isValid) {
             await this.saveValidConfiguration(validationResult);
         } else {
@@ -172,16 +207,11 @@ export class SettingsTab extends PluginSettingTab {
     /**
      * Perform comprehensive validation of both configurations
      */
-    private validateAndUpdate(showNotice: boolean = false): void {
+    private validateAndUpdate(): void {
         const validationResult = this.validateConfigurations();
 
-        if (showNotice) {
-            if (validationResult.isValid) {
-                new Notice('✅ Configuration is valid!', 3000);
-            } else {
-                this.showValidationError(validationResult);
-            }
-        }
+        // Update the validation message
+        this.updateValidationMessage();
 
         if (validationResult.isValid) {
             this.updateParsedConfigurations();
@@ -212,35 +242,6 @@ export class SettingsTab extends PluginSettingTab {
                 entryPoints: []
             };
         }
-    }
-
-    /**
-     * Show validation error with detailed information
-     */
-    private showValidationError(validationResult: ConfigValidationResult): void {
-        const errorSections = [];
-        
-        if (validationResult.modelsErrors.length > 0) {
-            errorSections.push(`Models: ${validationResult.modelsErrors.join('; ')}`);
-        }
-        
-        if (validationResult.pipelineErrors.length > 0) {
-            errorSections.push(`Pipeline: ${validationResult.pipelineErrors.join('; ')}`);
-        }
-        
-        if (validationResult.crossRefErrors.length > 0) {
-            errorSections.push(`Cross-reference: ${validationResult.crossRefErrors.join('; ')}`);
-        }
-        
-        if (validationResult.outputRoutingErrors.length > 0) {
-            errorSections.push(`Output routing: ${validationResult.outputRoutingErrors.join('; ')}`);
-        }
-        
-        const message = errorSections.length > 0 
-            ? `❌ Configuration errors: ${errorSections.join(' | ')}`
-            : '❌ Configuration validation failed';
-            
-        new Notice(message, 8000);
     }
 
     /**
