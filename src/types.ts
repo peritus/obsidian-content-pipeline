@@ -97,6 +97,29 @@ export interface PipelineConfiguration {
     [stepId: string]: PipelineStep;
 }
 
+/**
+ * Pipeline configuration with optional description
+ */
+export interface PipelineConfigurationWithDescription {
+    /** Optional description of the pipeline configuration */
+    description?: string;
+    /** Pipeline steps configuration */
+    [stepId: string]: PipelineStep | string | undefined;
+}
+
+/**
+ * Utility function to extract pipeline steps from a configuration that may contain description
+ */
+export function extractPipelineSteps(config: any): PipelineConfiguration {
+    const steps: PipelineConfiguration = {};
+    for (const [key, value] of Object.entries(config)) {
+        if (key !== 'description' && typeof value === 'object' && value !== null) {
+            steps[key] = value as PipelineStep;
+        }
+    }
+    return steps;
+}
+
 // =============================================================================
 // CONFIGURATION RESOLUTION TYPES (v2.0)
 // =============================================================================

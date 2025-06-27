@@ -2,14 +2,16 @@
  * Pipeline configuration section - handles rendering and logic for pipeline config textarea
  */
 
-import { Setting, TextAreaComponent } from 'obsidian';
+import { Setting, TextAreaComponent, DropdownComponent } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
-import { DEFAULT_PIPELINE_CONFIG } from './default-config';
+import { DEFAULT_CONFIGS } from '@/configs';
+import { extractPipelineSteps } from '../types';
 
 export class PipelineConfigSection {
     private plugin: ContentPipelinePlugin;
     private pipelineTextarea: TextAreaComponent | null = null;
+    private selectedConfigId: string = 'default'; // Default to first available config
     private onChangeCallback: (value: string) => void;
     private onExportCallback: () => void;
     private onImportCallback: () => void;
@@ -120,18 +122,45 @@ export class PipelineConfigSection {
      * Render the action buttons for pipeline configuration
      */
     private renderActionButtons(containerEl: HTMLElement): void {
+        // Configuration loader with dropdown + button
         new Setting(containerEl)
-            .setName('Load default configuration')
-            .setDesc('Reset to the default pipeline configuration with basic workflow steps.')
+            .setName('Load example configuration')
+            .setDesc('Choose from available example configurations to load as a starting point.')
+            .addDropdown(dropdown => {
+                // Populate dropdown with available configurations
+                const availableConfigs = Object.keys(DEFAULT_CONFIGS);
+                
+                // Add options to dropdown with descriptions
+                availableConfigs.forEach(configId => {
+                    const config = DEFAULT_CONFIGS[configId];
+                    const description = config.pipeline.description || `${configId} configuration`;
+                    dropdown.addOption(configId, description);
+                });
+                
+                // Set initial value
+                dropdown.setValue(this.selectedConfigId);
+                
+                // Update selected config when dropdown changes
+                dropdown.onChange((selectedConfigId) => {
+                    this.selectedConfigId = selectedConfigId;
+                });
+                
+                return dropdown;
+            })
             .addButton(button => {
                 button
-                    .setButtonText('Load default')
-                    .setTooltip('Replace current configuration with default template')
+                    .setButtonText('Load Configuration')
+                    .setTooltip('Load the selected configuration')
                     .onClick(() => {
-                        const defaultConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
-                        if (this.pipelineTextarea) {
-                            this.pipelineTextarea.setValue(defaultConfig);
-                            this.onChangeCallback(defaultConfig);
+                        const selectedConfig = DEFAULT_CONFIGS[this.selectedConfigId];
+                        if (selectedConfig) {
+                            // Extract just the pipeline steps (without description) for the textarea
+                            const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
+                            const configJson = JSON.stringify(pipelineSteps, null, 2);
+                            if (this.pipelineTextarea) {
+                                this.pipelineTextarea.setValue(configJson);
+                                this.onChangeCallback(configJson);
+                            }
                         }
                     });
             });

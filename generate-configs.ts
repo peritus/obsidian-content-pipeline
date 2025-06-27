@@ -165,7 +165,10 @@ function generatePipelineConfig(configName: string, configDir: string): Pipeline
     // Collect example prompts
     const examplePrompts = collectExamplePrompts(configDir);
     
-    console.log(`  - Found ${Object.keys(pipeline).length} pipeline steps`);
+    // Count actual pipeline steps (excluding description field)
+    const stepCount = Object.keys(pipeline).filter(key => key !== 'description').length;
+    
+    console.log(`  - Found ${stepCount} pipeline steps`);
     console.log(`  - Found ${Object.keys(examplePrompts).length} example prompts`);
     
     return {
@@ -236,7 +239,7 @@ function main(): void {
             
             generatedConfigs.push({
                 name,
-                steps: Object.keys(pipelineConfig.pipeline).length,
+                steps: Object.keys(pipelineConfig.pipeline).filter(key => key !== 'description').length,
                 prompts: Object.keys(pipelineConfig.examplePrompts).length
             });
         }
