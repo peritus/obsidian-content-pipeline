@@ -161,11 +161,6 @@ export class PipelineConfigSection {
                             const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
                             const configJson = JSON.stringify(pipelineSteps, null, 2);
                             
-                            // Ensure section is expanded so user can see the loaded config
-                            if (!this.isExpanded) {
-                                this.expand();
-                            }
-                            
                             if (this.pipelineTextarea) {
                                 this.pipelineTextarea.setValue(configJson);
                                 this.onChangeCallback(configJson);

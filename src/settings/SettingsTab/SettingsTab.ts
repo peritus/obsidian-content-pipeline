@@ -26,6 +26,7 @@ export class SettingsTab extends PluginSettingTab {
     private openAISection: OpenAIApiKeySection;
     private modelsSection: ModelsConfigSection;
     private pipelineSection: PipelineConfigSection;
+    private folderSection: FolderSetupSection;
     private importExportManager: ImportExportManager;
 
     constructor(app: App, plugin: ContentPipelinePlugin) {
@@ -50,6 +51,7 @@ export class SettingsTab extends PluginSettingTab {
             () => this.exportPipelineConfig(),
             () => this.importPipelineConfig()
         );
+        this.folderSection = new FolderSetupSection(plugin, this.fileOps);
         this.importExportManager = new ImportExportManager(importExportCallbacks);
 
         // Set up cross-component notifications
@@ -76,6 +78,9 @@ export class SettingsTab extends PluginSettingTab {
                 if (this.pipelineSection.getValue() !== event.pipelineConfig) {
                     this.pipelineSection.setValue(event.pipelineConfig);
                 }
+                
+                // Refresh folder section when pipeline config changes
+                this.folderSection.refresh();
             }
         });
     }
@@ -93,8 +98,7 @@ export class SettingsTab extends PluginSettingTab {
         this.pipelineSection.render(containerEl);
 
         // Folder Setup Section
-        const folderSection = new FolderSetupSection(this.plugin, this.fileOps);
-        folderSection.render(containerEl);
+        this.folderSection.render(containerEl);
 
         // Example Prompts Setup Section (moved above configuration sections)
         // Initialize with imported prompts if available

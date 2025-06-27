@@ -18,6 +18,7 @@ export class FolderSetupSection {
     private plugin: ContentPipelinePlugin;
     private fileOps: FileOperations;
     private directoryManager: DirectoryManager;
+    private containerEl: HTMLElement | null = null;
 
     constructor(plugin: ContentPipelinePlugin, fileOps: FileOperations) {
         this.plugin = plugin;
@@ -30,6 +31,33 @@ export class FolderSetupSection {
      * Only renders if there are missing folders to avoid empty sections
      */
     render(containerEl: HTMLElement): void {
+        // Store container reference for refreshes
+        this.containerEl = containerEl;
+        this.renderContent();
+    }
+
+    /**
+     * Refresh the folder setup section (re-render with current config)
+     */
+    refresh(): void {
+        if (this.containerEl) {
+            // Find and remove existing folder setup section
+            const existingSection = this.containerEl.querySelector('.folder-setup-section');
+            if (existingSection) {
+                existingSection.remove();
+            }
+            
+            // Re-render with current configuration
+            this.renderContent();
+        }
+    }
+
+    /**
+     * Render the folder setup content
+     */
+    private renderContent(): void {
+        if (!this.containerEl) return;
+
         try {
             const pipelineConfig = this.plugin.settings.parsedPipelineConfig;
             if (!pipelineConfig) {
@@ -41,24 +69,30 @@ export class FolderSetupSection {
 
             // Only render if there are missing folders
             if (missingFolders.length > 0) {
+                // Create container with class for easy removal
+                const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
+                
                 // Create proper Obsidian heading
-                new Setting(containerEl).setName('Entry Point Folders').setHeading();
+                new Setting(sectionContainer).setName('Entry Point Folders').setHeading();
                 
                 // Add description using Setting
-                new Setting(containerEl)
+                new Setting(sectionContainer)
                     .setName('')
                     .setDesc('Create input folders for pipeline entry points where you\'ll place files to start processing.');
 
                 // Render missing folders
-                this.renderMissingFolders(containerEl, missingFolders);
+                this.renderMissingFolders(sectionContainer, missingFolders);
             }
 
         } catch (error) {
             console.error('Error in FolderSetupSection render:', error);
             
+            // Create container with class for easy removal
+            const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
+            
             // Show error using proper Setting structure
-            new Setting(containerEl).setName('Entry Point Folders').setHeading();
-            new Setting(containerEl)
+            new Setting(sectionContainer).setName('Entry Point Folders').setHeading();
+            new Setting(sectionContainer)
                 .setName('Error')
                 .setDesc(`Failed to load folder setup: ${error instanceof Error ? error.message : String(error)}`);
         }
