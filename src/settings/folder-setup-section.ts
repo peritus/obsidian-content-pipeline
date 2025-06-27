@@ -18,7 +18,6 @@ export class FolderSetupSection {
     private plugin: ContentPipelinePlugin;
     private fileOps: FileOperations;
     private directoryManager: DirectoryManager;
-    private foldersContainer?: HTMLElement;
 
     constructor(plugin: ContentPipelinePlugin, fileOps: FileOperations) {
         this.plugin = plugin;
@@ -28,7 +27,7 @@ export class FolderSetupSection {
 
     /**
      * Render the folder setup section
-     * Creates a container that will be populated with missing entry point folders
+     * Only renders if there are missing folders to avoid empty sections
      */
     render(containerEl: HTMLElement): void {
         try {
@@ -37,61 +36,59 @@ export class FolderSetupSection {
                 return; // No configuration, nothing to render
             }
 
-            // Create a container immediately to reserve the position
-            this.foldersContainer = containerEl.createEl('div', { cls: 'content-pipeline-folders-container' });
-            
-            // Populate the container with missing folders
-            this.updateFoldersStatus();
+            const entryPointsStatus = this.checkEntryPointFolders(pipelineConfig);
+            const missingFolders = entryPointsStatus.filter(status => !status.exists);
+
+            // Only render if there are missing folders
+            if (missingFolders.length > 0) {
+                // Create proper Obsidian heading
+                new Setting(containerEl).setName('Entry Point Folders').setHeading();
+                
+                // Add description using Setting
+                new Setting(containerEl)
+                    .setName('')
+                    .setDesc('Create input folders for pipeline entry points where you\'ll place files to start processing.');
+
+                // Render missing folders
+                this.renderMissingFolders(containerEl, missingFolders);
+            }
 
         } catch (error) {
             console.error('Error in FolderSetupSection render:', error);
-            // Create a container for error display
-            this.foldersContainer = containerEl.createEl('div', { cls: 'content-pipeline-folders-container' });
-            this.showError(this.foldersContainer, `Failed to load folder setup: ${error instanceof Error ? error.message : String(error)}`);
+            
+            // Show error using proper Setting structure
+            new Setting(containerEl).setName('Entry Point Folders').setHeading();
+            new Setting(containerEl)
+                .setName('Error')
+                .setDesc(`Failed to load folder setup: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
     /**
-     * Update the folders status display in the container
+     * Render missing folders section
      */
-    private updateFoldersStatus(): void {
-        if (!this.foldersContainer) return;
-
-        try {
-            const pipelineConfig = this.plugin.settings.parsedPipelineConfig;
-            if (!pipelineConfig) return;
-
-            const entryPointsStatus = this.checkEntryPointFolders(pipelineConfig);
-            const missingFolders = entryPointsStatus.filter(status => !status.exists);
-
-            // Clear the container
-            this.foldersContainer.empty();
-
-            // Only show the section if there are missing folders
-            if (missingFolders.length > 0) {
-                // Create the heading using proper Obsidian heading method
-                new Setting(this.foldersContainer).setName('Entry Point Folders').setHeading();
-                
-                // Create a content section within the container
-                const contentSection = this.foldersContainer.createEl('div');
-
-                // Show info about entry point folders
-                const infoEl = contentSection.createEl('p', { cls: 'content-pipeline-folders-info' });
-                infoEl.textContent = `Create input folders for pipeline entry points where you'll place files to start processing.`;
-
-                // Render missing folders
-                this.renderMissingFolders(contentSection, missingFolders);
-            } else {
-                // If no folders to show, hide the container completely
-                this.foldersContainer.addClass('content-pipeline-folders-hidden');
-            }
-
-        } catch (error) {
-            // If there's an error checking status, show error in the container
-            this.foldersContainer.empty();
-            new Setting(this.foldersContainer).setName('Entry Point Folders').setHeading();
-            this.handleError(this.foldersContainer, error);
+    private renderMissingFolders(containerEl: HTMLElement, missingFolders: EntryPointFolderStatus[]): void {
+        for (const folderStatus of missingFolders) {
+            this.renderIndividualFolder(containerEl, folderStatus);
         }
+    }
+
+    /**
+     * Render a single folder entry using Obsidian Setting structure
+     */
+    private renderIndividualFolder(containerEl: HTMLElement, folderStatus: EntryPointFolderStatus): void {
+        // Format path for display
+        let displayPath = folderStatus.inputPath.startsWith('/') ? folderStatus.inputPath : `/${folderStatus.inputPath}`;
+        displayPath = displayPath.endsWith('/') ? displayPath : `${displayPath}/`;
+
+        new Setting(containerEl)
+            .setName(`Folder: ${displayPath}`)
+            .setDesc(`Entry point for: ${folderStatus.stepId}`)
+            .addButton(button => {
+                button
+                    .setButtonText('Create folder')
+                    .onClick(() => this.createSingleFolder(folderStatus));
+            });
     }
 
     /**
@@ -131,42 +128,6 @@ export class FolderSetupSection {
     }
 
     /**
-     * Render missing folders section
-     */
-    private renderMissingFolders(contentEl: HTMLElement, missingFolders: EntryPointFolderStatus[]): void {
-        for (const folderStatus of missingFolders) {
-            this.renderIndividualFolder(contentEl, folderStatus);
-        }
-    }
-
-    /**
-     * Render a single folder entry with horizontal layout
-     */
-    private renderIndividualFolder(containerEl: HTMLElement, folderStatus: EntryPointFolderStatus): void {
-        const folderEl = containerEl.createEl('div', { cls: 'content-pipeline-folder-item' });
-
-        // Top row: folder path and button
-        const topRow = folderEl.createEl('div', { cls: 'content-pipeline-folder-top-row' });
-
-        // Left side: folder path (ensure path starts with / and ends with /)
-        const pathEl = topRow.createEl('div', { cls: 'content-pipeline-folder-path' });
-        let displayPath = folderStatus.inputPath.startsWith('/') ? folderStatus.inputPath : `/${folderStatus.inputPath}`;
-        displayPath = displayPath.endsWith('/') ? displayPath : `${displayPath}/`;
-        pathEl.textContent = displayPath;
-
-        // Right side: button
-        const createBtn = topRow.createEl('button', { 
-            text: 'Create folder',
-            cls: 'content-pipeline-folder-create-button'
-        });
-        createBtn.onclick = () => this.createSingleFolder(folderStatus);
-
-        // Bottom row: step info
-        const finePrintEl = folderEl.createEl('small', { cls: 'content-pipeline-folder-fine-print' });
-        finePrintEl.textContent = `Entry point for: ${folderStatus.stepId}`;
-    }
-
-    /**
      * Create a single folder
      */
     private async createSingleFolder(folderStatus: EntryPointFolderStatus): Promise<void> {
@@ -174,38 +135,13 @@ export class FolderSetupSection {
             // Create the folder
             await this.directoryManager.ensureDirectory(folderStatus.inputPath);
             
-            // Show success notice
-            new Notice(`✅ Created folder: ${folderStatus.inputPath}`, 3000);
-            
-            // Update the display to remove this folder from the list
-            this.updateFoldersStatus();
+            // Show success notice with instruction to refresh
+            new Notice(`✅ Created folder: ${folderStatus.inputPath}. Reload settings to update the list.`, 5000);
 
         } catch (error) {
             const errorMsg = `Failed to create folder ${folderStatus.inputPath}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);
             console.error(errorMsg, error);
         }
-    }
-
-    /**
-     * Show simple error message
-     */
-    private showError(containerEl: HTMLElement, message: string): void {
-        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-simple-error' });
-        errorEl.innerHTML = `❌ <strong>Error:</strong> ${message}`;
-    }
-
-    /**
-     * Handle errors in status checking
-     */
-    private handleError(containerEl: HTMLElement, error: unknown): void {
-        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-overall-error' });
-        errorEl.innerHTML = `
-            <div class="content-pipeline-overall-error-icon">⚠️</div>
-            <div class="content-pipeline-overall-error-title">Error Checking Folders</div>
-            <div class="content-pipeline-overall-error-details">${error instanceof Error ? error.message : String(error)}</div>
-        `;
-        
-        console.error('Error in updateFoldersStatus:', error);
     }
 }

@@ -16,7 +16,6 @@ export class ExamplePromptsManager {
     private statusChecker: PromptStatusChecker;
     private promptCreator: PromptCreator;
     private individualRenderer: IndividualPromptRenderer;
-    private promptsContainer?: HTMLElement;
 
     constructor(private app: App) {
         this.fileOps = new PromptFileOperations(app);
@@ -30,45 +29,44 @@ export class ExamplePromptsManager {
      */
     setImportedPrompts(prompts: Record<string, string> | undefined): void {
         this.importedPrompts = prompts;
-        // Re-render if we have a container
-        if (this.promptsContainer) {
-            this.updatePromptsStatus();
-        }
+        // Note: User will need to reload settings to see imported prompts
     }
 
     /**
-     * Clear imported prompts (called when default configuration is loaded)
-     */
-    clearImportedPrompts(): void {
-        this.importedPrompts = undefined;
-        // Re-render if we have a container
-        if (this.promptsContainer) {
-            this.updatePromptsStatus();
-        }
-    }
-
-    /**
-     * Render simplified prompts setup section synchronously
-     * Creates a placeholder container that will be populated async
+     * Render simplified prompts setup section
+     * Only renders if there are prompts to show
      */
     render(containerEl: HTMLElement): void {
         try {
             const examplePrompts = this.getExamplePrompts();
-            if (!examplePrompts) return;
+            if (!examplePrompts || Object.keys(examplePrompts).length === 0) {
+                return; // No prompts, nothing to render
+            }
 
             this.examplePrompts = examplePrompts;
             
-            // Create a container immediately to reserve the position
-            this.promptsContainer = containerEl.createEl('div', { cls: 'content-pipeline-prompts-container' });
+            // Create proper Obsidian heading
+            new Setting(containerEl).setName('Prompts').setHeading();
             
-            // Populate the container asynchronously but in the correct position
-            this.updatePromptsStatus();
+            // Add description using Setting
+            const sourceInfo = this.getPromptSourceInfo();
+            if (sourceInfo) {
+                new Setting(containerEl)
+                    .setName('')
+                    .setDesc(sourceInfo);
+            }
+            
+            // Render prompts asynchronously
+            this.renderPromptsAsync(containerEl);
 
         } catch (error) {
             console.error('Error accessing example prompts:', error);
-            // Create a container for error display
-            this.promptsContainer = containerEl.createEl('div', { cls: 'content-pipeline-prompts-container' });
-            this.showSimpleError(this.promptsContainer, `Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
+            
+            // Show error using proper Setting structure
+            new Setting(containerEl).setName('Prompts').setHeading();
+            new Setting(containerEl)
+                .setName('Error')
+                .setDesc(`Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -90,63 +88,6 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Update the prompts status display in the reserved container
-     */
-    private async updatePromptsStatus(): Promise<void> {
-        // Get the current prompts (imported or default)
-        const currentPrompts = this.getExamplePrompts();
-        if (!currentPrompts || !this.promptsContainer) {
-            return;
-        }
-
-        try {
-            const promptsStatus = await this.statusChecker.checkPromptsStatus(currentPrompts);
-            const { configBased, vaultBased, errors } = this.statusChecker.categorizePrompts(promptsStatus);
-
-            // Clear the container
-            this.promptsContainer.empty();
-
-            // Always show the section if we have prompts
-            if (Object.keys(currentPrompts).length > 0) {
-                // Create the heading using proper Obsidian heading method
-                new Setting(this.promptsContainer).setName('Prompts').setHeading();
-                
-                // Create a content section within the container
-                const contentSection = this.promptsContainer.createEl('div');
-
-                // Show info about the current prompt source
-                const sourceInfo = this.getPromptSourceInfo();
-                if (sourceInfo) {
-                    const infoEl = contentSection.createEl('p', { cls: 'content-pipeline-prompts-info' });
-                    infoEl.textContent = sourceInfo;
-                }
-
-                // Render error prompts if any
-                this.renderErrorPrompts(contentSection, errors);
-                
-                // Render config-based prompts (not in vault)
-                if (configBased.length > 0) {
-                    this.renderConfigBasedPrompts(contentSection, configBased);
-                }
-
-                // Render vault-based prompts (exist in vault)
-                if (vaultBased.length > 0) {
-                    this.renderVaultBasedPrompts(contentSection, vaultBased);
-                }
-            } else {
-                // If no prompts to show, hide the container completely
-                this.promptsContainer.addClass('content-pipeline-prompts-hidden');
-            }
-
-        } catch (error) {
-            // If there's an error checking status, show error in the container
-            this.promptsContainer.empty();
-            new Setting(this.promptsContainer).setName('Prompts').setHeading();
-            this.handleOverallError(this.promptsContainer, error);
-        }
-    }
-
-    /**
      * Get info text about the current prompt source
      */
     private getPromptSourceInfo(): string | null {
@@ -163,34 +104,66 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Render config-based prompts (not in vault yet)
+     * Render prompts asynchronously using proper Setting structure
      */
-    private renderConfigBasedPrompts(contentEl: HTMLElement, configBasedPrompts: any[]): void {
-        this.individualRenderer.renderConfigBasedPrompts(
-            contentEl, 
-            configBasedPrompts, 
-            (prompt) => this.movePromptToVault(prompt)
-        );
+    private async renderPromptsAsync(containerEl: HTMLElement): Promise<void> {
+        const currentPrompts = this.getExamplePrompts();
+        if (!currentPrompts) return;
+
+        try {
+            const promptsStatus = await this.statusChecker.checkPromptsStatus(currentPrompts);
+            const { configBased, vaultBased, errors } = this.statusChecker.categorizePrompts(promptsStatus);
+
+            // Render error prompts if any
+            if (errors.length > 0) {
+                new Setting(containerEl)
+                    .setName('⚠️ Errors detected')
+                    .setDesc(errors.map(p => `• ${p.path}: ${p.error}`).join('\n'));
+            }
+            
+            // Render config-based prompts (not in vault)
+            for (const prompt of configBased) {
+                this.renderConfigBasedPrompt(containerEl, prompt);
+            }
+
+            // Render vault-based prompts (exist in vault)
+            for (const prompt of vaultBased) {
+                this.renderVaultBasedPrompt(containerEl, prompt);
+            }
+
+        } catch (error) {
+            new Setting(containerEl)
+                .setName('Error checking prompts')
+                .setDesc(`${error instanceof Error ? error.message : String(error)}`);
+        }
     }
 
     /**
-     * Render vault-based prompts (exist in vault)
+     * Render a single config-based prompt using Setting structure
      */
-    private renderVaultBasedPrompts(contentEl: HTMLElement, vaultBasedPrompts: any[]): void {
-        this.individualRenderer.renderVaultBasedPrompts(
-            contentEl, 
-            vaultBasedPrompts, 
-            (prompt) => this.viewPromptInVault(prompt)
-        );
+    private renderConfigBasedPrompt(containerEl: HTMLElement, prompt: any): void {
+        new Setting(containerEl)
+            .setName(`📄 ${prompt.filename}`)
+            .setDesc(`Create this prompt file in your vault`)
+            .addButton(button => {
+                button
+                    .setButtonText('Create prompt')
+                    .onClick(() => this.movePromptToVault(prompt));
+            });
     }
 
     /**
-     * Move a prompt from config to vault (replaces createSinglePrompt)
+     * Render a single vault-based prompt using Setting structure
      */
-    private async movePromptToVault(prompt: any): Promise<void> {
-        await this.promptCreator.movePromptToVault(prompt);
-        // Re-render the status in the same container
-        this.updatePromptsStatus();
+    private renderVaultBasedPrompt(containerEl: HTMLElement, prompt: any): void {
+        new Setting(containerEl)
+            .setName(`✅ ${prompt.filename}`)
+            .setDesc(`Already exists in vault`)
+            .addButton(button => {
+                button
+                    .setButtonText('View prompt')
+                    .onClick(() => this.viewPromptInVault(prompt));
+            });
     }
 
     /**
@@ -208,41 +181,5 @@ export class ExamplePromptsManager {
         } catch (error) {
             console.error(`Failed to open prompt file ${prompt.path}:`, error);
         }
-    }
-
-    /**
-     * Simplified error display for basic errors
-     */
-    private showSimpleError(containerEl: HTMLElement, message: string): void {
-        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-simple-error' });
-        errorEl.innerHTML = `❌ <strong>Error:</strong> ${message}`;
-    }
-
-    /**
-     * Render error prompts section (inlined from ErrorRenderer)
-     */
-    private renderErrorPrompts(containerEl: HTMLElement, errorPrompts: PromptStatus[]): void {
-        if (errorPrompts.length === 0) return;
-
-        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-error-with-details' });
-        errorEl.innerHTML = `
-            <strong>⚠️ Errors detected:</strong><br>
-            ${errorPrompts.map(p => `• <code>${p.path}</code>: ${p.error}`).join('<br>')}
-        `;
-    }
-
-    /**
-     * Handle overall errors (inlined from ErrorRenderer)
-     */
-    private handleOverallError(containerEl: HTMLElement, error: unknown): void {
-        containerEl.empty();
-        const errorEl = containerEl.createEl('div', { cls: 'content-pipeline-overall-error' });
-        errorEl.innerHTML = `
-            <div class="content-pipeline-overall-error-icon">⚠️</div>
-            <div class="content-pipeline-overall-error-title">Error Checking Prompts</div>
-            <div class="content-pipeline-overall-error-details">${error instanceof Error ? error.message : String(error)}</div>
-        `;
-        
-        console.error('Error in updatePromptsStatus:', error);
     }
 }
