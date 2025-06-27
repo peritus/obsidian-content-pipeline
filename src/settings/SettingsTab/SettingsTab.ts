@@ -9,6 +9,7 @@ import { FolderSetupSection } from '../folder-setup-section';
 import { ExamplePromptsManager } from './ExamplePromptsManager';
 import { createConfigurationResolver } from '../../validation/configuration-resolver';
 import { ConfigValidationResult } from '../../types';
+import { SettingsNotifier } from '../settings-notifier';
 
 /**
  * Settings tab for the Content Pipeline plugin
@@ -19,6 +20,7 @@ export class SettingsTab extends PluginSettingTab {
     private examplePromptsManager: ExamplePromptsManager;
     private debounceTimer: NodeJS.Timeout | null = null;
     private validationMessageEl: HTMLElement | null = null;
+    private settingsNotifier: SettingsNotifier;
 
     // Components
     private openAISection: OpenAIApiKeySection;
@@ -31,6 +33,7 @@ export class SettingsTab extends PluginSettingTab {
         this.plugin = plugin;
         this.fileOps = new FileOperations(app);
         this.examplePromptsManager = new ExamplePromptsManager(app);
+        this.settingsNotifier = new SettingsNotifier();
 
         // Create import/export callbacks
         const importExportCallbacks: ImportExportCallbacks = {
@@ -48,6 +51,33 @@ export class SettingsTab extends PluginSettingTab {
             () => this.importPipelineConfig()
         );
         this.importExportManager = new ImportExportManager(importExportCallbacks);
+
+        // Set up cross-component notifications
+        this.setupCrossComponentNotifications();
+    }
+
+    /**
+     * Set up cross-component notifications
+     */
+    private setupCrossComponentNotifications(): void {
+        // Subscribe to settings changes to keep components in sync
+        this.settingsNotifier.subscribe((event) => {
+            if (event.type === 'models' && event.modelsConfig !== undefined) {
+                // Update models section (but only if the value is different to avoid loops)
+                if (this.modelsSection.getValue() !== event.modelsConfig) {
+                    this.modelsSection.setValue(event.modelsConfig);
+                }
+                // Update OpenAI section
+                this.openAISection.refresh();
+            }
+            
+            if (event.type === 'pipeline' && event.pipelineConfig !== undefined) {
+                // Update pipeline section (but only if the value is different to avoid loops)
+                if (this.pipelineSection.getValue() !== event.pipelineConfig) {
+                    this.pipelineSection.setValue(event.pipelineConfig);
+                }
+            }
+        });
     }
 
     display(): void {
@@ -158,13 +188,8 @@ export class SettingsTab extends PluginSettingTab {
     private handleModelsConfigChange(value: string): void {
         this.plugin.settings.modelsConfig = value;
         
-        // Update both sections to keep them in sync
-        this.openAISection.refresh(); // Updates the API key field
-        
-        // Only update the models textarea if the value is different to avoid unnecessary updates
-        if (this.modelsSection.getValue() !== value) {
-            this.modelsSection.setValue(value); // Updates the JSON textarea
-        }
+        // Notify other components through the notifier system
+        this.settingsNotifier.notifyModelsChange(value);
         
         this.debounceValidationAndAutoSave();
     }
@@ -174,6 +199,10 @@ export class SettingsTab extends PluginSettingTab {
      */
     private handlePipelineConfigChange(value: string): void {
         this.plugin.settings.pipelineConfig = value;
+        
+        // Notify other components through the notifier system  
+        this.settingsNotifier.notifyPipelineChange(value);
+        
         this.debounceValidationAndAutoSave();
     }
 

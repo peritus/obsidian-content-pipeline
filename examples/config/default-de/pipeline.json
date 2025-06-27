@@ -1,5 +1,5 @@
 {
-  "description": "Vollständige Content-Pipeline (Deutsch) - Audio-Transkription mit intelligenter Inhaltsanalyse und Todo-Extraktion",
+  "description": "Todos und andere Notizen (Deutsch)",
   "transcribe": {
     "modelConfig": "openai-whisper",
     "input": "Content Pipeline/Eingang-Audio/",

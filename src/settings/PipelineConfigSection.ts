@@ -149,7 +149,7 @@ export class PipelineConfigSection {
             })
             .addButton(button => {
                 button
-                    .setButtonText('Load Configuration')
+                    .setButtonText('Load')
                     .setTooltip('Load the selected configuration')
                     .onClick(() => {
                         const selectedConfig = DEFAULT_CONFIGS[this.selectedConfigId];
@@ -157,6 +157,12 @@ export class PipelineConfigSection {
                             // Extract just the pipeline steps (without description) for the textarea
                             const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
                             const configJson = JSON.stringify(pipelineSteps, null, 2);
+                            
+                            // Ensure section is expanded so user can see the loaded config
+                            if (!this.isExpanded) {
+                                this.expand();
+                            }
+                            
                             if (this.pipelineTextarea) {
                                 this.pipelineTextarea.setValue(configJson);
                                 this.onChangeCallback(configJson);
