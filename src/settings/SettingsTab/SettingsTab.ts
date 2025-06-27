@@ -108,9 +108,6 @@ export class SettingsTab extends PluginSettingTab {
         // Create the validation section
         const validationSection = containerEl.createEl('div', { cls: 'content-pipeline-validation-section' });
         
-        // Section title using proper Obsidian heading method
-        new Setting(validationSection).setName('Configuration').setHeading();
-        
         // Validation message (instead of button)
         this.validationMessageEl = validationSection.createEl('div', { 
             cls: 'content-pipeline-validation-message'
