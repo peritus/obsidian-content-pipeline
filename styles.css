@@ -11,6 +11,22 @@
 }
 */
 
+/* Add consistent borders to custom sections to match Obsidian's setting items */
+.content-pipeline-prompts-container,
+.content-pipeline-folders-container {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 24px;
+    margin-top: 24px;
+}
+
+/* First section shouldn't have top border */
+.content-pipeline-prompts-container:first-child,
+.content-pipeline-folders-container:first-child {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+
 .content-pipeline-container {
     padding: 10px;
     border-radius: 5px;
