@@ -18,7 +18,6 @@ export class PipelineConfigSection {
     private isExpanded: boolean = false;
     private contentContainer: HTMLElement | null = null;
     private headingElement: HTMLElement | null = null;
-    private descriptionEl: HTMLElement | null = null;
 
     constructor(
         plugin: ContentPipelinePlugin, 
@@ -36,42 +35,49 @@ export class PipelineConfigSection {
      * Render the pipeline configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Create heading using Obsidian's method
-        const headingSetting = new Setting(containerEl)
+        // Create section heading
+        new Setting(containerEl)
             .setName('🔄 Pipeline (Advanced)')
             .setHeading();
+
+        // Add description
+        const descriptionEl = containerEl.createEl('div', { cls: 'content-pipeline-section-description' });
+        descriptionEl.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
+
+        // Render action buttons as independent sections
+        this.renderActionButtons(containerEl);
+
+        // Create collapsible section for Pipeline Configuration (JSON)
+        const configHeadingSetting = new Setting(containerEl)
+            .setName('Pipeline Configuration (JSON)')
+            .setHeading();
         
-        // Make the entire heading clickable with CSS toggle classes
-        this.headingElement = headingSetting.settingEl;
+        // Make the config heading clickable with CSS toggle classes
+        this.headingElement = configHeadingSetting.settingEl;
         this.headingElement.addClass('content-pipeline-clickable-heading');
         this.headingElement.addClass('content-pipeline-toggle-heading'); // CSS handles toggle indicators
         this.headingElement.onclick = () => this.toggleExpanded();
 
-        // Collapsible content container
+        // Collapsible content container for textarea
         this.contentContainer = containerEl.createEl('div', { 
             cls: 'content-pipeline-collapsible-content'
         });
         this.contentContainer.style.display = 'none'; // Start collapsed
 
-        this.renderContent();
+        this.renderTextareaContent();
     }
 
     /**
-     * Render the main content (textarea and buttons)
+     * Render the textarea content (collapsible part)
      */
-    private renderContent(): void {
+    private renderTextareaContent(): void {
         if (!this.contentContainer) return;
 
         // Clear existing content
         this.contentContainer.empty();
 
-        // Add description as first element in collapsible content
-        this.descriptionEl = this.contentContainer.createEl('div', { cls: 'content-pipeline-section-description' });
-        this.descriptionEl.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
-
         // Pipeline configuration textarea
         const pipelineSetting = new Setting(this.contentContainer)
-            .setName('Pipeline Configuration (JSON)')
             .setDesc('Configure workflow steps, routing logic, and file processing patterns.');
 
         TextareaStyler.styleSettingElement(pipelineSetting.settingEl);
@@ -88,9 +94,6 @@ export class PipelineConfigSection {
             
             return text;
         });
-
-        // Add action buttons for pipeline
-        this.renderActionButtons(this.contentContainer);
     }
 
     /**
@@ -119,7 +122,7 @@ export class PipelineConfigSection {
     }
 
     /**
-     * Render the action buttons for pipeline configuration
+     * Render the action buttons as independent sections
      */
     private renderActionButtons(containerEl: HTMLElement): void {
         // Configuration loader with dropdown + button
