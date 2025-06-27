@@ -14,6 +14,7 @@ export class OpenAIApiKeySection {
     private plugin: ContentPipelinePlugin;
     private onChangeCallback: (value: string) => void;
     private apiKeyInput: HTMLInputElement | null = null;
+    private debounceTimer: NodeJS.Timeout | null = null;
 
     constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
@@ -21,19 +22,23 @@ export class OpenAIApiKeySection {
     }
 
     render(containerEl: HTMLElement): void {
-        // API Key input setting
+        // API Key input setting with auto-save
         new Setting(containerEl)
             .setName('OpenAI API key')
             .setDesc('Get your API key from OpenAI Platform →')
             .addText(text => {
                 this.apiKeyInput = text.inputEl;
-                text.inputEl.type = 'password';
                 text.inputEl.spellcheck = false;
                 text.setPlaceholder('sk-proj-...');
                 text.inputEl.style.width = '300px';
                 
                 // Load current API key
                 this.loadCurrentApiKey();
+                
+                // Auto-save on change with debouncing
+                text.onChange((value) => {
+                    this.debouncedSave();
+                });
                 
                 return text;
             });
@@ -47,18 +52,6 @@ export class OpenAIApiKeySection {
                 window.open('https://platform.openai.com/api-keys', '_blank', 'noopener,noreferrer');
             };
         }
-
-        // Save button setting
-        new Setting(containerEl)
-            .setName('Update API key')
-            .setDesc('Apply this API key to all OpenAI model configurations.')
-            .addButton(button => {
-                button
-                    .setButtonText('Save')
-                    .setCta() // Makes it the accent color
-                    .setTooltip('Update all OpenAI configurations with this API key')
-                    .onClick(() => this.saveApiKey());
-            });
     }
 
     private loadCurrentApiKey(): void {
@@ -68,12 +61,26 @@ export class OpenAIApiKeySection {
         this.apiKeyInput.value = extraction.currentApiKey || '';
     }
 
+    /**
+     * Debounced save to avoid excessive API calls
+     */
+    private debouncedSave(): void {
+        if (this.debounceTimer) {
+            clearTimeout(this.debounceTimer);
+        }
+        
+        this.debounceTimer = setTimeout(() => {
+            this.saveApiKey();
+        }, 500); // 500ms debounce
+    }
+
     private async saveApiKey(): Promise<void> {
         if (!this.apiKeyInput) return;
         
         const apiKey = this.apiKeyInput.value.trim();
+        
+        // Skip saving if empty (user might be clearing the field)
         if (!apiKey) {
-            new Notice('Please enter an API key', 3000);
             return;
         }
 
@@ -85,10 +92,10 @@ export class OpenAIApiKeySection {
                 return;
             }
 
+            // Update the models config through the callback (triggers auto-save)
             this.onChangeCallback(result.updatedModelsConfig);
             
-            const configText = result.updatedCount === 1 ? 'configuration' : 'configurations';
-            new Notice(`✅ Updated ${result.updatedCount} OpenAI ${configText}`, 3000);
+            // No success notice for auto-save to avoid being intrusive
             
         } catch (error) {
             new Notice(`❌ Failed to update API keys: ${createUserFriendlyError(error)}`, 5000);
