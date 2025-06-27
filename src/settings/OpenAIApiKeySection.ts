@@ -2,7 +2,7 @@
  * OpenAI API Key configuration section
  */
 
-import { Notice } from 'obsidian';
+import { Notice, Setting } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { 
     extractOpenAIConfigs, 
@@ -21,43 +21,44 @@ export class OpenAIApiKeySection {
     }
 
     render(containerEl: HTMLElement): void {
-        // Create the setting item
-        const settingItem = containerEl.createEl('div', { cls: 'setting-item' });
-        
-        // Setting item info
-        const settingInfo = settingItem.createEl('div', { cls: 'setting-item-info' });
-        settingInfo.createEl('div', { cls: 'setting-item-name', text: 'OpenAI API key' });
-        
-        const settingDesc = settingInfo.createEl('div', { cls: 'setting-item-description' });
-        const link = settingDesc.createEl('a', {
-            text: 'Get your API key from OpenAI Platform →',
-            href: 'https://platform.openai.com/api-keys'
-        });
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        
-        // Setting item control
-        const settingControl = settingItem.createEl('div', { cls: 'setting-item-control' });
-        
-        // Password input
-        this.apiKeyInput = settingControl.createEl('input', {
-            type: 'password'
-        }) as HTMLInputElement;
-        this.apiKeyInput.spellcheck = false;
-        this.apiKeyInput.placeholder = 'sk-proj-...';
-        this.apiKeyInput.style.width = '300px';
-        
-        // Load current API key
-        this.loadCurrentApiKey();
-        
-        // Save button
-        const saveButton = settingControl.createEl('button', {
-            text: 'Save'
-        });
-        saveButton.setAttribute('aria-label', 'Update all OpenAI configurations with this API key');
-        saveButton.style.backgroundColor = 'var(--interactive-accent)';
-        
-        saveButton.onclick = () => this.saveApiKey();
+        // API Key input setting
+        new Setting(containerEl)
+            .setName('OpenAI API key')
+            .setDesc('Get your API key from OpenAI Platform →')
+            .addText(text => {
+                this.apiKeyInput = text.inputEl;
+                text.inputEl.type = 'password';
+                text.inputEl.spellcheck = false;
+                text.setPlaceholder('sk-proj-...');
+                text.inputEl.style.width = '300px';
+                
+                // Load current API key
+                this.loadCurrentApiKey();
+                
+                return text;
+            });
+
+        // Make the description link clickable
+        const descEl = containerEl.querySelector('.setting-item-description') as HTMLElement;
+        if (descEl) {
+            descEl.style.cursor = 'pointer';
+            descEl.style.color = 'var(--text-accent)';
+            descEl.onclick = () => {
+                window.open('https://platform.openai.com/api-keys', '_blank', 'noopener,noreferrer');
+            };
+        }
+
+        // Save button setting
+        new Setting(containerEl)
+            .setName('Update API key')
+            .setDesc('Apply this API key to all OpenAI model configurations.')
+            .addButton(button => {
+                button
+                    .setButtonText('Save')
+                    .setCta() // Makes it the accent color
+                    .setTooltip('Update all OpenAI configurations with this API key')
+                    .onClick(() => this.saveApiKey());
+            });
     }
 
     private loadCurrentApiKey(): void {
