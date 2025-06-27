@@ -47,6 +47,16 @@
     margin-bottom: 5px;
 }
 
+/* New toggle area styles */
+.content-pipeline-toggle-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
 .content-pipeline-toggle-text {
     font-size: 14px;
     color: var(--text-normal);
@@ -61,6 +71,18 @@
     text-shadow: none;
     font-weight: normal;
     text-decoration: none;
+}
+
+.content-pipeline-toggle-label {
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.content-pipeline-toggle-label:hover {
+    color: var(--interactive-accent);
 }
 
 .content-pipeline-collapsible-title {

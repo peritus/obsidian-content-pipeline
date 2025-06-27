@@ -26,26 +26,24 @@ export class ModelsConfigSection {
      */
     render(containerEl: HTMLElement): void {
         // Create section heading using proper Obsidian method
-        new Setting(containerEl).setName('🔐 Models Configuration (Advanced)').setHeading();
+        new Setting(containerEl).setName('🔐 Models Configuration').setHeading();
 
-        // Models configuration header with toggle
-        const headerEl = containerEl.createEl('div', { cls: 'content-pipeline-section-header content-pipeline-collapsible-header' });
+        // Toggle control area
+        const toggleArea = containerEl.createEl('div', { cls: 'content-pipeline-toggle-area' });
         
-        const titleRow = headerEl.createEl('div', { cls: 'content-pipeline-header-row' });
-        
-        // Toggle button - plain text style
-        this.toggleButton = titleRow.createEl('span', { 
+        // Toggle button and text in a row
+        this.toggleButton = toggleArea.createEl('span', { 
             cls: 'content-pipeline-toggle-text',
             text: '▶'
         });
         this.toggleButton.onclick = () => this.toggleExpanded();
         
-        // Toggle text without heading element - just styled text
-        const toggleText = titleRow.createEl('span', { 
-            text: 'Click to expand configuration',
+        // Simple toggle label
+        const toggleLabel = toggleArea.createEl('span', { 
+            text: 'Advanced configuration',
             cls: 'content-pipeline-toggle-label'
         });
-        toggleText.onclick = () => this.toggleExpanded();
+        toggleLabel.onclick = () => this.toggleExpanded();
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 
