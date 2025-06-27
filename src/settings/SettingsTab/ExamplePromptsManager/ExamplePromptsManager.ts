@@ -185,7 +185,7 @@ export class ExamplePromptsManager {
         const filename = this.getFilenameFromPath(prompt.path);
         
         new Setting(containerEl)
-            .setName(`📄 ${filename}`)
+            .setName(`⚙️ ${filename}`)
             .setDesc('Using prompt from configuration. Copy to vault to customize.')
             .addButton(button => {
                 button
@@ -203,7 +203,7 @@ export class ExamplePromptsManager {
         const filename = this.getFilenameFromPath(prompt.path);
         
         new Setting(containerEl)
-            .setName(`✅ ${filename}`)
+            .setName(`📝 ${filename}`)
             .setDesc('Using prompt from vault. Delete the file to revert to configuration version.')
             .addButton(button => {
                 button
