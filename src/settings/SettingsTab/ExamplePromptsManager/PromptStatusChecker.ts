@@ -1,20 +1,23 @@
 import { PromptFileOperations, PromptStatus } from '../prompt-file-operations';
 
 /**
- * Handles checking the status of prompt files
+ * Handles checking the status of prompt files and categorizing them by state
  */
 export class PromptStatusChecker {
     constructor(private fileOps: PromptFileOperations) {}
 
     /**
-     * Check which prompts exist with error handling
+     * Check status of all prompts with comprehensive error handling
      */
     async checkPromptsStatus(examplePrompts: Record<string, string>): Promise<PromptStatus[]> {
         return await this.fileOps.checkPromptsStatus(examplePrompts);
     }
 
     /**
-     * Separate prompts by their status - config-based vs vault-based
+     * Categorize prompts by their current state
+     * - Config-based: Prompts defined in configuration but not yet copied to vault
+     * - Vault-based: Prompts that exist in vault (potentially customized)
+     * - Errors: Prompts with validation or access issues
      */
     categorizePrompts(promptsStatus: PromptStatus[]): {
         configBased: PromptStatus[];

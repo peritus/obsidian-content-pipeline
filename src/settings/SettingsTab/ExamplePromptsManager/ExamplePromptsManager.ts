@@ -7,7 +7,7 @@ import { IndividualPromptRenderer } from './IndividualPromptRenderer';
 import { PromptStatus } from '../prompt-file-operations';
 
 /**
- * Manages the simplified prompts setup section with support for imported example prompts
+ * Manages the prompts setup section with config-based and vault-based prompt states
  */
 export class ExamplePromptsManager {
     private examplePrompts?: Record<string, string>;
@@ -25,7 +25,7 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Set imported example prompts (called when configuration is imported)
+     * Set imported prompts (called when configuration is imported)
      */
     setImportedPrompts(prompts: Record<string, string> | undefined): void {
         this.importedPrompts = prompts;
@@ -33,8 +33,8 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Render simplified prompts setup section
-     * Only renders if there are prompts to show
+     * Render prompts setup section
+     * Always renders all available prompts with their current state
      */
     render(containerEl: HTMLElement): void {
         try {
@@ -56,8 +56,8 @@ export class ExamplePromptsManager {
                     .setDesc(sourceInfo);
             }
             
-            // Render prompts asynchronously
-            this.renderPromptsAsync(containerEl);
+            // Render all prompts asynchronously
+            this.renderAllPromptsAsync(containerEl);
 
         } catch (error) {
             console.error('Error accessing example prompts:', error);
@@ -66,7 +66,7 @@ export class ExamplePromptsManager {
             new Setting(containerEl).setName('Prompts').setHeading();
             new Setting(containerEl)
                 .setName('Error')
-                .setDesc(`Failed to load example prompts: ${error instanceof Error ? error.message : String(error)}`);
+                .setDesc(`Failed to load prompts: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -92,7 +92,7 @@ export class ExamplePromptsManager {
      */
     private getPromptSourceInfo(): string | null {
         if (this.importedPrompts) {
-            return `Using ${Object.keys(this.importedPrompts).length} prompts from imported configuration.`;
+            return `Using ${Object.keys(this.importedPrompts).length} prompts from configuration.`;
         }
         
         const defaultConfig = this.getExamplePrompts();
@@ -104,9 +104,10 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Render prompts asynchronously using proper Setting structure
+     * Render all prompts asynchronously using proper Setting structure
+     * Always shows all prompts with their current state (config-based vs vault-based)
      */
-    private async renderPromptsAsync(containerEl: HTMLElement): Promise<void> {
+    private async renderAllPromptsAsync(containerEl: HTMLElement): Promise<void> {
         const currentPrompts = this.getExamplePrompts();
         if (!currentPrompts) return;
 
@@ -121,12 +122,12 @@ export class ExamplePromptsManager {
                     .setDesc(errors.map(p => `• ${p.path}: ${p.error}`).join('\n'));
             }
             
-            // Render config-based prompts (not in vault)
+            // Always render config-based prompts (available to copy to vault)
             for (const prompt of configBased) {
                 this.renderConfigBasedPrompt(containerEl, prompt);
             }
 
-            // Render vault-based prompts (exist in vault)
+            // Always render vault-based prompts (customized versions in vault)
             for (const prompt of vaultBased) {
                 this.renderVaultBasedPrompt(containerEl, prompt);
             }
@@ -150,33 +151,37 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Render a single config-based prompt using Setting structure
+     * Render a config-based prompt using Setting structure
+     * Shows prompts that are defined in configuration but not yet copied to vault
      */
     private renderConfigBasedPrompt(containerEl: HTMLElement, prompt: any): void {
         const filename = this.getFilenameFromPath(prompt.path);
         
         new Setting(containerEl)
             .setName(`📄 ${filename}`)
-            .setDesc(`Create this prompt file in your vault`)
+            .setDesc('Using prompt from configuration. Copy to vault to customize.')
             .addButton(button => {
                 button
-                    .setButtonText('Create prompt')
-                    .onClick(() => this.movePromptToVault(prompt));
+                    .setButtonText('Copy to vault')
+                    .setTooltip('Copy this prompt to your vault so you can customize it')
+                    .onClick(() => this.copyPromptToVault(prompt));
             });
     }
 
     /**
-     * Render a single vault-based prompt using Setting structure
+     * Render a vault-based prompt using Setting structure  
+     * Shows prompts that exist in the vault (potentially customized)
      */
     private renderVaultBasedPrompt(containerEl: HTMLElement, prompt: any): void {
         const filename = this.getFilenameFromPath(prompt.path);
         
         new Setting(containerEl)
             .setName(`✅ ${filename}`)
-            .setDesc(`Already exists in vault`)
+            .setDesc('Using prompt from vault. Delete the file to revert to configuration version.')
             .addButton(button => {
                 button
-                    .setButtonText('View prompt')
+                    .setButtonText('View in vault')
+                    .setTooltip('Open this customized prompt in your vault')
                     .onClick(() => this.viewPromptInVault(prompt));
             });
     }
@@ -199,22 +204,24 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Move a prompt from config to vault by creating the file
+     * Copy a prompt from configuration to vault for customization
+     * Enhanced with progress feedback and user guidance
      */
-    private async movePromptToVault(prompt: any): Promise<void> {
+    private async copyPromptToVault(prompt: any): Promise<void> {
+        const filename = this.getFilenameFromPath(prompt.path);
+        
         try {
-            // Use the file operations directly instead of the prompt creator
+            // Show progress feedback
+            new Notice(`🔄 Copying ${filename} to vault...`);
+            
+            // Copy the file to vault
             await this.fileOps.createPromptFile(prompt.path, prompt.content);
             
-            // Extract filename for user feedback
-            const filename = this.getFilenameFromPath(prompt.path);
-            
-            // Show success message with instruction to refresh
-            new Notice(`✅ Created prompt: ${filename}. Reload settings to update the list.`, 5000);
+            // Show success message with guidance
+            new Notice(`✅ Copied prompt to vault: ${filename}. You can now customize it!`, 5000);
             
         } catch (error) {
-            const filename = this.getFilenameFromPath(prompt.path);
-            const errorMsg = `Failed to create prompt ${filename}: ${error instanceof Error ? error.message : String(error)}`;
+            const errorMsg = `Failed to copy ${filename}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);
             console.error(errorMsg, error);
         }
