@@ -94,8 +94,9 @@ export class SettingsTab extends PluginSettingTab {
 
         // Configuration sections
         this.openAISection.render(containerEl);
-        this.modelsSection.render(containerEl);
         this.pipelineSection.render(containerEl);
+
+        this.modelsSection.render(containerEl);
 
         // Folder Setup Section
         this.folderSection.render(containerEl);

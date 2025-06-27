@@ -35,15 +35,6 @@ export class PipelineConfigSection {
      * Render the pipeline configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Create section heading
-        new Setting(containerEl)
-            .setName('🔄 Pipeline (Advanced)')
-            .setHeading();
-
-        // Add description
-        const descriptionEl = containerEl.createEl('div', { cls: 'content-pipeline-section-description' });
-        descriptionEl.innerHTML = 'Workflow logic and routing rules. <strong>Safe to export and share.</strong>';
-
         // Render action buttons as independent sections
         this.renderActionButtons(containerEl);
 
