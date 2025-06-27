@@ -56,11 +56,6 @@ export class SettingsTab extends PluginSettingTab {
         // Configuration Validation Section (at the very top)
         this.renderValidationSection(containerEl);
 
-        // Example Prompts Setup Section (moved above configuration sections)
-        // Initialize with imported prompts if available
-        this.examplePromptsManager.setImportedPrompts(this.plugin.settings.importedExamplePrompts);
-        this.examplePromptsManager.render(containerEl);
-
         // Configuration sections
         this.openAISection.render(containerEl);
         this.modelsSection.render(containerEl);
@@ -69,6 +64,11 @@ export class SettingsTab extends PluginSettingTab {
         // Folder Setup Section
         const folderSection = new FolderSetupSection(this.plugin, this.fileOps);
         folderSection.render(containerEl);
+
+        // Example Prompts Setup Section (moved above configuration sections)
+        // Initialize with imported prompts if available
+        this.examplePromptsManager.setImportedPrompts(this.plugin.settings.importedExamplePrompts);
+        this.examplePromptsManager.render(containerEl);
 
         // Initial validation
         this.validateAndUpdate();
