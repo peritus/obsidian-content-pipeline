@@ -36,29 +36,16 @@ export class ExamplePromptsManager {
 
     /**
      * Refresh the prompts display to reflect current vault state
-     * This allows the view to update automatically after changes
+     * Simplified to just re-render the prompts with consistent ordering
      */
     async refreshPrompts(): Promise<void> {
         if (!this.promptsContainer || !this.examplePrompts) {
             return; // Nothing to refresh
         }
 
-        try {
-            // Clear the current prompts container
-            this.promptsContainer.empty();
-            
-            // Re-render all prompts with their current state
-            await this.renderAllPromptsAsync(this.promptsContainer);
-        } catch (error) {
-            console.error('Error refreshing prompts:', error);
-            
-            // Show error in the container
-            this.promptsContainer.empty();
-            this.promptsContainer.createEl('div', {
-                text: `Error refreshing prompts: ${error instanceof Error ? error.message : String(error)}`,
-                cls: 'setting-item-description'
-            });
-        }
+        // Clear and re-render - with consistent sorting, this is smooth
+        this.promptsContainer.empty();
+        await this.renderAllPromptsAsync(this.promptsContainer);
     }
 
     /**
@@ -150,20 +137,25 @@ export class ExamplePromptsManager {
             const promptsStatus = await this.statusChecker.checkPromptsStatus(currentPrompts);
             const { configBased, vaultBased, errors } = this.statusChecker.categorizePrompts(promptsStatus);
 
+            // Sort prompts by path to ensure consistent order and prevent flickering
+            const sortedConfigBased = configBased.sort((a, b) => a.path.localeCompare(b.path));
+            const sortedVaultBased = vaultBased.sort((a, b) => a.path.localeCompare(b.path));
+            const sortedErrors = errors.sort((a, b) => a.path.localeCompare(b.path));
+
             // Render error prompts if any
-            if (errors.length > 0) {
+            if (sortedErrors.length > 0) {
                 new Setting(containerEl)
                     .setName('⚠️ Errors detected')
-                    .setDesc(errors.map(p => `• ${p.path}: ${p.error}`).join('\n'));
+                    .setDesc(sortedErrors.map(p => `• ${p.path}: ${p.error}`).join('\n'));
             }
             
             // Always render config-based prompts (available to copy to vault)
-            for (const prompt of configBased) {
+            for (const prompt of sortedConfigBased) {
                 this.renderConfigBasedPrompt(containerEl, prompt);
             }
 
             // Always render vault-based prompts (customized versions in vault)
-            for (const prompt of vaultBased) {
+            for (const prompt of sortedVaultBased) {
                 this.renderVaultBasedPrompt(containerEl, prompt);
             }
 
@@ -199,16 +191,7 @@ export class ExamplePromptsManager {
                 button
                     .setButtonText('Copy to vault')
                     .setTooltip('Copy this prompt to your vault so you can customize it')
-                    .onClick(async () => {
-                        button.setDisabled(true);
-                        button.setButtonText('Copying...');
-                        try {
-                            await this.copyPromptToVault(prompt);
-                        } finally {
-                            button.setDisabled(false);
-                            button.setButtonText('Copy to vault');
-                        }
-                    });
+                    .onClick(() => this.copyPromptToVault(prompt));
             });
     }
 
@@ -271,8 +254,6 @@ export class ExamplePromptsManager {
             const errorMsg = `Failed to copy ${filename}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);
             console.error(errorMsg, error);
-            // Re-throw to let the button handler know about the error
-            throw error;
         }
     }
 }
