@@ -49,6 +49,12 @@
     user-select: none;
 }
 
+.content-pipeline-toggle-indicator {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+
 .content-pipeline-collapsible-content {
     transition: all 0.3s ease;
     overflow: hidden;

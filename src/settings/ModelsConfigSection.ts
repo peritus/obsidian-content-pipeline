@@ -25,9 +25,9 @@ export class ModelsConfigSection {
      * Render the models configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Create heading with inline toggle using Obsidian's method
+        // Create heading using Obsidian's method
         const headingSetting = new Setting(containerEl)
-            .setName('🔐 Models (Advanced) ▶')
+            .setName('🔐 Models (Advanced)')
             .setHeading();
         
         // Make the entire heading clickable and style it
@@ -35,8 +35,12 @@ export class ModelsConfigSection {
         headingEl.addClass('content-pipeline-clickable-heading');
         headingEl.onclick = () => this.toggleExpanded();
         
-        // Find and store reference to the toggle indicator for updates
-        this.toggleButton = headingEl.querySelector('.setting-item-name') as HTMLElement;
+        // Add toggle indicator to the heading
+        const headingNameEl = headingEl.querySelector('.setting-item-name') as HTMLElement;
+        this.toggleButton = headingNameEl.createEl('span', { 
+            cls: 'content-pipeline-toggle-indicator',
+            text: ' ▶'
+        });
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 
@@ -98,11 +102,11 @@ export class ModelsConfigSection {
 
         if (this.isExpanded) {
             this.contentContainer.style.display = 'block';
-            this.toggleButton.textContent = '🔐 Models (Advanced) ▼';
+            this.toggleButton.textContent = ' ▼';
             this.toggleButton.setAttribute('aria-expanded', 'true');
         } else {
             this.contentContainer.style.display = 'none';
-            this.toggleButton.textContent = '🔐 Models (Advanced) ▶';
+            this.toggleButton.textContent = ' ▶';
             this.toggleButton.setAttribute('aria-expanded', 'false');
         }
     }
