@@ -1,5 +1,5 @@
 /**
- * Models configuration section - handles rendering and logic for models config textarea
+ * Models configuration section - OPTION 1: Button-based expand/collapse
  */
 
 import { Setting, TextAreaComponent } from 'obsidian';
@@ -13,8 +13,7 @@ export class ModelsConfigSection {
     private onChangeCallback: (value: string) => void;
     private isExpanded: boolean = false;
     private contentContainer: HTMLElement | null = null;
-    private headingElement: HTMLElement | null = null;
-    private descriptionEl: HTMLElement | null = null;
+    private expandButton: HTMLButtonElement | null = null;
 
     constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
@@ -25,22 +24,23 @@ export class ModelsConfigSection {
      * Render the models configuration section
      */
     render(containerEl: HTMLElement): void {
-        // Create heading using Obsidian's method
-        const headingSetting = new Setting(containerEl)
+        // Create Models Configuration section with expand/collapse button
+        new Setting(containerEl)
             .setName('🔐 Models (Advanced)')
-            .setHeading();
-        
-        // Make the entire heading clickable with CSS toggle classes
-        this.headingElement = headingSetting.settingEl;
-        this.headingElement.addClass('content-pipeline-clickable-heading');
-        this.headingElement.addClass('content-pipeline-toggle-heading'); // CSS handles toggle indicators
-        this.headingElement.onclick = () => this.toggleExpanded();
+            .setDesc('API keys, endpoints, and model specifications. Never share this configuration.')
+            .addButton(button => {
+                this.expandButton = button.buttonEl;
+                button
+                    .setButtonText(this.isExpanded ? 'Collapse' : 'Expand')
+                    .setTooltip('Show/hide models configuration editor')
+                    .onClick(() => this.toggleExpanded());
+            });
 
         // Collapsible content container
         this.contentContainer = containerEl.createEl('div', { 
             cls: 'content-pipeline-collapsible-content'
         });
-        this.contentContainer.style.display = 'none'; // Start collapsed
+        this.contentContainer.style.display = 'none';
 
         this.renderContent();
     }
@@ -54,12 +54,9 @@ export class ModelsConfigSection {
         // Clear existing content
         this.contentContainer.empty();
 
-        // Add description as first element in collapsible content
-        this.descriptionEl = this.contentContainer.createEl('div', { cls: 'content-pipeline-section-description' });
-        this.descriptionEl.innerHTML = 'API keys, endpoints, and model specifications. <strong>Never share this configuration.</strong>';
-
         // Models configuration textarea
-        const modelsSetting = new Setting(this.contentContainer);
+        const modelsSetting = new Setting(this.contentContainer)
+            .setDesc('JSON configuration for your AI models and API endpoints');
 
         TextareaStyler.styleSettingElement(modelsSetting.settingEl);
         
@@ -92,16 +89,14 @@ export class ModelsConfigSection {
      * Update the display based on expanded state
      */
     private updateDisplay(): void {
-        if (!this.contentContainer || !this.headingElement) return;
+        if (!this.contentContainer || !this.expandButton) return;
 
         if (this.isExpanded) {
             this.contentContainer.style.display = 'block';
-            this.headingElement.addClass('expanded');
-            this.headingElement.setAttribute('aria-expanded', 'true');
+            this.expandButton.textContent = 'Collapse';
         } else {
             this.contentContainer.style.display = 'none';
-            this.headingElement.removeClass('expanded');
-            this.headingElement.setAttribute('aria-expanded', 'false');
+            this.expandButton.textContent = 'Expand';
         }
     }
 
