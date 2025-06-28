@@ -1,5 +1,5 @@
 /**
- * Pipeline configuration section - handles rendering and logic for pipeline config textarea
+ * Pipeline configuration section - OPTION 1: Button-based expand/collapse
  */
 
 import { Setting, TextAreaComponent, DropdownComponent } from 'obsidian';
@@ -11,13 +11,13 @@ import { extractPipelineSteps } from '../types';
 export class PipelineConfigSection {
     private plugin: ContentPipelinePlugin;
     private pipelineTextarea: TextAreaComponent | null = null;
-    private selectedConfigId: string = 'default'; // Default to first available config
+    private selectedConfigId: string = 'default';
     private onChangeCallback: (value: string) => void;
     private onExportCallback: () => void;
     private onImportCallback: () => void;
     private isExpanded: boolean = false;
     private contentContainer: HTMLElement | null = null;
-    private headingElement: HTMLElement | null = null;
+    private expandButton: HTMLButtonElement | null = null;
 
     constructor(
         plugin: ContentPipelinePlugin, 
@@ -31,45 +31,38 @@ export class PipelineConfigSection {
         this.onImportCallback = onImportCallback;
     }
 
-    /**
-     * Render the pipeline configuration section
-     */
     render(containerEl: HTMLElement): void {
         // Render action buttons as independent sections
         this.renderActionButtons(containerEl);
 
-        // Create collapsible section for Pipeline Configuration (JSON)
-        const configHeadingSetting = new Setting(containerEl)
+        // Create Pipeline Configuration section with expand/collapse button
+        new Setting(containerEl)
             .setName('Pipeline Configuration (JSON)')
-            .setHeading();
-        
-        // Make the config heading clickable with CSS toggle classes
-        this.headingElement = configHeadingSetting.settingEl;
-        this.headingElement.addClass('content-pipeline-clickable-heading');
-        this.headingElement.addClass('content-pipeline-toggle-heading'); // CSS handles toggle indicators
-        this.headingElement.onclick = () => this.toggleExpanded();
+            .setDesc('Configure workflow steps, routing logic, and file processing patterns.')
+            .addButton(button => {
+                this.expandButton = button.buttonEl;
+                button
+                    .setButtonText(this.isExpanded ? 'Collapse' : 'Expand')
+                    .setTooltip('Show/hide pipeline configuration editor')
+                    .onClick(() => this.toggleExpanded());
+            });
 
         // Collapsible content container for textarea
         this.contentContainer = containerEl.createEl('div', { 
             cls: 'content-pipeline-collapsible-content'
         });
-        this.contentContainer.style.display = 'none'; // Start collapsed
+        this.contentContainer.style.display = 'none';
 
         this.renderTextareaContent();
     }
 
-    /**
-     * Render the textarea content (collapsible part)
-     */
     private renderTextareaContent(): void {
         if (!this.contentContainer) return;
 
-        // Clear existing content
         this.contentContainer.empty();
 
-        // Pipeline configuration textarea
         const pipelineSetting = new Setting(this.contentContainer)
-            .setDesc('Configure workflow steps, routing logic, and file processing patterns.');
+            .setDesc('JSON configuration for your content processing pipeline');
 
         TextareaStyler.styleSettingElement(pipelineSetting.settingEl);
         
@@ -87,58 +80,39 @@ export class PipelineConfigSection {
         });
     }
 
-    /**
-     * Toggle the expanded/collapsed state
-     */
     private toggleExpanded(): void {
         this.isExpanded = !this.isExpanded;
         this.updateDisplay();
     }
 
-    /**
-     * Update the display based on expanded state
-     */
     private updateDisplay(): void {
-        if (!this.contentContainer || !this.headingElement) return;
+        if (!this.contentContainer || !this.expandButton) return;
 
         if (this.isExpanded) {
             this.contentContainer.style.display = 'block';
-            this.headingElement.addClass('expanded');
-            this.headingElement.setAttribute('aria-expanded', 'true');
+            this.expandButton.textContent = 'Collapse';
         } else {
             this.contentContainer.style.display = 'none';
-            this.headingElement.removeClass('expanded');
-            this.headingElement.setAttribute('aria-expanded', 'false');
+            this.expandButton.textContent = 'Expand';
         }
     }
 
-    /**
-     * Render the action buttons as independent sections
-     */
+    // ... rest of the methods remain the same
     private renderActionButtons(containerEl: HTMLElement): void {
-        // Configuration loader with dropdown + button
         new Setting(containerEl)
             .setName('Load example configuration')
             .setDesc('Choose from available example configurations to load as a starting point.')
             .addDropdown(dropdown => {
-                // Populate dropdown with available configurations
                 const availableConfigs = Object.keys(DEFAULT_CONFIGS);
-                
-                // Add options to dropdown with descriptions
                 availableConfigs.forEach(configId => {
                     const config = DEFAULT_CONFIGS[configId];
                     const description = config.pipeline.description || `${configId} configuration`;
                     dropdown.addOption(configId, description);
                 });
-                
-                // Set initial value
                 dropdown.setValue(this.selectedConfigId);
-                
-                // Update selected config when dropdown changes
                 dropdown.onChange((selectedConfigId) => {
                     this.selectedConfigId = selectedConfigId;
                 });
-                
                 return dropdown;
             })
             .addButton(button => {
@@ -148,10 +122,8 @@ export class PipelineConfigSection {
                     .onClick(() => {
                         const selectedConfig = DEFAULT_CONFIGS[this.selectedConfigId];
                         if (selectedConfig) {
-                            // Extract just the pipeline steps (without description) for the textarea
                             const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
                             const configJson = JSON.stringify(pipelineSteps, null, 2);
-                            
                             if (this.pipelineTextarea) {
                                 this.pipelineTextarea.setValue(configJson);
                                 this.onChangeCallback(configJson);
@@ -181,43 +153,28 @@ export class PipelineConfigSection {
             });
     }
 
-    /**
-     * Get the current textarea value
-     */
     getValue(): string {
         return this.pipelineTextarea?.getValue() || '';
     }
 
-    /**
-     * Set the textarea value
-     */
     setValue(value: string): void {
         if (this.pipelineTextarea) {
             this.pipelineTextarea.setValue(value);
         }
     }
 
-    /**
-     * Expand the section programmatically
-     */
     expand(): void {
         if (!this.isExpanded) {
             this.toggleExpanded();
         }
     }
 
-    /**
-     * Collapse the section programmatically
-     */
     collapse(): void {
         if (this.isExpanded) {
             this.toggleExpanded();
         }
     }
 
-    /**
-     * Check if the section is currently expanded
-     */
     isCurrentlyExpanded(): boolean {
         return this.isExpanded;
     }
