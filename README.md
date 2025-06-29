@@ -32,6 +32,22 @@ The plugin handles all the technical complexity - file management, API communica
 2. In BRAT settings, add this repository: `peritus/obsidian-content-pipeline`
 3. BRAT will install and keep the plugin updated
 
+**Apple Shortcuts Integration:**
+
+This repository includes `Audio to Obsidian.shortcut` - an Apple Shortcuts automation that enables quick audio capture and routing to your Obsidian vault for processing through the content pipeline.
+
+**To install the shortcut:**
+1. Download `Audio to Obsidian.shortcut` from this repository
+2. Double-tap the file on iOS or double-click on macOS to import it into the Shortcuts app
+3. Configure the shortcut to point to your Obsidian vault's input folder
+
+**To use the shortcut:**
+- **iOS**: Add to home screen, control center, or invoke via Siri
+- **macOS**: Run from Shortcuts app or assign a keyboard shortcut
+- **Voice activation**: Say "Audio to Obsidian" to Siri (customizable)
+
+The shortcut captures audio recordings and places them in your configured input folder where the content pipeline can automatically process them through your audio transcription and analysis workflow.
+
 ## Quick Start
 
 1. **Add [OpenAI API key](https://platform.openai.com/api-keys)** in plugin settings
