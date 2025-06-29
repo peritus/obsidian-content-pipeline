@@ -94,15 +94,16 @@ export class ExamplePromptsManager {
 
     /**
      * Get example prompts, prioritizing imported prompts over default config
-     * Assumes configuration is always complete and valid
+     * Now that we copy prompts to importedExamplePrompts when loading configs,
+     * this will show the correct prompts for any loaded configuration
      */
     private getExamplePrompts(): Record<string, string> | null {
-        // First priority: imported prompts
+        // First priority: imported prompts (includes prompts from loaded configs)
         if (this.importedPrompts && Object.keys(this.importedPrompts).length > 0) {
             return this.importedPrompts;
         }
 
-        // Second priority: default configuration (assumed to always be complete)
+        // Second priority: default configuration (fallback only)
         const defaultConfig = DEFAULT_CONFIGS?.['default'];
         const examplePrompts = defaultConfig?.examplePrompts;
 
@@ -117,9 +118,9 @@ export class ExamplePromptsManager {
             return `Using ${Object.keys(this.importedPrompts).length} prompts from configuration.`;
         }
         
-        const defaultConfig = this.getExamplePrompts();
-        if (defaultConfig) {
-            return `Using ${Object.keys(defaultConfig).length} prompts from configuration.`;
+        const currentPrompts = this.getExamplePrompts();
+        if (currentPrompts) {
+            return `Using ${Object.keys(currentPrompts).length} prompts from default configuration.`;
         }
         
         return null;

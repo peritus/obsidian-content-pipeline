@@ -119,7 +119,7 @@ export class PipelineConfigSection {
                 button
                     .setButtonText('Load')
                     .setTooltip('Load the selected configuration')
-                    .onClick(() => {
+                    .onClick(async () => {
                         const selectedConfig = DEFAULT_CONFIGS[this.selectedConfigId];
                         if (selectedConfig) {
                             const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
@@ -127,6 +127,16 @@ export class PipelineConfigSection {
                             if (this.pipelineTextarea) {
                                 this.pipelineTextarea.setValue(configJson);
                                 this.onChangeCallback(configJson);
+                            }
+                            
+                            // Copy example prompts to settings
+                            this.plugin.settings.importedExamplePrompts = selectedConfig.examplePrompts;
+                            
+                            // Save settings to persist the prompts
+                            try {
+                                await this.plugin.saveSettings();
+                            } catch (error) {
+                                console.error('Failed to save example prompts:', error);
                             }
                         }
                     });
