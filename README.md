@@ -37,7 +37,7 @@ The plugin handles all the technical complexity - file management, API communica
 This repository includes `Audio to Obsidian.shortcut` - an Apple Shortcuts automation that enables quick audio capture and routing to your Obsidian vault for processing through the content pipeline.
 
 **To install the shortcut:**
-1. Download `Audio to Obsidian.shortcut` from this repository
+1. **Download**: [Audio to Obsidian.shortcut](https://raw.githubusercontent.com/peritus/obsidian-content-pipeline/main/Audio%20to%20Obsidian.shortcut) (direct download)
 2. Double-tap the file on iOS or double-click on macOS to import it into the Shortcuts app
 3. Configure the shortcut to point to your Obsidian vault's input folder
 
