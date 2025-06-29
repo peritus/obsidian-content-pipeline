@@ -165,6 +165,9 @@ export class OutputHandler {
                 resolvedFilename: pathContext.filename
             });
 
+            // Ensure directory exists before writing file
+            await this.fileOps.ensureDirectoryForFile(outputPath);
+
             // Write content to file
             await this.fileOps.writeFile(outputPath, finalContent, {
                 createDirectories: true,
@@ -313,6 +316,9 @@ export class OutputHandler {
                     effectiveFilename: effectiveFilename,
                     isDirectoryOutput: isDirectoryOutput
                 });
+
+                // Ensure directory exists before writing file
+                await this.fileOps.ensureDirectoryForFile(outputPath);
 
                 // Write content to file
                 await this.fileOps.writeFile(outputPath, finalContent, {

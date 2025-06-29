@@ -87,9 +87,25 @@ export class PromptBuilder {
         const contexts: string[] = [];
         
         for (const contextFile of contextFiles) {
-            const content = await this.readFileContent(contextFile);
-            const filename = contextFile.split('/').pop() || contextFile;
-            contexts.push(`=== ${filename} ===\n${content}`);
+            try {
+                // Check if file exists before attempting to read
+                if (!this.fileOps.fileExists(contextFile)) {
+                    logger.info(`Context file not found, skipping: ${contextFile}`);
+                    continue;
+                }
+                
+                const content = await this.readFileContent(contextFile);
+                const filename = contextFile.split('/').pop() || contextFile;
+                contexts.push(`<file filename="${filename}">\n${content}\n</file>`);
+            } catch (error) {
+                logger.warn(`Failed to read context file, skipping: ${contextFile}`, error);
+                continue;
+            }
+        }
+        
+        if (contexts.length === 0) {
+            logger.info('No context files available - proceeding without reference context');
+            return ''; // Return empty string instead of context section
         }
         
         return `<reference_context>\n${contexts.join('\n\n')}\n</reference_context>`;

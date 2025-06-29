@@ -110,6 +110,18 @@ export class FileOperations {
         return this.directoryManager.directoryExists(dirPath);
     }
 
+    /**
+     * Ensure directory exists for a file path
+     */
+    async ensureDirectoryForFile(filePath: string): Promise<void> {
+        const lastSlash = filePath.lastIndexOf('/');
+        if (lastSlash > 0) {
+            const directoryPath = filePath.substring(0, lastSlash);
+            await this.ensureDirectory(directoryPath);
+            logger.debug(`Ensured directory exists for file: ${directoryPath}`);
+        }
+    }
+
     // File operations
     async readFile(filePath: string, options?: FileOperationOptions): Promise<string> {
         return this.fileReader.readFile(filePath, options);
