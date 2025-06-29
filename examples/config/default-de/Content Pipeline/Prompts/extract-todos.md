@@ -15,7 +15,7 @@ Finde alle Aufgaben im Transkript:
 
 Erstelle eine einfache Markdown-Liste:
 
-```markdown
+```
 - [ ] Aufgabe 1
 - [ ] Aufgabe 2 (mit Details falls erwähnt)
 - [ ] Aufgabe 3

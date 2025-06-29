@@ -31,16 +31,19 @@ Consolidate the provided English TODO lists by grouping and removing duplicates.
 
 ## Example Output:
 
-```markdown
+```
 ## Shopping List
+
 - [ ] Buy milk
 - [ ] Get bread
 
 ## Work
+
 - [ ] Prepare presentation
 - [ ] Plan team meeting
 
 ## Today
+
 - [ ] Confirm appointments
 - [ ] Reply to emails
 ```

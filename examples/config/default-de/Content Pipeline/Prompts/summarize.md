@@ -31,16 +31,19 @@ Konsolidiere die bereitgestellten deutschen TODO-Listen durch Gruppierung und En
 
 ## Beispiel-Ausgabe:
 
-```markdown
+```
 ## Einkaufsliste
+
 - [ ] Milch kaufen
 - [ ] Brot besorgen
 
 ## Arbeit
+
 - [ ] Präsentation vorbereiten
 - [ ] Meeting mit Team planen
 
 ## Heute
+
 - [ ] Termine bestätigen
 - [ ] E-Mails beantworten
 ```

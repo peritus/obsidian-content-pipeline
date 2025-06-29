@@ -15,7 +15,7 @@ Find all tasks in the transcript:
 
 Create a simple Markdown list:
 
-```markdown
+```
 - [ ] Task 1
 - [ ] Task 2 (with details if mentioned)
 - [ ] Task 3
