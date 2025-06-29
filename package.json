@@ -1,6 +1,6 @@
 {
   "name": "obsidian-content-pipeline",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "A sophisticated content pipeline plugin for Obsidian for advanced content processing workflows",
   "main": "main.js",
   "scripts": {
