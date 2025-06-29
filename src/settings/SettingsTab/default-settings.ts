@@ -1,12 +1,12 @@
 import { ContentPipelineSettings } from '../../types';
-import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from '../default-config';
 
 /**
- * Default settings for the plugin (v1.2 dual configuration)
+ * Default plugin settings - no pre-loaded configurations
+ * Users must explicitly load configurations from the settings interface
  */
 export const DEFAULT_SETTINGS: ContentPipelineSettings = {
-    modelsConfig: JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2),
-    pipelineConfig: JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2),
+    modelsConfig: '{}',  // Empty configuration - user must load one
+    pipelineConfig: '{}',  // Empty configuration - user must load one
     importedExamplePrompts: undefined,
     debugMode: false,
     version: '1.0.0',

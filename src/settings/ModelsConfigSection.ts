@@ -5,7 +5,7 @@
 import { Setting, TextAreaComponent } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
-import { DEFAULT_MODELS_CONFIG } from './default-config';
+import { BUNDLED_MODELS_CONFIG } from '@/configs';
 
 export class ModelsConfigSection {
     private plugin: ContentPipelinePlugin;
@@ -46,7 +46,7 @@ export class ModelsConfigSection {
     }
 
     /**
-     * Render the main content (textarea and buttons)
+     * Render the main content (textarea and default button)
      */
     private renderContent(): void {
         if (!this.contentContainer) return;
@@ -112,7 +112,7 @@ export class ModelsConfigSection {
                     .setButtonText('Load default')
                     .setTooltip('Replace current configuration with default template')
                     .onClick(() => {
-                        const defaultConfig = JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2);
+                        const defaultConfig = JSON.stringify(BUNDLED_MODELS_CONFIG, null, 2);
                         if (this.modelsTextarea) {
                             this.modelsTextarea.setValue(defaultConfig);
                             this.onChangeCallback(defaultConfig);

@@ -1,6 +1,6 @@
 import { App, Notice, Setting } from 'obsidian';
 import { PromptFileOperations } from '../prompt-file-operations';
-import { DEFAULT_CONFIGS } from '@/configs';
+import { BUNDLED_PIPELINE_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
 import { PromptCreator } from './PromptCreator';
 import { IndividualPromptRenderer } from './IndividualPromptRenderer';
@@ -93,9 +93,8 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Get example prompts, prioritizing imported prompts over default config
-     * Now that we copy prompts to importedExamplePrompts when loading configs,
-     * this will show the correct prompts for any loaded configuration
+     * Get example prompts, prioritizing imported prompts over available configs
+     * Since there's no explicit "default" config anymore, we don't fall back to any config
      */
     private getExamplePrompts(): Record<string, string> | null {
         // First priority: imported prompts (includes prompts from loaded configs)
@@ -103,11 +102,8 @@ export class ExamplePromptsManager {
             return this.importedPrompts;
         }
 
-        // Second priority: default configuration (fallback only)
-        const defaultConfig = DEFAULT_CONFIGS?.['default'];
-        const examplePrompts = defaultConfig?.examplePrompts;
-
-        return examplePrompts || null;
+        // No fallback to default config since users must manually load a config
+        return null;
     }
 
     /**
@@ -115,14 +111,10 @@ export class ExamplePromptsManager {
      */
     private getPromptSourceInfo(): string | null {
         if (this.importedPrompts) {
-            return `Using ${Object.keys(this.importedPrompts).length} prompts from configuration.`;
+            return `Using ${Object.keys(this.importedPrompts).length} prompts from loaded configuration.`;
         }
         
-        const currentPrompts = this.getExamplePrompts();
-        if (currentPrompts) {
-            return `Using ${Object.keys(currentPrompts).length} prompts from default configuration.`;
-        }
-        
+        // No prompts available - user needs to load a configuration
         return null;
     }
 

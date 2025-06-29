@@ -13,5 +13,6 @@ declare module '@/configs' {
         [configName: string]: GeneratedConfig;
     }
     
-    export const DEFAULT_CONFIGS: GeneratedConfigs;
+    export const BUNDLED_PIPELINE_CONFIGS: GeneratedConfigs;
+    export const BUNDLED_MODELS_CONFIG: ModelsConfig;
 }

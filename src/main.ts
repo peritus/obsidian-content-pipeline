@@ -4,7 +4,6 @@ import { ContentPipelineSettings, PipelineConfiguration, ModelsConfig } from './
 import { createLogger, getBuildLogLevel } from './logger';
 import { createConfigurationResolver } from './validation/configuration-resolver';
 import { createConfigurationValidator } from './validation/configuration-validator';
-import { DEFAULT_MODELS_CONFIG, DEFAULT_PIPELINE_CONFIG } from './settings/default-config';
 import { CommandHandler } from './commands';
 
 /**
@@ -130,7 +129,7 @@ export default class ContentPipelinePlugin extends Plugin {
     }
 
     /**
-     * Load plugin settings from disk with v1.2 dual configuration support
+     * Load plugin settings from disk with no automatic configuration initialization
      */
     async loadSettings() {
         try {
@@ -141,28 +140,15 @@ export default class ContentPipelinePlugin extends Plugin {
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
             
-            // Ensure we have both configurations
-            if (!this.settings.modelsConfig || this.settings.modelsConfig === '{}') {
-                this.settings.modelsConfig = JSON.stringify(DEFAULT_MODELS_CONFIG, null, 2);
-                this.logger.info('Initialized with default models configuration');
-            }
-            
-            if (!this.settings.pipelineConfig || this.settings.pipelineConfig === '{}') {
-                this.settings.pipelineConfig = JSON.stringify(DEFAULT_PIPELINE_CONFIG, null, 2);
-                this.logger.info('Initialized with default pipeline configuration');
-            }
-            
-            // Parse and validate configurations
+            // Parse and validate configurations (if any exist)
             this.parseConfigurations();
             
-            // Save if we made any changes
-            if (!loadedData || !loadedData.modelsConfig || !loadedData.pipelineConfig) {
-                await this.saveSettings();
-            }
+            // Save settings (but don't initialize with defaults)
+            await this.saveSettings();
             
             this.logger.info('Settings loaded successfully');
         } catch (error) {
-            this.logger.error('Failed to load settings, using defaults:', error);
+            this.logger.error('Failed to load settings, using empty defaults:', error);
             this.settings = Object.assign({}, DEFAULT_SETTINGS);
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;

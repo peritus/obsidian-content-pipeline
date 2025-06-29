@@ -91,7 +91,8 @@ const configInjectionPlugin = {
     
     build.onLoad({ filter: /.*/, namespace: 'config-injection' }, (args) => {
       return {
-        contents: `export const DEFAULT_CONFIGS = ${JSON.stringify(configs, null, 2)};`,
+        contents: `export const BUNDLED_PIPELINE_CONFIGS = ${JSON.stringify(configs, null, 2)};
+export const BUNDLED_MODELS_CONFIG = ${JSON.stringify(models, null, 2)};`,
         loader: 'js'
       };
     });

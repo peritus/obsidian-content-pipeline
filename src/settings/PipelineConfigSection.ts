@@ -5,13 +5,13 @@
 import { Setting, TextAreaComponent, DropdownComponent } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
-import { DEFAULT_CONFIGS } from '@/configs';
+import { BUNDLED_PIPELINE_CONFIGS } from '@/configs';
 import { extractPipelineSteps } from '../types';
 
 export class PipelineConfigSection {
     private plugin: ContentPipelinePlugin;
     private pipelineTextarea: TextAreaComponent | null = null;
-    private selectedConfigId: string = 'default';
+    private selectedConfigId: string = '';  // No config pre-selected
     private onChangeCallback: (value: string) => void;
     private onExportCallback: () => void;
     private onImportCallback: () => void;
@@ -103,9 +103,12 @@ export class PipelineConfigSection {
             .setName('Load example configuration')
             .setDesc('Choose from available example configurations to load as a starting point.')
             .addDropdown(dropdown => {
-                const availableConfigs = Object.keys(DEFAULT_CONFIGS);
+                // Add placeholder option
+                dropdown.addOption('', 'Select a configuration...');
+                
+                const availableConfigs = Object.keys(BUNDLED_PIPELINE_CONFIGS);
                 availableConfigs.forEach(configId => {
-                    const config = DEFAULT_CONFIGS[configId];
+                    const config = BUNDLED_PIPELINE_CONFIGS[configId];
                     const description = config.pipeline.description || `${configId} configuration`;
                     dropdown.addOption(configId, description);
                 });
@@ -120,7 +123,12 @@ export class PipelineConfigSection {
                     .setButtonText('Load')
                     .setTooltip('Load the selected configuration')
                     .onClick(async () => {
-                        const selectedConfig = DEFAULT_CONFIGS[this.selectedConfigId];
+                        if (!this.selectedConfigId || this.selectedConfigId === '') {
+                            // Show notice that user needs to select a config
+                            return;
+                        }
+                        
+                        const selectedConfig = BUNDLED_PIPELINE_CONFIGS[this.selectedConfigId];
                         if (selectedConfig) {
                             const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
                             const configJson = JSON.stringify(pipelineSteps, null, 2);
