@@ -32,7 +32,7 @@ export class InboxStructureManager {
         const outputDirs: string[] = [];
 
         if (typeof stepOutput === 'string') {
-            // Handle string output (backward compatibility)
+            // Handle string output
             let outputDir = stepOutput.replace(/\{[^}]+\}/g, '');
             if (outputDir.includes('.')) {
                 // If output includes a filename, get the directory part

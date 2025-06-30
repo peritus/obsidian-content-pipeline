@@ -31,10 +31,10 @@ export class IndividualPromptRenderer {
     }
 
     /**
-     * Render individual missing prompts section (legacy method for compatibility)
+     * Render individual missing prompts section
      */
     renderIndividualPrompts(containerEl: HTMLElement, missingPrompts: PromptStatus[], onCreateSingle: (prompt: PromptStatus) => void): void {
-        // This method is kept for compatibility but now delegates to the config-based rendering
+        // This method delegates to the config-based rendering
         // Sort prompts by filename for consistency
         const sortedPrompts = [...missingPrompts].sort((a, b) => a.path.localeCompare(b.path));
         this.renderConfigBasedPrompts(containerEl, sortedPrompts, onCreateSingle);
@@ -93,10 +93,10 @@ export class IndividualPromptRenderer {
     }
 
     /**
-     * Render a single simplified prompt entry with horizontal layout and static fine print (legacy method)
+     * Render a single simplified prompt entry with horizontal layout and static fine print
      */
     private renderIndividualPrompt(containerEl: HTMLElement, prompt: PromptStatus, onCreate: (prompt: PromptStatus) => void): void {
-        // This legacy method now delegates to the config-based rendering
+        // This method delegates to the config-based rendering
         this.renderConfigBasedPrompt(containerEl, prompt, onCreate);
     }
 }

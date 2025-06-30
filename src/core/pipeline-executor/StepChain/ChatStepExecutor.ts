@@ -106,7 +106,7 @@ export class ChatStepExecutor {
             const routingValidation = this.validateRoutingDecisions(processedResponse.sections, resolvedStep);
             logger.debug("Routing validation completed", routingValidation);
 
-            // Create legacy step object for OutputHandler compatibility with routing-aware output support
+            // Create step object for OutputHandler compatibility with routing-aware output support
             const outputStepCompat: PipelineStep = {
                 modelConfig: stepId, // Not used by OutputHandler but needed for interface
                 input: resolvedStep.input,

@@ -47,9 +47,9 @@ export class OutputHandler {
      * Resolve output path based on routing decision and step configuration
      */
     resolveOutputPath(step: PipelineStep, nextStep?: string): string {
-        // Handle backward compatibility with string output
+        // Handle string output
         if (typeof step.output === 'string') {
-            logger.debug('Using string output (backward compatible)', { 
+            logger.debug('Using string output', { 
                 output: step.output, 
                 nextStep 
             });

@@ -165,9 +165,9 @@ export class WhisperStepProcessor {
         // Check if step has routing-aware output configuration
         const output = resolvedStep.routingAwareOutput || resolvedStep.output;
 
-        // Handle backward compatibility with string output
+        // Handle string output
         if (typeof output === 'string') {
-            logger.debug('Whisper using string output (backward compatible)', { 
+            logger.debug('Whisper using string output', { 
                 output, 
                 nextStep 
             });

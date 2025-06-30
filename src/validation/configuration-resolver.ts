@@ -39,7 +39,7 @@ class ConfigurationResolver {
      * @throws ContentPipelineError if no valid output path can be resolved
      */
     resolveOutputPath(step: PipelineStep, nextStep?: string): string {
-        // Handle string output (backward compatibility)
+        // Handle string output
         if (typeof step.output === 'string') {
             return step.output;
         }
@@ -238,7 +238,7 @@ class ConfigurationResolver {
 
             // Validate output configuration
             if (typeof step.output === 'string') {
-                // String output is always valid (backward compatibility)
+                // String output is always valid
                 return;
             }
 

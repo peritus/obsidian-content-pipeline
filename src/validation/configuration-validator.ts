@@ -131,7 +131,7 @@ class ConfigurationValidator {
             return errors;
         }
 
-        // Handle string output (backward compatibility)
+        // Handle string output
         if (typeof step.output === 'string') {
             return errors; // Valid string output, no routing validation needed
         }

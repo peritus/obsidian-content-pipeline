@@ -24,14 +24,14 @@ export class PromptCreator {
     }
 
     /**
-     * Legacy method for backward compatibility - delegates to copyPromptToVault
+     * Move prompt to vault (delegates to copyPromptToVault)
      */
     async movePromptToVault(prompt: PromptStatus): Promise<void> {
         await this.copyPromptToVault(prompt);
     }
 
     /**
-     * Legacy method for backward compatibility - delegates to copyPromptToVault  
+     * Create single prompt (delegates to copyPromptToVault)
      */
     async createSinglePrompt(prompt: PromptStatus): Promise<void> {
         await this.copyPromptToVault(prompt);

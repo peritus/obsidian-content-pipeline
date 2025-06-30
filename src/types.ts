@@ -134,7 +134,7 @@ export interface ResolvedPipelineStep {
     modelConfig: ModelConfig;
     /** Input pattern */
     input: string;
-    /** Output pattern (string for backward compatibility) */
+    /** Output pattern (string format) */
     output: string;
     /** Resolved output path based on routing decision */
     resolvedOutputPath?: string;
