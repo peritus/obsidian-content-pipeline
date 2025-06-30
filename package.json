@@ -21,14 +21,15 @@
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
     "eliminate_dead_code": "tsr 'src/main\\.ts$' --recursive --include-d-ts --project tsconfig.json --write",
-    "version:preview:patch": "bump-my-version --config-file .bumpversion-preview.toml bump patch",
-    "version:preview:minor": "bump-my-version --config-file .bumpversion-preview.toml bump minor",
-    "version:preview:major": "bump-my-version --config-file .bumpversion-preview.toml bump major",
-    "version:preview": "bump-my-version --config-file .bumpversion-preview.toml bump preview",
+    "version:preview:patch": "bump-my-version bump patch --config-file .bumpversion-preview.toml",
+    "version:preview:minor": "bump-my-version bump minor --config-file .bumpversion-preview.toml ",
+    "version:preview:major": "bump-my-version bump major --config-file .bumpversion-preview.toml ",
+    "version:preview": "bump-my-version bump preview --config-file .bumpversion-preview.toml",
     "version:patch": "bump-my-version bump patch",
     "version:minor": "bump-my-version bump minor",
     "version:major": "bump-my-version bump major",
-    "version:show": "bump-my-version show-bump"
+    "version:show": "bump-my-version show-bump",
+    "version:preview:show": "bump-my-version show-bump --config-file .bumpversion-preview.toml"
   },
   "keywords": [
     "obsidian",
