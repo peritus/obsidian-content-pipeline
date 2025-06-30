@@ -9,14 +9,14 @@ export class PromptStatusChecker {
     /**
      * Check status of all prompts with comprehensive error handling
      */
-    async checkPromptsStatus(examplePrompts: Record<string, string>): Promise<PromptStatus[]> {
-        return await this.fileOps.checkPromptsStatus(examplePrompts);
+    async checkPromptsStatus(configPrompts: Record<string, string>): Promise<PromptStatus[]> {
+        return await this.fileOps.checkPromptsStatus(configPrompts);
     }
 
     /**
      * Categorize prompts by their current state
      * - Config-based: Prompts defined in configuration but not yet copied to vault
-     * - Vault-based: Prompts that exist in vault (potentially customized)
+     * - Vault-based: Prompts that exist in vault
      * - Errors: Prompts with validation or access issues
      */
     categorizePrompts(promptsStatus: PromptStatus[]): {

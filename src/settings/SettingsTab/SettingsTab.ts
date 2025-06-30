@@ -6,7 +6,7 @@ import { OpenAIApiKeySection } from '../OpenAIApiKeySection';
 import { PipelineConfigSection } from '../PipelineConfigSection';
 import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
 import { FolderSetupSection } from '../folder-setup-section';
-import { ExamplePromptsManager } from './ExamplePromptsManager';
+import { PromptsManager } from './PromptsManager';
 import { createConfigurationResolver } from '../../validation/configuration-resolver';
 import { ConfigValidationResult } from '../../types';
 import { SettingsNotifier } from '../settings-notifier';
@@ -17,7 +17,7 @@ import { SettingsNotifier } from '../settings-notifier';
 export class SettingsTab extends PluginSettingTab {
     plugin: ContentPipelinePlugin;
     private fileOps: FileOperations;
-    private examplePromptsManager: ExamplePromptsManager;
+    private promptsManager: PromptsManager;
     private debounceTimer: NodeJS.Timeout | null = null;
     private validationMessageEl: HTMLElement | null = null;
     private settingsNotifier: SettingsNotifier;
@@ -33,7 +33,7 @@ export class SettingsTab extends PluginSettingTab {
         super(app, plugin);
         this.plugin = plugin;
         this.fileOps = new FileOperations(app);
-        this.examplePromptsManager = new ExamplePromptsManager(app);
+        this.promptsManager = new PromptsManager(app);
         this.settingsNotifier = new SettingsNotifier();
 
         // Create import/export callbacks
@@ -103,8 +103,8 @@ export class SettingsTab extends PluginSettingTab {
 
         // Example Prompts Setup Section (moved above configuration sections)
         // Initialize with imported prompts if available
-        this.examplePromptsManager.setImportedPrompts(this.plugin.settings.importedExamplePrompts);
-        this.examplePromptsManager.render(containerEl);
+        this.promptsManager.setLoadedPrompts(this.plugin.settings.importedExamplePrompts);
+        this.promptsManager.render(containerEl);
     }
 
     /**
@@ -122,8 +122,8 @@ export class SettingsTab extends PluginSettingTab {
         // Store imported prompts in settings
         this.plugin.settings.importedExamplePrompts = prompts;
         
-        // Update the example prompts manager
-        this.examplePromptsManager.setImportedPrompts(prompts);
+        // Update the prompts manager
+        this.promptsManager.setLoadedPrompts(prompts);
         
         // Save settings immediately to persist the imported prompts
         try {

@@ -9,9 +9,9 @@ import { PromptStatus } from '../prompt-file-operations';
 /**
  * Manages the prompts setup section with config-based and vault-based prompt states
  */
-export class ExamplePromptsManager {
-    private examplePrompts?: Record<string, string>;
-    private importedPrompts?: Record<string, string>;
+export class PromptsManager {
+    private configPrompts?: Record<string, string>;
+    private loadedPrompts?: Record<string, string>;
     private fileOps: PromptFileOperations;
     private statusChecker: PromptStatusChecker;
     private promptCreator: PromptCreator;
@@ -27,11 +27,11 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Set imported prompts (called when configuration is imported)
+     * Set loaded prompts (called when configuration is imported)
      */
-    setImportedPrompts(prompts: Record<string, string> | undefined): void {
-        this.importedPrompts = prompts;
-        // Note: User will need to reload settings to see imported prompts
+    setLoadedPrompts(prompts: Record<string, string> | undefined): void {
+        this.loadedPrompts = prompts;
+        // Note: User will need to reload settings to see loaded prompts
     }
 
     /**
@@ -39,7 +39,7 @@ export class ExamplePromptsManager {
      * Simplified to just re-render the prompts with consistent ordering
      */
     async refreshPrompts(): Promise<void> {
-        if (!this.promptsContainer || !this.examplePrompts) {
+        if (!this.promptsContainer || !this.configPrompts) {
             return; // Nothing to refresh
         }
 
@@ -57,12 +57,12 @@ export class ExamplePromptsManager {
             // Store container reference for refreshing
             this.currentContainer = containerEl;
             
-            const examplePrompts = this.getExamplePrompts();
-            if (!examplePrompts || Object.keys(examplePrompts).length === 0) {
+            const configPrompts = this.getConfigPrompts();
+            if (!configPrompts || Object.keys(configPrompts).length === 0) {
                 return; // No prompts, nothing to render
             }
 
-            this.examplePrompts = examplePrompts;
+            this.configPrompts = configPrompts;
             
             // Create proper Obsidian heading
             new Setting(containerEl).setName('Prompts').setHeading();
@@ -82,7 +82,7 @@ export class ExamplePromptsManager {
             this.renderAllPromptsAsync(this.promptsContainer);
 
         } catch (error) {
-            console.error('Error accessing example prompts:', error);
+            console.error('Error accessing prompts:', error);
             
             // Show error using proper Setting structure
             new Setting(containerEl).setName('Prompts').setHeading();
@@ -93,13 +93,13 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Get example prompts, prioritizing imported prompts over available configs
+     * Get config prompts, prioritizing loaded prompts over available configs
      * Since there's no explicit "default" config anymore, we don't fall back to any config
      */
-    private getExamplePrompts(): Record<string, string> | null {
-        // First priority: imported prompts (includes prompts from loaded configs)
-        if (this.importedPrompts && Object.keys(this.importedPrompts).length > 0) {
-            return this.importedPrompts;
+    private getConfigPrompts(): Record<string, string> | null {
+        // First priority: loaded prompts (includes prompts from loaded configs)
+        if (this.loadedPrompts && Object.keys(this.loadedPrompts).length > 0) {
+            return this.loadedPrompts;
         }
 
         // No fallback to default config since users must manually load a config
@@ -110,8 +110,8 @@ export class ExamplePromptsManager {
      * Get info text about the current prompt source
      */
     private getPromptSourceInfo(): string | null {
-        if (this.importedPrompts) {
-            return `Using ${Object.keys(this.importedPrompts).length} prompts from loaded configuration.`;
+        if (this.loadedPrompts) {
+            return `Using ${Object.keys(this.loadedPrompts).length} prompts from loaded configuration.`;
         }
         
         // No prompts available - user needs to load a configuration
@@ -123,7 +123,7 @@ export class ExamplePromptsManager {
      * Always shows all prompts with their current state (config-based vs vault-based)
      */
     private async renderAllPromptsAsync(containerEl: HTMLElement): Promise<void> {
-        const currentPrompts = this.getExamplePrompts();
+        const currentPrompts = this.getConfigPrompts();
         if (!currentPrompts) return;
 
         try {
@@ -144,12 +144,12 @@ export class ExamplePromptsManager {
             
             // Always render config-based prompts (available to copy to vault)
             for (const prompt of sortedConfigBased) {
-                this.renderConfigBasedPrompt(containerEl, prompt);
+                this.renderConfigPrompt(containerEl, prompt);
             }
 
-            // Always render vault-based prompts (customized versions in vault)
+            // Always render vault-based prompts (versions in vault)
             for (const prompt of sortedVaultBased) {
-                this.renderVaultBasedPrompt(containerEl, prompt);
+                this.renderVaultPrompt(containerEl, prompt);
             }
 
         } catch (error) {
@@ -174,42 +174,42 @@ export class ExamplePromptsManager {
      * Render a config-based prompt using Setting structure
      * Shows prompts that are defined in configuration but not yet copied to vault
      */
-    private renderConfigBasedPrompt(containerEl: HTMLElement, prompt: any): void {
+    private renderConfigPrompt(containerEl: HTMLElement, prompt: any): void {
         const filename = this.getFilenameFromPath(prompt.path);
         
         new Setting(containerEl)
             .setName(`⚙️ ${filename}`)
-            .setDesc('Using prompt from configuration. Copy to vault to customize.')
+            .setDesc('Prompt from configuration. Copy to vault to edit.')
             .addButton(button => {
                 button
                     .setButtonText('Copy to vault')
-                    .setTooltip('Copy this prompt to your vault so you can customize it')
-                    .onClick(() => this.copyPromptToVault(prompt));
+                    .setTooltip('Copy this prompt to your vault so you can edit it')
+                    .onClick(() => this.copyToVault(prompt));
             });
     }
 
     /**
      * Render a vault-based prompt using Setting structure  
-     * Shows prompts that exist in the vault (potentially customized)
+     * Shows prompts that exist in the vault
      */
-    private renderVaultBasedPrompt(containerEl: HTMLElement, prompt: any): void {
+    private renderVaultPrompt(containerEl: HTMLElement, prompt: any): void {
         const filename = this.getFilenameFromPath(prompt.path);
         
         new Setting(containerEl)
             .setName(`📝 ${filename}`)
-            .setDesc('Using prompt from vault. Delete the file to revert to configuration version.')
+            .setDesc('Prompt stored in vault. Delete file to use configuration version.')
             .addButton(button => {
                 button
-                    .setButtonText('View in vault')
-                    .setTooltip('Open this customized prompt in your vault')
-                    .onClick(() => this.viewPromptInVault(prompt));
+                    .setButtonText('Open in vault')
+                    .setTooltip('Open this prompt in your vault')
+                    .onClick(() => this.openInVault(prompt));
             });
     }
 
     /**
-     * View a prompt that exists in the vault
+     * Open a prompt that exists in the vault
      */
-    private async viewPromptInVault(prompt: any): Promise<void> {
+    private async openInVault(prompt: any): Promise<void> {
         try {
             // Open the file in Obsidian
             const file = this.app.vault.getAbstractFileByPath(prompt.path);
@@ -224,10 +224,10 @@ export class ExamplePromptsManager {
     }
 
     /**
-     * Copy a prompt from configuration to vault for customization
+     * Copy a prompt from configuration to vault for editing
      * Enhanced with progress feedback and automatic view refresh
      */
-    private async copyPromptToVault(prompt: any): Promise<void> {
+    private async copyToVault(prompt: any): Promise<void> {
         const filename = this.getFilenameFromPath(prompt.path);
         
         try {
@@ -238,7 +238,7 @@ export class ExamplePromptsManager {
             await this.fileOps.createPromptFile(prompt.path, prompt.content);
             
             // Show success message with guidance
-            new Notice(`✅ Copied prompt to vault: ${filename}. You can now customize it!`, 5000);
+            new Notice(`✅ Copied prompt to vault: ${filename}. You can now edit it!`, 5000);
             
             // Automatically refresh the prompts display to show updated state
             await this.refreshPrompts();

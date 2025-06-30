@@ -12,7 +12,7 @@ interface EntryPointFolderStatus {
 
 /**
  * Manages the folder setup section with individual entry point folder creation
- * Inspired by ExamplePromptsManager functionality and styling
+ * Inspired by PromptsManager functionality and styling
  */
 export class FolderSetupSection {
     private plugin: ContentPipelinePlugin;
