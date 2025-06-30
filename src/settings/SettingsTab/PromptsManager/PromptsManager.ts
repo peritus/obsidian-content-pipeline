@@ -111,7 +111,7 @@ export class PromptsManager {
      */
     private getPromptSourceInfo(): string | null {
         if (this.loadedPrompts) {
-            return `Using ${Object.keys(this.loadedPrompts).length} prompts from loaded configuration.`;
+            return `Configuration defines ${Object.keys(this.loadedPrompts).length} prompts.`;
         }
         
         // No prompts available - user needs to load a configuration
