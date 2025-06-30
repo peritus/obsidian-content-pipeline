@@ -1,5 +1,5 @@
 /**
- * Configuration resolver for v2.0 routing-aware output system
+ * Configuration resolver for routing-aware output system
  * 
  * Handles resolution of pipeline steps to model configurations, provides
  * cross-reference validation, and resolves routing-aware output paths.
@@ -352,7 +352,7 @@ class ConfigurationResolver {
      * @returns Pipeline configuration safe for sharing
      */
     exportPipelineConfig(): PipelineConfiguration {
-        // The pipeline configuration already doesn't contain sensitive data in v1.2
+        // The pipeline configuration already doesn't contain sensitive data
         return { ...this.pipelineConfig };
     }
 

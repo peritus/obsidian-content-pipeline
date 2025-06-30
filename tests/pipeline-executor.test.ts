@@ -1,7 +1,7 @@
 /**
  * Pipeline Executor Tests
  * 
- * Test suite for the pipeline execution engine and its components updated for v2.0 schema.
+ * Test suite for the pipeline execution engine and its components.
  * Updated for routing-aware output system without legacy 'next' field.
  */
 
@@ -14,7 +14,7 @@ import { ContentPipelineSettings, ProcessingStatus } from '../src/types';
 // Mock app for testing
 const mockApp = {} as App;
 
-// Mock settings with dual configuration for v2.0 schema
+// Mock settings with dual configuration
 const mockSettings: ContentPipelineSettings = {
     modelsConfig: '{"test-model": {"baseUrl": "https://api.openai.com/v1", "apiKey": "test-key", "implementation": "chatgpt", "model": "gpt-4"}}',
     pipelineConfig: '{}',

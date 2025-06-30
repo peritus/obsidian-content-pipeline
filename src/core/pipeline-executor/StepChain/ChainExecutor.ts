@@ -1,5 +1,5 @@
 /**
- * Chain Execution Logic (v1.2 - Updated for dual configuration)
+ * Chain Execution Logic
  */
 
 import { App } from 'obsidian';

@@ -2,7 +2,7 @@
  * Models configuration validation utility
  * 
  * Validates model configurations including API credentials and implementation mappings
- * for the v1.2 split configuration system.
+ * for the split configuration system.
  */
 
 import { ErrorFactory } from '../error-handler';

@@ -1,7 +1,7 @@
 /**
  * Validation System Tests
  * 
- * Comprehensive test suite for all validation modules updated for v2.0 schema.
+ * Comprehensive test suite for all validation modules.
  * Updated for routing-aware output system without legacy 'next' field.
  */
 
@@ -457,7 +457,7 @@ describe('Validators Object', () => {
         expect(typeof Validators.pipelineStep).toBe('function');
         expect(typeof Validators.pipelineConfig).toBe('function');
         
-        // Category validation should no longer exist in v2.0 schema
+        // Category validation should no longer exist
         expect('category' in Validators).toBe(false);
     });
 

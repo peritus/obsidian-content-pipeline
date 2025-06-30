@@ -1,5 +1,5 @@
 /**
- * Step Chain Execution - Main Orchestrator (v1.2 - Updated for dual configuration)
+ * Step Chain Execution - Main Orchestrator
  */
 
 import { App } from 'obsidian';

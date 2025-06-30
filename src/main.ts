@@ -7,7 +7,7 @@ import { createConfigurationValidator } from './validation/configuration-validat
 import { CommandHandler } from './commands';
 
 /**
- * Main plugin class for Content Pipeline (v1.2 dual configuration)
+ * Main plugin class for Content Pipeline
  */
 export default class ContentPipelinePlugin extends Plugin {
     settings!: ContentPipelineSettings; // Definite assignment assertion since we load in onload
@@ -18,7 +18,7 @@ export default class ContentPipelinePlugin extends Plugin {
      * Called when the plugin is loaded
      */
     async onload() {
-        this.logger.info('Content Pipeline Plugin v1.2 loaded!');
+        this.logger.info('Content Pipeline Plugin loaded!');
         
         // Load settings
         await this.loadSettings();
@@ -63,7 +63,7 @@ export default class ContentPipelinePlugin extends Plugin {
         // Register settings tab
         this.addSettingTab(new SettingsTab(this.app, this));
 
-        this.logger.info('Content Pipeline Plugin v1.2 initialization complete');
+        this.logger.info('Content Pipeline Plugin initialization complete');
     }
 
     /**

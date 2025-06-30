@@ -1,5 +1,5 @@
 /**
- * Output File Handling Logic with Routing-Aware Output Support (v2.0)
+ * Output File Handling Logic with Routing-Aware Output Support
  */
 
 import { App } from 'obsidian';

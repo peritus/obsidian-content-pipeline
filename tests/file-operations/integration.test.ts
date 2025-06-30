@@ -1,6 +1,6 @@
 /**
  * Tests for FileOperations.getFileInfo and integration tests
- * Updated for v1.1 schema - removed category system, added step-based organization
+ * Updated for step-based organization without category system
  */
 
 import { FileOperations } from '../../src/core/file-operations';
@@ -75,7 +75,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
                 
                 expect(fileInfo.path).toBe(path);
                 expect(fileInfo.name).toBe('test-file');
-                // No category field should be present in v1.1
+                // No category field should be present
                 expect(fileInfo).not.toHaveProperty('category');
             });
         });
@@ -117,7 +117,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
         });
     });
 
-    describe('Integration Tests for v1.1 Schema', () => {
+    describe('Integration Tests', () => {
         beforeEach(() => {
             // Reset mocks before each integration test for better isolation
             resetMocks();

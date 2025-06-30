@@ -1,5 +1,5 @@
 /**
- * Chat Step Execution Logic with Structured Output Support (v2.0)
+ * Chat Step Execution Logic with Structured Output Support
  */
 
 import { App } from 'obsidian';

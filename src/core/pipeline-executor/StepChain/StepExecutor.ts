@@ -1,5 +1,5 @@
 /**
- * Individual Step Execution Logic (v1.2 - Updated for dual configuration)
+ * Individual Step Execution Logic
  */
 
 import { App } from 'obsidian';

@@ -1,6 +1,6 @@
 /**
  * Tests for FileOperations.archiveFile method
- * Updated for v1.1 schema - no category system, step-based archiving
+ * Updated for step-based archiving without category system
  */
 
 import { FileOperations } from '../../src/core/file-operations';

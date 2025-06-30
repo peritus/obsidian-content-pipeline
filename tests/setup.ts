@@ -2,7 +2,7 @@
  * Jest test setup file
  * 
  * This file runs before each test suite and sets up mocks and global test configuration.
- * Updated for v2.0 schema - routing-aware output system without legacy 'next' field.
+ * Updated for routing-aware output system without legacy 'next' field.
  */
 
 // Import the mocked obsidian module directly
@@ -35,7 +35,7 @@ declare global {
     }
 }
 
-// Custom Jest matchers updated for v2.0 schema
+// Custom Jest matchers
 expect.extend({
     toBeValidPath(received: string) {
         const isValid = typeof received === 'string' && 
@@ -72,7 +72,7 @@ expect.extend({
     }
 });
 
-// Test data factories updated for v2.0 schema
+// Test data factories
 
 export const createMockContext = (overrides: any = {}) => ({
     filename: 'test-file',
@@ -85,7 +85,7 @@ export const createMockContext = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Factory for creating mock model configurations (v2.0)
+// Factory for creating mock model configurations
 export const createMockModelConfig = (overrides: Partial<ModelConfig> = {}): ModelConfig => ({
     baseUrl: 'https://api.openai.com/v1',
     apiKey: 'sk-proj-test1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
@@ -95,7 +95,7 @@ export const createMockModelConfig = (overrides: Partial<ModelConfig> = {}): Mod
     ...overrides
 });
 
-// Factory for creating mock models configuration (v2.0)
+// Factory for creating mock models configuration
 export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): ModelsConfig => ({
     'openai-gpt': createMockModelConfig({
         implementation: 'chatgpt',
@@ -109,7 +109,7 @@ export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): M
     ...overrides
 });
 
-// Factory for creating mock pipeline steps (v2.0) - now uses prompts/context instead of include
+// Factory for creating mock pipeline steps - now uses prompts/context instead of include
 export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): PipelineStep => ({
     modelConfig: 'test-model',  // Reference to models config
     input: 'inbox/audio',
@@ -120,13 +120,13 @@ export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): P
     ...overrides
 });
 
-// Factory for creating mock pipeline configuration (v2.0)
+// Factory for creating mock pipeline configuration
 export const createMockPipelineConfig = (overrides: Partial<PipelineConfiguration> = {}): PipelineConfiguration => ({
     'test-step': createMockPipelineStep(),
     ...overrides
 });
 
-// Mock file info factory for v2.0 schema
+// Mock file info factory
 export const createMockFileInfo = (overrides: any = {}) => ({
     name: 'test-audio.mp3',
     path: 'inbox/audio/test-audio.mp3',
@@ -138,7 +138,7 @@ export const createMockFileInfo = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Mock file metadata factory for v2.0 schema
+// Mock file metadata factory
 export const createMockFileMetadata = (overrides: any = {}) => ({
     source: 'inbox/archive/transcribe/test-audio.mp3',
     processed: '2024-01-15T10:30:00Z',
@@ -177,7 +177,7 @@ export const createMockValidationResult = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Mock processing result for v2.0 schema
+// Mock processing result
 export const createMockProcessingResult = (overrides: any = {}) => ({
     inputFile: createMockFileInfo(),
     status: 'completed',
@@ -190,7 +190,7 @@ export const createMockProcessingResult = (overrides: any = {}) => ({
     ...overrides
 });
 
-// Helper function to create complex pipeline configurations for testing (v2.0)
+// Helper function to create complex pipeline configurations for testing
 export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     'transcribe': createMockPipelineStep({
         modelConfig: 'openai-whisper',
@@ -263,7 +263,7 @@ export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     })
 });
 
-// Helper function to create complex models config for testing (v2.0)
+// Helper function to create complex models config for testing
 export const createComplexModelsConfig = (): ModelsConfig => ({
     'openai-gpt': createMockModelConfig({
         implementation: 'chatgpt',
@@ -275,7 +275,7 @@ export const createComplexModelsConfig = (): ModelsConfig => ({
     })
 });
 
-// Helper function to create invalid configurations for testing (v2.0)
+// Helper function to create invalid configurations for testing
 export const createInvalidPipelineConfig = (errorType: string): PipelineConfiguration => {
     const baseStep = createMockPipelineStep();
     
@@ -322,7 +322,7 @@ export const createInvalidPipelineConfig = (errorType: string): PipelineConfigur
     }
 };
 
-// Helper function to create invalid models config for testing (v2.0)
+// Helper function to create invalid models config for testing
 export const createInvalidModelsConfig = (errorType: string): ModelsConfig => {
     const baseModel = createMockModelConfig();
     

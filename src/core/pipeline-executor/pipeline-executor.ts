@@ -1,5 +1,5 @@
 /**
- * Pipeline Execution Engine - Main Orchestrator (v1.2 - Updated for dual configuration)
+ * Pipeline Execution Engine - Main Orchestrator
  */
 
 import { App } from 'obsidian';

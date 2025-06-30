@@ -1,7 +1,7 @@
 /**
  * Step Routing Tests
  * 
- * Comprehensive test suite for step routing functionality introduced in v2.0 schema.
+ * Comprehensive test suite for step routing functionality.
  * Tests intelligent step routing, routing-aware output configuration, and YAML-based routing communication.
  */
 

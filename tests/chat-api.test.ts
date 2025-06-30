@@ -1,6 +1,6 @@
 /**
  * Chat API Client Tests
- * Updated for v1.1 schema with YAML routing communication
+ * Updated with YAML routing communication
  */
 
 import { ChatClient } from '../src/api/chat-client';
@@ -35,7 +35,7 @@ describe('Chat API Integration', () => {
         });
     });
 
-    describe('YAML Utilities for v1.1 Schema', () => {
+    describe('YAML Utilities', () => {
         test('should validate YAML requests', () => {
             const validRequest = 'This is a test request';
             expect(() => validateYamlRequest(validRequest, 'gpt-4o')).not.toThrow();
@@ -256,7 +256,7 @@ Action items and meeting notes.`;
             expect(DEFAULT_CHAT_CONFIG.model).toBe('gpt-4o');
         });
 
-        test('should support updated model list for v1.1', () => {
+        test('should support updated model list', () => {
             const supportedModels = ['gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o'];
             
             supportedModels.forEach(model => {

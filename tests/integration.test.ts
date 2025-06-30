@@ -1,7 +1,7 @@
 /**
  * Integration Test
  * 
- * Basic integration test to verify the test system is working with v1.1 schema
+ * Basic integration test to verify the test system is working
  */
 
 describe('Test System Integration', () => {
@@ -16,7 +16,7 @@ describe('Test System Integration', () => {
         await expect(promise).resolves.toBe('async result');
     });
 
-    it('should support custom matchers for v1.1 schema', () => {
+    it('should support custom matchers', () => {
         expect('valid/path/file.md').toBeValidPath();
         expect('transcribe').toBeValidStepId();
         expect('process-thoughts').toBeValidStepId();

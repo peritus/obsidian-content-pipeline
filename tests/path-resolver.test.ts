@@ -1,7 +1,7 @@
 /**
  * Path Resolver Tests
  * 
- * Comprehensive test suite for the path resolution system updated for v1.1 schema.
+ * Comprehensive test suite for the path resolution system.
  * Removed category-related functionality and updated for step-based organization.
  */
 
@@ -248,7 +248,7 @@ describe('PathResolver', () => {
         });
     });
 
-    describe('Real-world pipeline patterns for v1.1 schema', () => {
+    describe('Real-world pipeline patterns', () => {
         const context = createMockContext({
             filename: 'standup-2024-01-15',
             stepId: 'transcribe'
@@ -294,7 +294,7 @@ describe('PathResolver', () => {
             expect(result.isComplete).toBe(true);
         });
 
-        it('should handle all default pipeline patterns for v1.1', () => {
+        it('should handle all default pipeline patterns', () => {
             const patterns = [
                 'inbox/audio',
                 'inbox/transcripts/{filename}-transcript.md',
@@ -463,7 +463,7 @@ describe('PathUtils', () => {
         });
     });
 
-    describe('Variable substitution patterns for v1.1', () => {
+    describe('Variable substitution patterns', () => {
         it('should handle filename variable substitution', () => {
             const context = { filename: 'meeting-notes' };
             const pattern = 'output/{filename}-processed.md';
@@ -510,8 +510,8 @@ describe('PathUtils', () => {
     });
 });
 
-describe('SUPPORTED_PATH_VARIABLES for v1.1 schema', () => {
-    it('should contain expected variables for v1.1 schema', () => {
+describe('SUPPORTED_PATH_VARIABLES', () => {
+    it('should contain expected variables', () => {
         const expected = ['filename', 'timestamp', 'date', 'stepId'];
         expect([...SUPPORTED_PATH_VARIABLES]).toEqual(expected);
     });
@@ -536,10 +536,10 @@ describe('SUPPORTED_PATH_VARIABLES for v1.1 schema', () => {
         expect(SUPPORTED_PATH_VARIABLES.length).toBe(originalLength);
     });
 
-    it('should support all variables used in v1.1 default configuration', () => {
-        const v11Variables = ['filename', 'stepId', 'timestamp', 'date'];
+    it('should support all variables used in default configuration', () => {
+        const variables = ['filename', 'stepId', 'timestamp', 'date'];
         
-        v11Variables.forEach(variable => {
+        variables.forEach(variable => {
             expect(SUPPORTED_PATH_VARIABLES).toContain(variable);
         });
     });

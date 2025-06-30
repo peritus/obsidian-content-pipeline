@@ -1,5 +1,5 @@
 /**
- * Whisper-specific step processing with Routing-Aware Output Support (v2.0)
+ * Whisper-specific step processing with Routing-Aware Output Support
  */
 
 import { App } from 'obsidian';

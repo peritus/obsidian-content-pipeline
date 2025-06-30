@@ -1,6 +1,6 @@
 /**
  * Tests for FileUtils utility functions
- * Updated for v1.1 schema - no category system
+ * Updated without category system
  */
 
 import { FileUtils } from '../../src/core/file-operations';
@@ -76,7 +76,7 @@ describe('FileUtils', () => {
             expect(context.stepId).toBe('transcribe');
             expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
             expect(context.date).toMatch(/\d{4}-\d{2}-\d{2}/);
-            // Category no longer exists in v1.1 schema - verify context doesn't have category fields
+            // Category no longer exists - verify context doesn't have category fields
             expect('category' in context).toBe(false);
         });
     });

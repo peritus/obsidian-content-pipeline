@@ -1,5 +1,5 @@
 /**
- * Centralized Configuration Validation Service (v2.0)
+ * Centralized Configuration Validation Service
  * 
  * Provides unified configuration validation for all components,
  * including routing-aware output path validation and explicit prompt/context validation.

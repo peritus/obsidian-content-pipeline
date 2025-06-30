@@ -1,6 +1,6 @@
 /**
  * Tests for FileOperations.discoverFiles method
- * Updated for v1.1 schema - no category system
+ * Updated without category system
  */
 
 import { FileOperations } from '../../src/core/file-operations';
