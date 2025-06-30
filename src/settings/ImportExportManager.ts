@@ -7,7 +7,7 @@ import { createConfigurationResolver } from '../validation/configuration-resolve
 
 export interface ImportExportCallbacks {
     onPipelineImport: (config: string) => void;
-    onExamplePromptsImport: (prompts: Record<string, string>) => void;
+    onConfigPromptsImport: (prompts: Record<string, string>) => void;
 }
 
 export class ImportExportManager {
@@ -71,7 +71,7 @@ export class ImportExportManager {
     }
 
     /**
-     * Import pipeline configuration with support for bundled example prompts
+     * Import pipeline configuration with support for bundled config-defined prompts
      */
     importPipelineConfig(): void {
         const input = document.createElement('input');
@@ -97,12 +97,12 @@ export class ImportExportManager {
                     const pipelineConfigStr = JSON.stringify(importData.pipeline, null, 2);
                     this.callbacks.onPipelineImport(pipelineConfigStr);
 
-                    // Import example prompts if they exist
+                    // Import config-defined prompts if they exist
                     if (importData.examplePrompts && typeof importData.examplePrompts === 'object') {
                         const promptCount = Object.keys(importData.examplePrompts).length;
                         if (promptCount > 0) {
-                            this.callbacks.onExamplePromptsImport(importData.examplePrompts);
-                            new Notice(`Pipeline configuration imported with ${promptCount} example prompts!`, 4000);
+                            this.callbacks.onConfigPromptsImport(importData.examplePrompts);
+                            new Notice(`Pipeline configuration imported with ${promptCount} config-defined prompts!`, 4000);
                         } else {
                             new Notice('Pipeline configuration imported successfully!', 3000);
                         }

@@ -114,7 +114,7 @@
 
 /* Error Handling Styles - Used by Setting API based components */
 
-.example-prompts-config-error {
+.config-prompts-config-error {
     padding: 15px;
     background-color: #f8d7da;
     border-color: #f5c6cb;
@@ -122,7 +122,7 @@
     border-radius: 6px;
 }
 
-.example-prompts-errors {
+.config-prompts-errors {
     margin-bottom: 20px;
     padding: 15px;
     background-color: #f8d7da;
@@ -132,7 +132,7 @@
     border-left: 4px solid #dc3545;
 }
 
-.example-prompts-overall-error {
+.config-prompts-overall-error {
     padding: 20px;
     background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
     border: 2px solid #dc3545;
@@ -141,7 +141,7 @@
     text-align: center;
 }
 
-.example-prompts-warning {
+.config-prompts-warning {
     padding: 15px;
     background-color: #fff3cd;
     border-color: #ffeaa7;

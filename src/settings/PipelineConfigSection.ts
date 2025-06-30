@@ -137,14 +137,14 @@ export class PipelineConfigSection {
                                 this.onChangeCallback(configJson);
                             }
                             
-                            // Copy example prompts to settings
-                            this.plugin.settings.importedExamplePrompts = selectedConfig.examplePrompts;
+                            // Copy config-defined prompts to settings
+                            this.plugin.settings.configDefinedPrompts = selectedConfig.examplePrompts;
                             
                             // Save settings to persist the prompts
                             try {
                                 await this.plugin.saveSettings();
                             } catch (error) {
-                                console.error('Failed to save example prompts:', error);
+                                console.error('Failed to save config-defined prompts:', error);
                             }
                         }
                     });

@@ -39,7 +39,7 @@ export class SettingsTab extends PluginSettingTab {
         // Create import/export callbacks
         const importExportCallbacks: ImportExportCallbacks = {
             onPipelineImport: (config) => this.handlePipelineImport(config),
-            onExamplePromptsImport: (prompts) => this.handleExamplePromptsImport(prompts)
+            onConfigPromptsImport: (prompts) => this.handleExamplePromptsImport(prompts)
         };
 
         // Initialize components
@@ -102,8 +102,8 @@ export class SettingsTab extends PluginSettingTab {
         this.folderSection.render(containerEl);
 
         // Example Prompts Setup Section (moved above configuration sections)
-        // Initialize with imported prompts if available
-        this.promptsManager.setLoadedPrompts(this.plugin.settings.importedExamplePrompts);
+        // Initialize with config-defined prompts if available
+        this.promptsManager.setConfigDefinedPrompts(this.plugin.settings.configDefinedPrompts);
         this.promptsManager.render(containerEl);
     }
 
@@ -116,21 +116,21 @@ export class SettingsTab extends PluginSettingTab {
     }
 
     /**
-     * Handle example prompts import
+     * Handle config-defined prompts import
      */
     private async handleExamplePromptsImport(prompts: Record<string, string>): Promise<void> {
-        // Store imported prompts in settings
-        this.plugin.settings.importedExamplePrompts = prompts;
+        // Store config-defined prompts in settings
+        this.plugin.settings.configDefinedPrompts = prompts;
         
         // Update the prompts manager
-        this.promptsManager.setLoadedPrompts(prompts);
+        this.promptsManager.setConfigDefinedPrompts(prompts);
         
-        // Save settings immediately to persist the imported prompts
+        // Save settings immediately to persist the config-defined prompts
         try {
             await this.plugin.saveSettings();
         } catch (error) {
-            console.error('Failed to save imported example prompts:', error);
-            new Notice('Warning: Failed to save imported example prompts', 5000);
+            console.error('Failed to save config-defined prompts:', error);
+            new Notice('Warning: Failed to save config-defined prompts', 5000);
         }
     }
 

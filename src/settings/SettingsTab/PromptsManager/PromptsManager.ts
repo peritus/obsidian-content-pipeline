@@ -11,7 +11,7 @@ import { PromptStatus } from '../prompt-file-operations';
  */
 export class PromptsManager {
     private configPrompts?: Record<string, string>;
-    private loadedPrompts?: Record<string, string>;
+    private configDefinedPrompts?: Record<string, string>;
     private fileOps: PromptFileOperations;
     private statusChecker: PromptStatusChecker;
     private promptCreator: PromptCreator;
@@ -27,11 +27,11 @@ export class PromptsManager {
     }
 
     /**
-     * Set loaded prompts (called when configuration is imported)
+     * Set config-defined prompts (called when configuration is imported)
      */
-    setLoadedPrompts(prompts: Record<string, string> | undefined): void {
-        this.loadedPrompts = prompts;
-        // Note: User will need to reload settings to see loaded prompts
+    setConfigDefinedPrompts(prompts: Record<string, string> | undefined): void {
+        this.configDefinedPrompts = prompts;
+        // Note: User will need to reload settings to see config-defined prompts
     }
 
     /**
@@ -97,9 +97,9 @@ export class PromptsManager {
      * Since there's no explicit "default" config anymore, we don't fall back to any config
      */
     private getConfigPrompts(): Record<string, string> | null {
-        // First priority: loaded prompts (includes prompts from loaded configs)
-        if (this.loadedPrompts && Object.keys(this.loadedPrompts).length > 0) {
-            return this.loadedPrompts;
+        // First priority: config-defined prompts (includes prompts from loaded configs)
+        if (this.configDefinedPrompts && Object.keys(this.configDefinedPrompts).length > 0) {
+            return this.configDefinedPrompts;
         }
 
         // No fallback to default config since users must manually load a config
@@ -110,8 +110,8 @@ export class PromptsManager {
      * Get info text about the current prompt source
      */
     private getPromptSourceInfo(): string | null {
-        if (this.loadedPrompts) {
-            return `Pipeline configuration defines ${Object.keys(this.loadedPrompts).length} prompts:`;
+        if (this.configDefinedPrompts) {
+            return `Pipeline configuration defines ${Object.keys(this.configDefinedPrompts).length} prompts:`;
         }
         
         // No prompts available - user needs to load a configuration

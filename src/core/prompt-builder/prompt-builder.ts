@@ -126,25 +126,25 @@ export class PromptBuilder {
             // First, try to read from vault
             return await this.fileOps.readFile(filePath);
         } catch (error) {
-            logger.debug(`File not found in vault: ${filePath}, checking example prompts`);
+            logger.debug(`File not found in vault: ${filePath}, checking config-defined prompts`);
             
-            // If vault read fails, try to find it in imported example prompts with exact path match
-            if (this.settings?.importedExamplePrompts) {
-                if (this.settings.importedExamplePrompts[filePath]) {
-                    logger.debug(`Found example prompt for exact path: ${filePath}`);
-                    return this.settings.importedExamplePrompts[filePath];
+            // If vault read fails, try to find it in config-defined prompts with exact path match
+            if (this.settings?.configDefinedPrompts) {
+                if (this.settings.configDefinedPrompts[filePath]) {
+                    logger.debug(`Found config-defined prompt for exact path: ${filePath}`);
+                    return this.settings.configDefinedPrompts[filePath];
                 }
             }
             
             // If no match found, throw error to abort processing
             throw ErrorFactory.parsing(
                 `Prompt file not found: ${filePath}`,
-                `Required prompt file "${filePath}" was not found in vault or example prompts`,
-                { filePath, availableExamplePrompts: this.settings?.importedExamplePrompts ? Object.keys(this.settings.importedExamplePrompts) : [] },
+                `Required prompt file "${filePath}" was not found in vault or config-defined prompts`,
+                { filePath, availableConfigDefinedPrompts: this.settings?.configDefinedPrompts ? Object.keys(this.settings.configDefinedPrompts) : [] },
                 [
                     'Create the prompt file in your vault', 
                     'Check the file path is correct',
-                    'Ensure example prompts are properly imported if using configurations'
+                    'Ensure config-defined prompts are properly imported if using configurations'
                 ]
             );
         }
