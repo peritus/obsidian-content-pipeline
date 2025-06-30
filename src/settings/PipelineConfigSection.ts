@@ -37,7 +37,7 @@ export class PipelineConfigSection {
 
         // Create Pipeline Configuration section with expand/collapse button
         new Setting(containerEl)
-            .setName('Pipeline Configuration (JSON)')
+            .setName('Pipeline configuration (JSON)')
             .setDesc('Configure workflow steps, routing logic, and file processing patterns.')
             .addButton(button => {
                 this.expandButton = button.buttonEl;

@@ -73,7 +73,7 @@ export class FolderSetupSection {
                 const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
                 
                 // Create proper Obsidian heading
-                new Setting(sectionContainer).setName('Entry Point Folders').setHeading();
+                new Setting(sectionContainer).setName('Entry point folders').setHeading();
                 
                 // Add description using Setting
                 new Setting(sectionContainer)
@@ -91,7 +91,7 @@ export class FolderSetupSection {
             const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
             
             // Show error using proper Setting structure
-            new Setting(sectionContainer).setName('Entry Point Folders').setHeading();
+            new Setting(sectionContainer).setName('Entry point folders').setHeading();
             new Setting(sectionContainer)
                 .setName('Error')
                 .setDesc(`Failed to load folder setup: ${error instanceof Error ? error.message : String(error)}`);
