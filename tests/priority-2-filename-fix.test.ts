@@ -6,14 +6,10 @@
  */
 
 import { OutputHandler } from '../src/core/pipeline-executor/StepChain/OutputHandler';
-import { App } from 'obsidian';
 import { PipelineStep, ProcessingContext } from '../src/types';
 import { ProcessedSection } from '../src/api/chat-types';
 import { FileOperationResult } from '../src/core/file-operations/types';
-import { cleanup, createMockContext, createMockPipelineStep } from './setup';
-
-// Mock app for testing
-const mockApp = {} as App;
+import { cleanup, createMockContext, createMockPipelineStep, mockApp } from './setup';
 
 // Mock file operation result
 const mockFileOperationResult: FileOperationResult = {
@@ -28,7 +24,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
     let mockContext: ProcessingContext;
 
     beforeEach(() => {
-        outputHandler = new OutputHandler(mockApp);
+        outputHandler = new OutputHandler(mockApp as any);
         
         // Create mock step with output pattern
         mockStep = createMockPipelineStep({
