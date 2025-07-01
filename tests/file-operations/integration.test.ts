@@ -165,8 +165,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
             expect(processedResult.success).toBe(true);
 
             // Step 4: Archive original file to step-specific archive
-            const context = { stepId: 'transcribe' };
-            const archiveResult = await fileOps.archiveFile('inbox/audio/recording.mp3', 'inbox/archive/transcribe', context);
+            const archiveResult = await fileOps.archiveFile('inbox/audio/recording.mp3', 'inbox/archive/transcribe');
             expect(archiveResult.success).toBe(true);
         });
 
@@ -324,8 +323,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
                 mockVault.createFolder.mockResolvedValue(createMockTFolder(step, expectedArchive));
                 mockVault.rename.mockResolvedValue(archivedFile);
 
-                const context = { stepId: step };
-                const archiveResult = await fileOps.archiveFile(input, expectedArchive, context);
+                const archiveResult = await fileOps.archiveFile(input, expectedArchive);
                 
                 expect(archiveResult.success).toBe(true);
             }

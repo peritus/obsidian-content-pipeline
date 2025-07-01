@@ -5,7 +5,6 @@
 import { App, TFile, Vault } from 'obsidian';
 import { SimplePathBuilder } from '../SimplePathBuilder';
 import { FilenameResolver } from '../FilenameResolver';
-import { PathContext } from '../../types';
 import { ArchiveResult } from './types';
 import { DirectoryManager } from './directory-manager';
 import { ErrorFactory } from '../../error-handler';
@@ -27,8 +26,7 @@ export class FileArchiver {
      */
     async archiveFile(
         sourceFilePath: string,
-        archiveDirectory: string,
-        context: PathContext
+        archiveDirectory: string
     ): Promise<ArchiveResult> {
         try {
             // Normalize archive directory path (now expects simple directory path)

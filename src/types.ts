@@ -389,24 +389,6 @@ export interface LoggerConfig {
 }
 
 /**
- * Path pattern resolution context
- */
-export interface PathContext {
-    /** Filename for path resolution */
-    filename?: string;
-    /** Timestamp for path resolution */
-    timestamp?: string;
-    /** Date for path resolution */
-    date?: string;
-    /** Step ID for path resolution */
-    stepId?: string;
-}
-
-// =============================================================================
-// PLUGIN SETTINGS TYPES
-// =============================================================================
-
-/**
  * Complete plugin settings interface for dual configuration system
  * NOTE: Log level is now controlled at build-time via OBSIDIAN_CONTENT_PIPELINE_LOGLEVEL
  */

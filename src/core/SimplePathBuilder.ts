@@ -10,6 +10,56 @@ import { createLogger } from '../logger';
 const logger = createLogger('SimplePathBuilder');
 
 export class SimplePathBuilder {
+    // =====================================
+    // INPUT DISCOVERY METHODS (replaces PathResolver)
+    // =====================================
+
+    /**
+     * Resolve input directory pattern to actual directory path
+     * 
+     * Replaces PathResolver.resolvePath() with simple directory resolution
+     * No variable substitution - just direct path normalization
+     */
+    static resolveInputDirectory(inputPattern: string): string {
+        if (!inputPattern || typeof inputPattern !== 'string') {
+            throw new Error('Input pattern is required and must be a string');
+        }
+
+        // Simple normalization - no variable substitution needed
+        return this.normalizeDirectoryPath(inputPattern);
+    }
+
+    /**
+     * Check if a file path matches an input pattern
+     * 
+     * Replaces complex PathResolver logic with simple prefix matching
+     */
+    static matchesInputPattern(filePath: string, inputPattern: string): boolean {
+        if (!filePath || !inputPattern) {
+            return false;
+        }
+
+        try {
+            const resolvedInputPath = this.resolveInputDirectory(inputPattern);
+            const normalizedFilePath = filePath.replace(/\\/g, '/');
+            
+            // Remove trailing slash from input path for comparison
+            const cleanInputPath = resolvedInputPath.endsWith('/') 
+                ? resolvedInputPath.slice(0, -1)
+                : resolvedInputPath;
+            
+            // Check if file path starts with the input directory path
+            return normalizedFilePath.startsWith(cleanInputPath + '/');
+        } catch (error) {
+            logger.debug(`Error matching path ${filePath} against pattern ${inputPattern}:`, error);
+            return false;
+        }
+    }
+
+    // =====================================
+    // OUTPUT FILE BUILDING METHODS
+    // =====================================
+
     /**
      * Build an output file path from directory and filename components
      * 

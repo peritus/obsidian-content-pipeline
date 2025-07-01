@@ -3,8 +3,8 @@
  */
 
 import { App, TFolder } from 'obsidian';
-import { PathResolver } from '../path-resolver';
-import { PathContext, FileInfo, PipelineConfiguration } from '../../types';
+import { SimplePathBuilder } from '../SimplePathBuilder';
+import { FileInfo, PipelineConfiguration } from '../../types';
 import { 
     FileOperationOptions, 
     FileOperationResult, 
@@ -71,34 +71,15 @@ export class FileOperations {
     /**
      * Ensure directory for a resolved path pattern
      */
-    async ensureDirectoryForPattern(
-        pathPattern: string, 
-        context: PathContext
-    ): Promise<TFolder> {
-        // Resolve the path pattern
-        const pathResult = PathResolver.resolvePath(pathPattern, context);
+    async ensureDirectoryForPattern(pathPattern: string): Promise<TFolder> {
+        // Use SimplePathBuilder to resolve the directory path
+        const directoryPath = SimplePathBuilder.resolveInputDirectory(pathPattern);
         
-        if (!pathResult.isComplete) {
-            throw ErrorFactory.fileSystem(
-                `Cannot resolve path pattern: missing variables ${pathResult.missingVariables.join(', ')}`,
-                'Cannot create directory for incomplete path',
-                { pathPattern, context, missingVariables: pathResult.missingVariables },
-                ['Provide all required variables', 'Check path pattern configuration']
-            );
-        }
-
-        const resolvedPath = pathResult.resolvedPath;
-        
-        // If it's a file path, get the directory part
-        const directoryPath = resolvedPath.endsWith('/') || !resolvedPath.includes('.') 
-            ? resolvedPath 
-            : resolvedPath.substring(0, resolvedPath.lastIndexOf('/'));
-
         if (!directoryPath) {
             throw ErrorFactory.fileSystem(
                 'Cannot determine directory from path pattern',
                 'Path pattern does not resolve to a valid directory',
-                { pathPattern, resolvedPath },
+                { pathPattern },
                 ['Check path pattern format', 'Ensure pattern includes directory structure']
             );
         }
@@ -140,12 +121,12 @@ export class FileOperations {
     }
 
     // Archive operations  
-    async archiveFile(sourceFilePath: string, archiveDirectory: string, context: PathContext): Promise<ArchiveResult> {
-        return this.fileArchiver.archiveFile(sourceFilePath, archiveDirectory, context);
+    async archiveFile(sourceFilePath: string, archiveDirectory: string): Promise<ArchiveResult> {
+        return this.fileArchiver.archiveFile(sourceFilePath, archiveDirectory);
     }
 
     // Discovery operations
-    async discoverFiles(inputPattern: string, context?: Partial<PathContext>, options?: FileDiscoveryOptions): Promise<FileInfo[]> {
+    async discoverFiles(inputPattern: string, context?: Record<string, any>, options?: FileDiscoveryOptions): Promise<FileInfo[]> {
         return this.fileDiscovery.discoverFiles(inputPattern, context, options);
     }
 

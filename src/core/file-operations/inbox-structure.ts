@@ -8,7 +8,7 @@ import { InboxCore } from './inbox-core';
 import { EntryPointManager } from './entry-point-manager';
 import { FolderStructureResult } from './types';
 import { PipelineConfiguration, isRoutingAwareOutput } from '../../types';
-import { PathResolver } from '../path-resolver';
+import { SimplePathBuilder } from '../SimplePathBuilder';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('InboxStructure');

@@ -88,11 +88,9 @@ export class ChatStepExecutor {
             // Archive input file using FileOperations directly
             let archivePath: string;
             try {
-                const pathContext = FileUtils.createProcessingContext(fileInfo, stepId);
                 const archiveResult = await this.fileOps.archiveFile(
                     fileInfo.path, 
-                    resolvedStep.archive, 
-                    pathContext
+                    resolvedStep.archive
                 );
                 archivePath = archiveResult.archivePath;
                 logger.debug(`File archived: ${fileInfo.path} → ${archivePath}`);

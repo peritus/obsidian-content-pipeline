@@ -5,8 +5,8 @@
  */
 
 import { App, TFile, TFolder, Vault, normalizePath } from 'obsidian';
-import { PathResolver } from '../path-resolver';
-import { PathContext, FileInfo, PipelineConfiguration, isRoutingAwareOutput } from '../../types';
+import { SimplePathBuilder } from '../SimplePathBuilder';
+import { FileInfo, PipelineConfiguration, isRoutingAwareOutput } from '../../types';
 import { FileDiscoveryOptions, FileDiscoveryResult } from './types';
 import { FileInfoProvider } from './file-info-provider';
 import { ErrorFactory } from '../../error-handler';
@@ -32,7 +32,7 @@ export class FileDiscovery {
      */
     async discoverFiles(
         inputPattern: string,
-        context: Partial<PathContext> = {},
+        context: Record<string, any> = {},
         options: FileDiscoveryOptions = {}
     ): Promise<FileInfo[]> {
         const {
@@ -45,12 +45,8 @@ export class FileDiscovery {
         } = options;
 
         try {
-            // Resolve the search pattern
-            const result = PathResolver.resolvePath(inputPattern, context, { 
-                throwOnMissing: false,
-                validateResult: false 
-            });
-            const searchPath = result.resolvedPath;
+            // Resolve the search pattern using SimplePathBuilder
+            const searchPath = SimplePathBuilder.resolveInputDirectory(inputPattern);
 
             // Search for files in the resolved path
             const files = await this.searchFilesInPath(searchPath, {
@@ -83,7 +79,7 @@ export class FileDiscovery {
      */
     async discoverFilesMultiple(
         inputPatterns: string[],
-        context: Partial<PathContext> = {},
+        context: Record<string, any> = {},
         options: FileDiscoveryOptions = {}
     ): Promise<FileInfo[]> {
         const allFiles: FileInfo[] = [];
@@ -316,28 +312,11 @@ export class FileDiscovery {
      */
     private isFileInInputDirectory(filePath: string, inputPattern: string): boolean {
         try {
-            // Try to resolve the input pattern - this gives us the actual directory path
-            const result = PathResolver.resolvePath(inputPattern, {}, { 
-                throwOnMissing: false,
-                validateResult: false 
-            });
+            // Use SimplePathBuilder for pattern matching
+            const isMatch = SimplePathBuilder.matchesInputPattern(filePath, inputPattern);
             
-            const resolvedInputPath = result.resolvedPath;
-            
-            // Normalize paths for comparison
-            const normalizedFilePath = filePath.replace(/\\/g, '/');
-            const normalizedInputPath = resolvedInputPath.replace(/\\/g, '/');
-            
-            // Remove trailing slash from input path if present
-            const cleanInputPath = normalizedInputPath.endsWith('/') 
-                ? normalizedInputPath.slice(0, -1)
-                : normalizedInputPath;
-            
-            // Check if file path starts with the input directory path
-            const isInDirectory = normalizedFilePath.startsWith(cleanInputPath + '/');
-            
-            logger.debug(`Path check: ${filePath} in ${inputPattern} (${cleanInputPath}) = ${isInDirectory}`);
-            return isInDirectory;
+            logger.debug(`Path check: ${filePath} in ${inputPattern} = ${isMatch}`);
+            return isMatch;
             
         } catch (error) {
             logger.debug(`Error checking path ${filePath} against pattern ${inputPattern}:`, error);

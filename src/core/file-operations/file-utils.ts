@@ -5,7 +5,7 @@
 import { App, normalizePath } from 'obsidian';
 import { FileOperations } from './file-operations';
 import { FilenameResolver } from '../FilenameResolver';
-import { FileInfo, PathContext } from '../../types';
+import { FileInfo } from '../../types';
 
 /**
  * Utility functions for file operations
@@ -43,16 +43,6 @@ export const FileUtils = {
      * Generate timestamp for file operations
      */
     generateTimestamp: (): string => new Date().toISOString(),
-
-    /**
-     * Create processing context from file info
-     */
-    createProcessingContext: (fileInfo: FileInfo, stepId?: string): PathContext => ({
-        filename: FilenameResolver.getBasename(fileInfo.path),
-        stepId,
-        timestamp: FileUtils.generateTimestamp(),
-        date: new Date().toISOString().split('T')[0]
-    }),
 
     /**
      * Strip YAML frontmatter from markdown content and return only the body content

@@ -36,8 +36,7 @@ describe('FileOperations - archiveFile', () => {
 
         const result = await fileOps.archiveFile(
             'inbox/source.md',
-            'inbox/archive/transcribe/',
-            context
+            'inbox/archive/transcribe/'
         );
 
         expect(result.success).toBe(true);
@@ -51,8 +50,7 @@ describe('FileOperations - archiveFile', () => {
 
         await expect(fileOps.archiveFile(
             'nonexistent.md',
-            'inbox/archive/transcribe/',
-            context
+            'inbox/archive/transcribe/'
         )).rejects.toThrow('Source file not found');
     });
 
@@ -64,8 +62,7 @@ describe('FileOperations - archiveFile', () => {
 
         const result = await fileOps.archiveFile(
             'source.md',
-            '', // Empty archive path should fail
-            context
+            '' // Empty archive path should fail
         );
 
         expect(result.success).toBe(false);

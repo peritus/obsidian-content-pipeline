@@ -57,27 +57,4 @@ describe('FileUtils', () => {
             expect(new Date(timestamp).toISOString()).toBe(timestamp);
         });
     });
-
-    describe('createProcessingContext', () => {
-        it('should create valid processing context', () => {
-            const fileInfo: FileInfo = {
-                name: 'test.mp3',
-                path: 'inbox/audio/test.mp3',
-                size: 1000,
-                extension: '.mp3',
-                isProcessable: true,
-                lastModified: new Date(),
-                mimeType: 'audio/mpeg'
-            };
-
-            const context = FileUtils.createProcessingContext(fileInfo, 'transcribe');
-
-            expect(context.filename).toBe('test');
-            expect(context.stepId).toBe('transcribe');
-            expect(context.timestamp).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
-            expect(context.date).toMatch(/\d{4}-\d{2}-\d{2}/);
-            // Category no longer exists - verify context doesn't have category fields
-            expect('category' in context).toBe(false);
-        });
-    });
 });
