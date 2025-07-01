@@ -1,9 +1,10 @@
 /**
- * Whisper-specific step processing with Routing-Aware Output Support
+ * Whisper-specific step processing with Simplified Directory-Only Output System
  */
 
 import { App } from 'obsidian';
-import { PathUtils, PathResolver } from '../path-resolver';
+import { SimplePathBuilder } from '../SimplePathBuilder';
+import { FilenameResolver } from '../FilenameResolver';
 import { FileOperations } from '../file-operations';
 import { WhisperClient } from '../../api';
 import { 
@@ -59,21 +60,20 @@ export class WhisperStepProcessor {
             // Archive original file first and capture archive path
             const archivePath = await this.archiveFile(fileInfo.path, resolvedStep.archive, fileInfo);
 
-            // Create processing context for routing-aware output resolution
+            // Create processing context for simplified output resolution
             const context: ProcessingContext = {
-                filename: PathUtils.getBasename(fileInfo.path),
+                filename: FilenameResolver.getBasename(fileInfo.path),
                 timestamp: new Date().toISOString(),
                 date: new Date().toISOString().split('T')[0],
                 archivePath,
                 stepId,
                 inputPath: fileInfo.path,
-                outputPath: '' // Will be resolved based on routing
+                outputPath: '' // Will be resolved using SimplePathBuilder
             };
 
             // Determine next step and routing for Whisper step
             let nextStep: string | undefined;
             let usedDefaultFallback = false;
-            let resolvedOutputPath: string;
 
             // For Whisper steps, determine routing based on routing-aware output configuration
             const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
@@ -84,14 +84,14 @@ export class WhisperStepProcessor {
                 logger.debug(`Whisper step routing to: ${nextStep}`);
             }
 
-            // Resolve output path using routing-aware logic
-            resolvedOutputPath = this.resolveOutputPath(resolvedStep, nextStep);
+            // Resolve output directory using simplified logic
+            const outputDirectory = this.resolveOutputDirectory(resolvedStep, nextStep);
 
             // Add routing decision to context
             context.routingDecision = {
                 nextStep,
                 usedDefaultFallback,
-                resolvedOutputPath,
+                resolvedOutputPath: outputDirectory,
                 availableOptions: availableNextSteps
             };
 
@@ -104,19 +104,25 @@ export class WhisperStepProcessor {
                 context
             );
             
-            const outputPath = PathResolver.resolvePath(resolvedOutputPath, {
-                filename: context.filename,
-                timestamp: context.timestamp,
-                date: context.date,
-                stepId: context.stepId
-            }).resolvedPath;
+            // Build output path using SimplePathBuilder
+            const effectiveFilename = FilenameResolver.resolveOutputFilename(
+                undefined, // Whisper doesn't get LLM filename suggestions
+                context.filename,
+                stepId
+            );
+            const extension = FilenameResolver.getExtensionForStepType(stepId);
+            const outputPath = SimplePathBuilder.buildOutputPath(
+                outputDirectory,
+                effectiveFilename,
+                extension
+            );
             
             await this.fileOps.writeFile(outputPath, outputContent, {
                 createDirectories: true,
                 overwrite: true
             });
 
-            logger.info(`Whisper transcription completed with routing: ${fileInfo.name} → ${outputPath}, nextStep: ${nextStep || 'none'}`);
+            logger.info(`Whisper transcription completed with simplified output: ${fileInfo.name} → ${outputPath}, nextStep: ${nextStep || 'none'}`);
 
             // Create routing decision metadata for result
             const routingDecision = {
@@ -159,48 +165,48 @@ export class WhisperStepProcessor {
     }
 
     /**
-     * Resolve output path using routing-aware logic (similar to OutputHandler)
+     * Resolve output directory using simplified routing-aware logic
      */
-    private resolveOutputPath(resolvedStep: ResolvedPipelineStep, nextStep?: string): string {
+    private resolveOutputDirectory(resolvedStep: ResolvedPipelineStep, nextStep?: string): string {
         // Check if step has routing-aware output configuration
         const output = resolvedStep.routingAwareOutput || resolvedStep.output;
 
-        // Handle string output
+        // Handle string output (single directory)
         if (typeof output === 'string') {
-            logger.debug('Whisper using string output', { 
+            logger.debug('Whisper using string output directory', { 
                 output, 
                 nextStep 
             });
-            return output;
+            return SimplePathBuilder.normalizeDirectoryPath(output);
         }
 
-        // Handle routing-aware output
+        // Handle routing-aware output (multiple directories)
         if (isRoutingAwareOutput(output)) {
             const routingOutput = output as RoutingAwareOutput;
             
             // Priority 1: Use nextStep if provided and valid
             if (nextStep && routingOutput[nextStep]) {
-                logger.debug('Whisper using routing-aware output for nextStep', { 
+                logger.debug('Whisper using routing-aware output directory for nextStep', { 
                     nextStep, 
                     outputPath: routingOutput[nextStep] 
                 });
-                return routingOutput[nextStep];
+                return SimplePathBuilder.normalizeDirectoryPath(routingOutput[nextStep]);
             }
 
             // Priority 2: Use default fallback if nextStep is invalid/missing
             if (routingOutput.default) {
-                logger.debug('Whisper using default fallback output', { 
+                logger.debug('Whisper using default fallback output directory', { 
                     nextStep: nextStep || 'undefined',
                     defaultPath: routingOutput.default,
                     availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
                 });
-                return routingOutput.default;
+                return SimplePathBuilder.normalizeDirectoryPath(routingOutput.default);
             }
 
             // Priority 3: If no default, throw error
             const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
             throw ErrorFactory.routing(
-                `Whisper step: No valid output path found for routing decision: nextStep='${nextStep}', no default fallback configured`,
+                `Whisper step: No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`,
                 'Cannot determine where to save Whisper output file - routing configuration is incomplete',
                 { 
                     nextStep, 
@@ -215,8 +221,8 @@ export class WhisperStepProcessor {
             );
         }
 
-        // Fallback to resolved step output as string
-        return resolvedStep.output;
+        // Fallback to resolved step output as directory
+        return SimplePathBuilder.normalizeDirectoryPath(resolvedStep.output);
     }
 
     /**
@@ -279,11 +285,12 @@ export class WhisperStepProcessor {
 
     private async archiveFile(sourcePath: string, archivePattern: string, fileInfo: FileInfo): Promise<string> {
         try {
-            // Archive pattern should be step-based: inbox/archive/{stepId}
-            const archivePath = archivePattern + '/' + fileInfo.name;
+            // Archive pattern should be step-based directory: inbox/archive/{stepId}/
+            const archiveDirectory = SimplePathBuilder.normalizeDirectoryPath(archivePattern);
+            const archivePath = SimplePathBuilder.buildArchivePath(archiveDirectory, fileInfo.name);
             
             // Ensure archive directory exists
-            const archiveDir = PathUtils.getDirectory(archivePath);
+            const archiveDir = SimplePathBuilder.extractDirectoryPath(archivePath);
             if (archiveDir) {
                 await this.fileOps.ensureDirectory(archiveDir);
             }
@@ -309,7 +316,7 @@ export class WhisperStepProcessor {
     }
 
     /**
-     * Generate a unique filename to avoid conflicts (similar to FileArchiver)
+     * Generate a unique filename to avoid conflicts
      */
     private async generateUniqueFilename(basePath: string): Promise<string> {
         let counter = 0;
@@ -317,11 +324,12 @@ export class WhisperStepProcessor {
 
         while (this.fileExists(testPath)) {
             counter++;
-            const dir = PathUtils.getDirectory(basePath);
-            const basename = PathUtils.getBasename(basePath);
-            const extension = PathUtils.getExtension(basePath);
+            const dir = SimplePathBuilder.extractDirectoryPath(basePath);
+            const filename = SimplePathBuilder.extractFilename(basePath);
+            const basename = FilenameResolver.getBasename(filename);
+            const extension = filename.includes('.') ? '.' + filename.split('.').pop() : '';
             const uniqueName = `${basename}-${counter}${extension}`;
-            testPath = dir ? PathUtils.join(dir, uniqueName) : uniqueName;
+            testPath = dir ? `${dir}${uniqueName}` : uniqueName;
         }
 
         return testPath;

@@ -126,18 +126,6 @@ export class ChatStepExecutor {
                 resolvedOutputPath: string;
             }> = [];
 
-            // Determine if output is a directory pattern (check resolved output or first routing option)
-            let outputPattern: string;
-            if (isRoutingAwareOutput(outputStepCompat.output)) {
-                const routingOutput = outputStepCompat.output as RoutingAwareOutput;
-                // Use first available route or default for pattern detection
-                const firstRoute = Object.keys(routingOutput).find(k => k !== 'default');
-                outputPattern = routingOutput[firstRoute || 'default'] || routingOutput.default || resolvedStep.output;
-            } else {
-                outputPattern = outputStepCompat.output as string;
-            }
-            const isDirectoryOutput = this.isDirectoryOutput(outputPattern);
-
             // Process routing decisions and prepare context
             for (const section of processedResponse.sections) {
                 const sectionRoutingDecision = this.createRoutingDecision(section, resolvedStep);
@@ -157,16 +145,11 @@ export class ChatStepExecutor {
                 availableOptions: this.getAvailableNextSteps(resolvedStep)
             };
 
-            // Handle different response types and output patterns with routing support
+            // Handle different response types with unified output handling
             if (processedResponse.isMultiFile) {
-                // Multi-file response: always use appropriate method based on output pattern
-                if (isDirectoryOutput) {
-                    const savedFiles = await this.outputHandler.saveToDirectory(processedResponse.sections, outputStepCompat, context);
-                    outputFiles.push(...Object.values(savedFiles));
-                } else {
-                    const savedFiles = await this.outputHandler.saveMultiple(processedResponse.sections, outputStepCompat, context);
-                    outputFiles.push(...Object.values(savedFiles));
-                }
+                // Multi-file response: use saveMultiple for all cases
+                const savedFiles = await this.outputHandler.saveMultiple(processedResponse.sections, outputStepCompat, context);
+                outputFiles.push(...Object.values(savedFiles));
                 
                 // Get nextStep from first section that has a valid one
                 const validNextStep = processedResponse.sections.find(section => 
@@ -176,7 +159,7 @@ export class ChatStepExecutor {
                     nextStep = validNextStep;
                 }
             } else if (processedResponse.sections.length > 0) {
-                // Single-file response: check if output pattern is directory
+                // Single-file response: use unified save method
                 const section = processedResponse.sections[0];
                 
                 // Update context with specific routing decision for this section
@@ -185,20 +168,14 @@ export class ChatStepExecutor {
                     routingDecision: {
                         nextStep: section.nextStep,
                         usedDefaultFallback: !section.nextStep || !this.isValidNextStep(section.nextStep, resolvedStep),
-                        resolvedOutputPath: this.outputHandler.resolveOutputPath(outputStepCompat, section.nextStep),
+                        resolvedOutputPath: this.outputHandler.resolveOutputDirectory(outputStepCompat, section.nextStep),
                         availableOptions: this.getAvailableNextSteps(resolvedStep)
                     }
                 };
 
-                if (isDirectoryOutput) {
-                    // Even for single-file responses, use saveToDirectory if output is a directory pattern
-                    const savedFiles = await this.outputHandler.saveToDirectory(processedResponse.sections, outputStepCompat, sectionContext);
-                    outputFiles.push(...Object.values(savedFiles));
-                } else {
-                    // Regular file output pattern
-                    const outputPath = await this.outputHandler.save(section, outputStepCompat, sectionContext);
-                    outputFiles.push(outputPath);
-                }
+                // Use unified save method for all single-file responses
+                const outputPath = await this.outputHandler.save(section, outputStepCompat, sectionContext);
+                outputFiles.push(outputPath);
                 
                 // Validate and set nextStep
                 if (section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)) {
@@ -311,7 +288,7 @@ export class ChatStepExecutor {
             section: section.filename || 'unnamed',
             nextStep: isValid ? section.nextStep : undefined,
             usedDefaultFallback: !isValid,
-            resolvedOutputPath: this.outputHandler.resolveOutputPath(stepForResolution, isValid ? section.nextStep : undefined)
+            resolvedOutputPath: this.outputHandler.resolveOutputDirectory(stepForResolution, isValid ? section.nextStep : undefined)
         };
     }
 
@@ -322,14 +299,6 @@ export class ChatStepExecutor {
     private isValidNextStep(nextStep: string, resolvedStep: ResolvedPipelineStep): boolean {
         const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
         return availableNextSteps.includes(nextStep);
-    }
-
-    /**
-     * Check if an output pattern represents a directory
-     */
-    private isDirectoryOutput(outputPattern: string): boolean {
-        // Directory patterns either end with '/' or don't contain {filename} variable
-        return outputPattern.endsWith('/') || !outputPattern.includes('{filename}');
     }
 
     /**
