@@ -4,7 +4,7 @@
 
 import { App, normalizePath } from 'obsidian';
 import { FileOperations } from './file-operations';
-import { PathUtils } from '../path-resolver';
+import { FilenameResolver } from '../FilenameResolver';
 import { FileInfo, PathContext } from '../../types';
 
 /**
@@ -48,7 +48,7 @@ export const FileUtils = {
      * Create processing context from file info
      */
     createProcessingContext: (fileInfo: FileInfo, stepId?: string): PathContext => ({
-        filename: PathUtils.getBasename(fileInfo.path),
+        filename: FilenameResolver.getBasename(fileInfo.path),
         stepId,
         timestamp: FileUtils.generateTimestamp(),
         date: new Date().toISOString().split('T')[0]

@@ -3,7 +3,6 @@
  */
 
 import { App, TFolder, TFile, Vault, normalizePath } from 'obsidian';
-import { PathUtils } from '../path-resolver';
 import { ErrorFactory } from '../../error-handler';
 import { createLogger } from '../../logger';
 

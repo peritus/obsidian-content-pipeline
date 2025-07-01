@@ -139,9 +139,9 @@ export class FileOperations {
         return this.fileReader.fileExists(filePath);
     }
 
-    // Archive operations
-    async archiveFile(sourceFilePath: string, archivePattern: string, context: PathContext): Promise<ArchiveResult> {
-        return this.fileArchiver.archiveFile(sourceFilePath, archivePattern, context);
+    // Archive operations  
+    async archiveFile(sourceFilePath: string, archiveDirectory: string, context: PathContext): Promise<ArchiveResult> {
+        return this.fileArchiver.archiveFile(sourceFilePath, archiveDirectory, context);
     }
 
     // Discovery operations

@@ -1,9 +1,10 @@
 /**
- * File archiving operations
+ * File archiving operations with simplified directory-only system
  */
 
 import { App, TFile, Vault } from 'obsidian';
-import { PathResolver, PathUtils } from '../path-resolver';
+import { SimplePathBuilder } from '../SimplePathBuilder';
+import { FilenameResolver } from '../FilenameResolver';
 import { PathContext } from '../../types';
 import { ArchiveResult } from './types';
 import { DirectoryManager } from './directory-manager';
@@ -22,26 +23,16 @@ export class FileArchiver {
     }
 
     /**
-     * Move a file to archive location
+     * Move a file to archive location using simplified directory-only system
      */
     async archiveFile(
         sourceFilePath: string,
-        archivePattern: string,
+        archiveDirectory: string,
         context: PathContext
     ): Promise<ArchiveResult> {
         try {
-            // Resolve the archive directory path
-            const archiveResult = PathResolver.resolvePath(archivePattern, context);
-            if (!archiveResult.isComplete) {
-                throw ErrorFactory.fileSystem(
-                    `Cannot resolve archive path: missing variables ${archiveResult.missingVariables.join(', ')}`,
-                    'Cannot determine archive location',
-                    { archivePattern, context, missingVariables: archiveResult.missingVariables },
-                    ['Provide all required variables for archive path', 'Check archive pattern configuration']
-                );
-            }
-
-            const archiveDir = archiveResult.resolvedPath;
+            // Normalize archive directory path (now expects simple directory path)
+            const normalizedArchiveDir = SimplePathBuilder.normalizeDirectoryPath(archiveDirectory);
 
             // Get source file
             const sourceFile = this.vault.getAbstractFileByPath(sourceFilePath);
@@ -55,11 +46,11 @@ export class FileArchiver {
             }
 
             // Ensure archive directory exists
-            await this.directoryManager.ensureDirectory(archiveDir);
+            await this.directoryManager.ensureDirectory(normalizedArchiveDir);
 
-            // Construct the full archive file path by appending source filename to archive directory
-            const sourceFilename = PathUtils.getFilename(sourceFilePath);
-            const baseArchivePath = PathUtils.join(archiveDir, sourceFilename);
+            // Extract source filename and build archive path
+            const sourceFilename = SimplePathBuilder.extractFilename(sourceFilePath);
+            const baseArchivePath = SimplePathBuilder.buildArchivePath(normalizedArchiveDir, sourceFilename);
 
             // Generate unique archive filename if needed
             const finalArchivePath = await this.generateUniqueFilename(baseArchivePath);
@@ -97,7 +88,7 @@ export class FileArchiver {
     }
 
     /**
-     * Generate a unique filename to avoid conflicts
+     * Generate a unique filename to avoid conflicts using simplified path operations
      */
     private async generateUniqueFilename(basePath: string): Promise<string> {
         let counter = 0;
@@ -105,11 +96,12 @@ export class FileArchiver {
 
         while (this.fileExists(testPath)) {
             counter++;
-            const dir = PathUtils.getDirectory(basePath);
-            const basename = PathUtils.getBasename(basePath);
-            const extension = PathUtils.getExtension(basePath);
+            const dir = SimplePathBuilder.extractDirectoryPath(basePath);
+            const filename = SimplePathBuilder.extractFilename(basePath);
+            const basename = FilenameResolver.getBasename(filename);
+            const extension = filename.includes('.') ? '.' + filename.split('.').pop() : '';
             const uniqueName = `${basename}-${counter}${extension}`;
-            testPath = dir ? PathUtils.join(dir, uniqueName) : uniqueName;
+            testPath = dir ? `${dir}${uniqueName}` : uniqueName;
         }
 
         return testPath;

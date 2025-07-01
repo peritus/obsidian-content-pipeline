@@ -3,7 +3,7 @@
  */
 
 import { TFile } from 'obsidian';
-import { PathUtils } from '../path-resolver';
+import { FilenameResolver } from '../FilenameResolver';
 import { FileInfo } from '../../types';
 
 export class FileInfoProvider {
@@ -12,7 +12,7 @@ export class FileInfoProvider {
      */
     getFileInfo(file: TFile): FileInfo {
         const path = file.path;
-        const extension = PathUtils.getExtension(path);
+        const extension = this.getFileExtension(path);
         const isProcessable = this.isProcessableFile(extension);
 
         return {
@@ -24,6 +24,15 @@ export class FileInfoProvider {
             lastModified: new Date(file.stat.mtime),
             mimeType: this.getMimeType(extension)
         };
+    }
+
+    /**
+     * Extract file extension from path
+     */
+    private getFileExtension(path: string): string {
+        const filename = path.includes('/') ? path.split('/').pop() || '' : path;
+        const lastDot = filename.lastIndexOf('.');
+        return lastDot === -1 ? '' : filename.substring(lastDot);
     }
 
     /**
@@ -71,7 +80,7 @@ export class FileInfoProvider {
 
         // Check extensions
         if (extensions.length > 0) {
-            const fileExt = PathUtils.getExtension(file.path);
+            const fileExt = this.getFileExtension(file.path);
             return extensions.includes(fileExt);
         }
 

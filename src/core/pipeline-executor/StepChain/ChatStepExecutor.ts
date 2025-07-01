@@ -6,7 +6,7 @@ import { App } from 'obsidian';
 import { PromptBuilder } from '../../prompt-builder';
 import { ChatClient } from '../../../api/chat-client';
 import { FileOperations, FileUtils } from '../../file-operations';
-import { PathUtils } from '../../path-resolver';
+import { FilenameResolver } from '../../FilenameResolver';
 import { OutputHandler } from './OutputHandler';
 import { 
     ResolvedPipelineStep,
@@ -52,7 +52,7 @@ export class ChatStepExecutor {
 
             // Create processing context with routing preparation
             const context: ProcessingContext = {
-                filename: PathUtils.getBasename(fileInfo.path),
+                filename: FilenameResolver.getBasename(fileInfo.path),
                 timestamp: FileUtils.generateTimestamp(),
                 date: new Date().toISOString().split('T')[0],
                 archivePath: '', // Will be set after archiving
