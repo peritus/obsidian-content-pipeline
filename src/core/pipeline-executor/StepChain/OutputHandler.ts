@@ -1,10 +1,11 @@
 /**
- * Output File Handling Logic with Routing-Aware Output Support
+ * Simplified Output File Handling Logic for Directory-Only System
  */
 
 import { App } from 'obsidian';
-import { FileOperations, FileUtils } from '../../file-operations';
-import { PathResolver, PathUtils } from '../../path-resolver';
+import { FileOperations } from '../../file-operations';
+import { SimplePathBuilder } from '../../SimplePathBuilder';
+import { FilenameResolver } from '../../FilenameResolver';
 import { ProcessedSection } from '../../../api/chat-types';
 import { 
     PipelineStep,
@@ -18,22 +19,6 @@ import { ErrorFactory } from '../../../error-handler';
 
 const logger = createLogger('OutputHandler');
 
-/**
- * Generic/default filenames that should trigger fallback to original filename
- */
-const GENERIC_FILENAMES = new Set([
-    'response',
-    'response.md',
-    'output',
-    'output.md',
-    'untitled',
-    'untitled.md',
-    'result',
-    'result.md',
-    'document',
-    'document.md'
-]);
-
 export class OutputHandler {
     private app: App;
     private fileOps: FileOperations;
@@ -44,45 +29,49 @@ export class OutputHandler {
     }
 
     /**
-     * Resolve output path based on routing decision and step configuration
+     * Resolve output directory based on routing decision and step configuration
+     * 
+     * All outputs are now directories, so this returns a directory path ending with '/'
      */
-    resolveOutputPath(step: PipelineStep, nextStep?: string): string {
-        // Handle string output
+    resolveOutputDirectory(step: PipelineStep, nextStep?: string): string {
+        // Handle string output (single directory path)
         if (typeof step.output === 'string') {
-            logger.debug('Using string output', { 
+            logger.debug('Using string output directory', { 
                 output: step.output, 
                 nextStep 
             });
-            return step.output;
+            
+            // Ensure it's formatted as a directory path
+            return SimplePathBuilder.normalizeDirectoryPath(step.output);
         }
 
-        // Handle routing-aware output
+        // Handle routing-aware output (multiple directory paths)
         if (isRoutingAwareOutput(step.output)) {
             const routingOutput = step.output as RoutingAwareOutput;
             
             // Priority 1: Use nextStep if provided and valid
             if (nextStep && routingOutput[nextStep]) {
-                logger.debug('Using routing-aware output for nextStep', { 
+                logger.debug('Using routing-aware output directory for nextStep', { 
                     nextStep, 
                     outputPath: routingOutput[nextStep] 
                 });
-                return routingOutput[nextStep];
+                return SimplePathBuilder.normalizeDirectoryPath(routingOutput[nextStep]);
             }
 
             // Priority 2: Use default fallback if nextStep is invalid/missing
             if (routingOutput.default) {
-                logger.debug('Using default fallback output', { 
+                logger.debug('Using default fallback output directory', { 
                     nextStep: nextStep || 'undefined',
                     defaultPath: routingOutput.default,
                     availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
                 });
-                return routingOutput.default;
+                return SimplePathBuilder.normalizeDirectoryPath(routingOutput.default);
             }
 
             // Priority 3: If no default, throw error
             const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
             throw ErrorFactory.routing(
-                `No valid output path found for routing decision: nextStep='${nextStep}', no default fallback configured`,
+                `No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`,
                 'Cannot determine where to save output file - routing configuration is incomplete',
                 { 
                     nextStep, 
@@ -100,7 +89,7 @@ export class OutputHandler {
         // Should not reach here with proper typing, but handle gracefully
         throw ErrorFactory.validation(
             'Invalid output configuration - not string or routing-aware object',
-            'Output configuration must be either a string path or routing-aware object',
+            'Output configuration must be either a string directory path or routing-aware object',
             { stepOutput: step.output },
             ['Check your pipeline configuration format', 'Ensure output is string or object with routing paths']
         );
@@ -111,24 +100,27 @@ export class OutputHandler {
         step: PipelineStep,
         context: ProcessingContext
     ): Promise<string> {
-        // Resolve output path based on routing decision
-        const outputPattern = this.resolveOutputPath(step, section.nextStep);
-        
-        // Determine effective filename to use for path resolution
-        const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
-        
-        // Resolve output path with the effective filename
-        const pathContext = {
-            filename: effectiveFilename,
-            timestamp: context.timestamp,
-            date: context.date,
-            stepId: context.stepId
-        };
-
-        const outputResult = PathResolver.resolvePath(outputPattern, pathContext);
-        const outputPath = outputResult.resolvedPath;
-
         try {
+            // Resolve output directory based on routing decision
+            const outputDirectory = this.resolveOutputDirectory(step, section.nextStep);
+            
+            // Determine effective filename using FilenameResolver
+            const effectiveFilename = FilenameResolver.resolveOutputFilename(
+                section.filename,
+                context.filename,
+                context.stepId
+            );
+            
+            // Get appropriate file extension for the step type
+            const extension = FilenameResolver.getExtensionForStepType(context.stepId);
+            
+            // Build complete output path using SimplePathBuilder
+            const outputPath = SimplePathBuilder.buildOutputPath(
+                outputDirectory,
+                effectiveFilename,
+                extension
+            );
+
             // Generate clean frontmatter with essential metadata only
             const metadata: FileMetadata = {
                 source: context.archivePath,
@@ -151,18 +143,17 @@ export class OutputHandler {
             // Combine frontmatter with direct API response content
             const finalContent = frontmatterLines.join('\n') + section.content;
 
-            // Debug logging: Saving output file with routing info
-            logger.debug("Saving output file with routing", {
+            // Debug logging: Saving output file with simplified system
+            logger.debug("Saving output file with simplified system", {
                 outputPath: outputPath,
-                outputPattern: outputPattern,
+                outputDirectory: outputDirectory,
                 nextStep: section.nextStep,
-                usedDefaultFallback: context.routingDecision?.usedDefaultFallback,
                 contentLength: finalContent.length,
                 frontmatterUsed: metadata,
-                filenameSource: this.getFilenameSource(section.filename, context),
+                filenameSource: FilenameResolver.getFilenameSource(section.filename, context.filename),
                 sectionFilename: section.filename,
                 effectiveFilename: effectiveFilename,
-                resolvedFilename: pathContext.filename
+                extension: extension
             });
 
             // Ensure directory exists before writing file
@@ -174,11 +165,11 @@ export class OutputHandler {
                 overwrite: true
             });
 
-            logger.debug(`Output file saved with routing-aware path: ${outputPath}`);
+            logger.debug(`Output file saved with simplified system: ${outputPath}`);
             return outputPath;
 
         } catch (error) {
-            logger.error(`Failed to save output file: ${outputPath}`, error);
+            logger.error(`Failed to save output file`, error);
             throw error;
         }
     }
@@ -190,7 +181,7 @@ export class OutputHandler {
     ): Promise<{ [filename: string]: string }> {
         const savedFiles: { [filename: string]: string } = {};
 
-        logger.debug("Saving multiple sections with routing", {
+        logger.debug("Saving multiple sections with simplified system", {
             sectionCount: sections.length,
             stepId: context.stepId,
             stepOutput: step.output,
@@ -199,8 +190,10 @@ export class OutputHandler {
 
         for (const section of sections) {
             try {
-                // Update context with routing decision for this section
+                // Create section-specific context with routing decision metadata
                 const sectionContext = this.createSectionContext(context, section, step);
+                
+                // Use unified save method - no need for special directory handling
                 const outputPath = await this.save(section, step, sectionContext);
                 savedFiles[section.filename] = outputPath;
             } catch (error) {
@@ -209,133 +202,7 @@ export class OutputHandler {
             }
         }
 
-        logger.debug("Multiple sections save complete with routing", {
-            successCount: Object.keys(savedFiles).length,
-            totalCount: sections.length,
-            savedFiles: savedFiles
-        });
-
-        return savedFiles;
-    }
-
-    /**
-     * Handle directory-only outputs for multi-file responses with routing support
-     */
-    async saveToDirectory(
-        sections: ProcessedSection[],
-        step: PipelineStep,
-        context: ProcessingContext
-    ): Promise<{ [filename: string]: string }> {
-        const savedFiles: { [filename: string]: string } = {};
-
-        logger.debug("Saving to directory with routing", {
-            sectionCount: sections.length,
-            stepOutput: step.output,
-            stepId: context.stepId,
-            isRoutingAware: isRoutingAwareOutput(step.output)
-        });
-
-        for (const section of sections) {
-            try {
-                // Resolve output path based on routing decision for this section
-                const outputPattern = this.resolveOutputPath(step, section.nextStep);
-                
-                // Check if output is a directory pattern
-                const isDirectoryOutput = outputPattern.endsWith('/') || !outputPattern.includes('{filename}');
-                const effectiveFilename = this.resolveEffectiveFilename(section.filename, context);
-
-                let outputPath: string;
-
-                if (isDirectoryOutput) {
-                    // For directory outputs, handle specially to preserve directory nature
-                    let directoryPath: string;
-                    
-                    if (outputPattern.endsWith('/')) {
-                        // Pattern like "inbox/summary-personal/" - remove trailing slash before resolving
-                        const directoryPatternBase = outputPattern.slice(0, -1);
-                        directoryPath = PathResolver.resolvePath(directoryPatternBase, {
-                            timestamp: context.timestamp,
-                            date: context.date,
-                            stepId: context.stepId
-                        }).resolvedPath;
-                    } else {
-                        // Pattern without filename variable, like "inbox/summary-personal"
-                        directoryPath = PathResolver.resolvePath(outputPattern, {
-                            timestamp: context.timestamp,
-                            date: context.date,
-                            stepId: context.stepId
-                        }).resolvedPath;
-                    }
-                    
-                    // Ensure we have a valid filename from LLM response
-                    const filename = section.filename || `${effectiveFilename}.md`;
-                    outputPath = PathUtils.join(directoryPath, filename);
-                } else {
-                    // For file pattern outputs, use the effective filename as the basis
-                    const pathContext = {
-                        filename: effectiveFilename,
-                        timestamp: context.timestamp,
-                        date: context.date,
-                        stepId: context.stepId
-                    };
-                    outputPath = PathResolver.resolvePath(outputPattern, pathContext).resolvedPath;
-                }
-
-                // Generate clean metadata with essential information only
-                const metadata: FileMetadata = {
-                    source: context.archivePath,
-                    processed: new Date().toISOString(),
-                    step: context.stepId,
-                    nextStep: section.nextStep
-                };
-
-                // Create clean frontmatter
-                const frontmatterLines = ['---'];
-                frontmatterLines.push(`source: "[[${metadata.source}]]"`);
-                frontmatterLines.push(`processed: "${metadata.processed}"`);
-                frontmatterLines.push(`step: "${metadata.step}"`);
-                if (metadata.nextStep) {
-                    frontmatterLines.push(`nextStep: "${metadata.nextStep}"`);
-                }
-                frontmatterLines.push('---');
-                frontmatterLines.push('');
-
-                // Combine frontmatter with direct API response content
-                const finalContent = frontmatterLines.join('\n') + section.content;
-
-                // Debug logging: Saving section to directory with routing
-                logger.debug("Saving section to directory with routing", {
-                    outputPath: outputPath,
-                    outputPattern: outputPattern,
-                    nextStep: section.nextStep,
-                    usedDefaultFallback: context.routingDecision?.usedDefaultFallback,
-                    contentLength: finalContent.length,
-                    frontmatterUsed: metadata,
-                    filenameSource: this.getFilenameSource(section.filename, context),
-                    sectionFilename: section.filename,
-                    effectiveFilename: effectiveFilename,
-                    isDirectoryOutput: isDirectoryOutput
-                });
-
-                // Ensure directory exists before writing file
-                await this.fileOps.ensureDirectoryForFile(outputPath);
-
-                // Write content to file
-                await this.fileOps.writeFile(outputPath, finalContent, {
-                    createDirectories: true,
-                    overwrite: true
-                });
-
-                savedFiles[section.filename] = outputPath;
-                logger.debug(`Section saved to directory with routing: ${outputPath}`);
-
-            } catch (error) {
-                logger.error(`Failed to save section to directory: ${section.filename}`, error);
-                // Continue processing other sections even if one fails
-            }
-        }
-
-        logger.debug("Directory save complete with routing", {
+        logger.debug("Multiple sections save complete with simplified system", {
             successCount: Object.keys(savedFiles).length,
             totalCount: sections.length,
             savedFiles: savedFiles
@@ -369,52 +236,10 @@ export class OutputHandler {
             routingDecision: {
                 nextStep: section.nextStep,
                 usedDefaultFallback,
-                resolvedOutputPath: this.resolveOutputPath(step, section.nextStep),
+                resolvedOutputPath: this.resolveOutputDirectory(step, section.nextStep),
                 availableOptions
             }
         };
     }
-
-    /**
-     * Determine the effective filename to use for path resolution
-     * 
-     * Priority order:
-     * 1. If LLM provided a meaningful filename (not generic), use it
-     * 2. Otherwise, fall back to the original input filename from context
-     */
-    private resolveEffectiveFilename(sectionFilename: string | undefined, context: ProcessingContext): string {
-        // Check if LLM provided a meaningful filename
-        if (sectionFilename && this.isValidCustomFilename(sectionFilename)) {
-            // Use the basename of the LLM-provided filename (without extension)
-            return PathUtils.getBasename(sectionFilename);
-        }
-
-        // Fall back to original input filename from context
-        return context.filename;
-    }
-
-    /**
-     * Check if a filename is a valid custom filename (not generic)
-     */
-    private isValidCustomFilename(filename: string): boolean {
-        if (!filename || typeof filename !== 'string') {
-            return false;
-        }
-
-        // Get the basename without extension for comparison
-        const basename = PathUtils.getBasename(filename).toLowerCase();
-        
-        // Check if it's a generic filename
-        return !GENERIC_FILENAMES.has(basename) && !GENERIC_FILENAMES.has(filename.toLowerCase());
-    }
-
-    /**
-     * Get a description of the filename source for logging
-     */
-    private getFilenameSource(sectionFilename: string | undefined, context: ProcessingContext): string {
-        if (sectionFilename && this.isValidCustomFilename(sectionFilename)) {
-            return "llm-provided";
-        }
-        return "original-input";
-    }
+}
 }
