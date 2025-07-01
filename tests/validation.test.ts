@@ -131,10 +131,20 @@ describe('File Pattern Validation', () => {
     });
 
     describe('validateFilePattern', () => {
-        it('should accept valid file patterns', () => {
-            expect(() => validateFilePattern('inbox/{filename}.md')).not.toThrow();
-            expect(() => validateFilePattern('static/path/file.txt')).not.toThrow();
-            expect(() => validateFilePattern('{stepId}/{date}/{timestamp}.log')).not.toThrow();
+        it('should accept valid directory patterns', () => {
+            expect(() => validateFilePattern('inbox/transcripts/')).not.toThrow();
+            expect(() => validateFilePattern('static/path/')).not.toThrow();
+            expect(() => validateFilePattern('{stepId}/{date}_{timestamp}/')).not.toThrow();
+        });
+
+        it('should reject {filename} template variable', () => {
+            expect(() => validateFilePattern('inbox/{filename}.md')).toThrow('{filename} template variable which is no longer supported');
+            expect(() => validateFilePattern('{stepId}/{filename}.md')).toThrow('{filename} template variable which is no longer supported');
+        });
+
+        it('should reject patterns that do not end with /', () => {
+            expect(() => validateFilePattern('inbox/transcripts')).toThrow('should end with \'/\'');
+            expect(() => validateFilePattern('static/path')).toThrow('should end with \'/\'');
         });
 
         it('should reject empty patterns', () => {
@@ -142,42 +152,38 @@ describe('File Pattern Validation', () => {
         });
 
         it('should reject path traversal in patterns', () => {
-            expect(() => validateFilePattern('../{stepId}/file.md')).toThrow('path traversal');
-            expect(() => validateFilePattern('inbox/../{stepId}')).toThrow('path traversal');
+            expect(() => validateFilePattern('../{stepId}/')).toThrow('path traversal');
+            expect(() => validateFilePattern('inbox/../{stepId}/')).toThrow('path traversal');
         });
 
         it('should reject absolute patterns', () => {
-            expect(() => validateFilePattern('/inbox/{stepId}')).toThrow('must be relative');
-            expect(() => validateFilePattern('C:\\inbox\\{stepId}')).toThrow('must be relative');
+            expect(() => validateFilePattern('/inbox/{stepId}/')).toThrow('must be relative');
+            expect(() => validateFilePattern('C:\\inbox\\{stepId}\\')).toThrow('must be relative');
         });
 
         it('should reject invalid variables', () => {
-            expect(() => validateFilePattern('inbox/{invalidVar}')).toThrow('File pattern contains unsupported variables');
-            expect(() => validateFilePattern('{stepId}/{invalid}/{filename}')).toThrow('File pattern contains unsupported variables');
+            expect(() => validateFilePattern('inbox/{invalidVar}/')).toThrow('File pattern contains unsupported variables');
+            expect(() => validateFilePattern('{stepId}/{invalid}/')).toThrow('File pattern contains unsupported variables');
         });
 
         it('should reject malformed variable syntax', () => {
-            expect(() => validateFilePattern('inbox/{unclosed')).toThrow('File pattern contains unmatched brackets');
-            expect(() => validateFilePattern('inbox/unopened}')).toThrow('File pattern contains unmatched brackets');
-            expect(() => validateFilePattern('inbox/{}')).toThrow('File pattern contains empty variable');
+            expect(() => validateFilePattern('inbox/{unclosed/')).toThrow('File pattern contains unmatched brackets');
+            expect(() => validateFilePattern('inbox/unopened}/')).toThrow('File pattern contains unmatched brackets');
+            expect(() => validateFilePattern('inbox/{}/')).toThrow('File pattern contains empty variable');
         });
 
         it('should reject invalid characters', () => {
-            expect(() => validateFilePattern('inbox/<invalid>')).toThrow('invalid characters');
-            expect(() => validateFilePattern('inbox/file|name')).toThrow('invalid characters');
+            expect(() => validateFilePattern('inbox/<invalid>/')).toThrow('invalid characters');
+            expect(() => validateFilePattern('inbox/file|name/')).toThrow('invalid characters');
         });
 
         it('should reject patterns that are too long', () => {
-            const longPattern = 'inbox/' + 'a'.repeat(500);
+            const longPattern = 'inbox/' + 'a'.repeat(500) + '/';
             expect(() => validateFilePattern(longPattern)).toThrow('too long');
         });
 
         it('should reject double slashes', () => {
-            expect(() => validateFilePattern('inbox//{stepId}')).toThrow('double slashes');
-        });
-
-        it('should suggest file extensions for filename patterns', () => {
-            expect(() => validateFilePattern('inbox/{filename}')).toThrow('should include file extension');
+            expect(() => validateFilePattern('inbox//{stepId}/')).toThrow('double slashes');
         });
     });
 });
@@ -242,8 +248,8 @@ describe('Pipeline Step Validation', () => {
         it('should validate routing-aware output configuration', () => {
             const step = createMockPipelineStep({ 
                 routingAwareOutput: { 
-                    'valid-step': 'inbox/valid/{filename}.md',
-                    'default': 'inbox/default/{filename}.md'
+                    'valid-step': 'inbox/valid/',
+                    'default': 'inbox/default/'
                 }
             });
             expect(() => validatePipelineStep(step, 'test-step')).not.toThrow();
@@ -264,15 +270,15 @@ describe('Pipeline Step Validation', () => {
             const step = createMockPipelineStep({ 
                 routingAwareOutput: { 
                     'step-id': '', // Empty path
-                    'default': 'inbox/default/{filename}.md'
+                    'default': 'inbox/default/'
                 }
             });
             expect(() => validatePipelineStep(step, 'test-step')).toThrow();
 
             const step2 = createMockPipelineStep({ 
                 routingAwareOutput: { 
-                    '': 'inbox/empty/{filename}.md', // Empty step ID
-                    'default': 'inbox/default/{filename}.md'
+                    '': 'inbox/empty/', // Empty step ID
+                    'default': 'inbox/default/'
                 }
             });
             expect(() => validatePipelineStep(step2, 'test-step')).toThrow();
@@ -322,8 +328,8 @@ describe('Pipeline Configuration Validation', () => {
             const config = createMockPipelineConfig({
                 'step1': createMockPipelineStep({ 
                     routingAwareOutput: { 
-                        'non-existent-step': 'inbox/non-existent/{filename}.md',
-                        'default': 'inbox/default/{filename}.md'
+                        'non-existent-step': 'inbox/non-existent/',
+                        'default': 'inbox/default/'
                     }
                 })
             });
@@ -334,14 +340,14 @@ describe('Pipeline Configuration Validation', () => {
             const config = {
                 'step1': createMockPipelineStep({ 
                     routingAwareOutput: { 
-                        'step2': 'inbox/step1/{filename}.md',
-                        'default': 'inbox/step1/{filename}.md'
+                        'step2': 'inbox/step1/',
+                        'default': 'inbox/step1/'
                     }
                 }),
                 'step2': createMockPipelineStep({ 
                     routingAwareOutput: { 
-                        'step1': 'inbox/step2/{filename}.md',
-                        'default': 'inbox/step2/{filename}.md'
+                        'step1': 'inbox/step2/',
+                        'default': 'inbox/step2/'
                     }
                 })
             };
@@ -354,14 +360,14 @@ describe('Pipeline Configuration Validation', () => {
             const config = {
                 'step1': createMockPipelineStep({ 
                     routingAwareOutput: { 
-                        'step2': 'inbox/step1/{filename}.md',
-                        'default': 'inbox/step1/{filename}.md'
+                        'step2': 'inbox/step1/',
+                        'default': 'inbox/step1/'
                     }
                 }),
                 'step2': createMockPipelineStep({ 
                     routingAwareOutput: { 
-                        'step1': 'inbox/step2/{filename}.md',
-                        'default': 'inbox/step2/{filename}.md'
+                        'step1': 'inbox/step2/',
+                        'default': 'inbox/step2/'
                     }
                 })
             };
@@ -373,10 +379,10 @@ describe('Pipeline Configuration Validation', () => {
         it('should detect orphaned steps', () => {
             const config = {
                 'entry': createMockPipelineStep({ 
-                    input: 'inbox/input/{filename}.md', // Entry point (has input)
+                    input: 'inbox/input/', // Entry point (has input)
                     routingAwareOutput: { 
-                        'connected': 'inbox/entry/{filename}.md',
-                        'default': 'inbox/entry/{filename}.md'
+                        'connected': 'inbox/entry/',
+                        'default': 'inbox/entry/'
                     }
                 }),
                 'connected': createMockPipelineStep({
@@ -404,32 +410,32 @@ describe('Pipeline Configuration Validation', () => {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
                     routingAwareOutput: {
-                        'process-thoughts': 'inbox/transcripts/{filename}.md',
-                        'process-tasks': 'inbox/transcripts/{filename}.md',
-                        'process-ideas': 'inbox/transcripts/{filename}.md',
-                        'default': 'inbox/transcripts/{filename}.md'
+                        'process-thoughts': 'inbox/transcripts/',
+                        'process-tasks': 'inbox/transcripts/',
+                        'process-ideas': 'inbox/transcripts/',
+                        'default': 'inbox/transcripts/'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     routingAwareOutput: {
-                        'summary-personal': 'inbox/thoughts/{filename}.md',
-                        'default': 'inbox/thoughts/{filename}.md'
+                        'summary-personal': 'inbox/thoughts/',
+                        'default': 'inbox/thoughts/'
                     }
                 }),
                 'process-tasks': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     routingAwareOutput: {
-                        'summary-work': 'inbox/tasks/{filename}.md',
-                        'default': 'inbox/tasks/{filename}.md'
+                        'summary-work': 'inbox/tasks/',
+                        'default': 'inbox/tasks/'
                     }
                 }),
                 'process-ideas': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     routingAwareOutput: {
-                        'summary-personal': 'inbox/ideas/{filename}-personal.md',
-                        'summary-work': 'inbox/ideas/{filename}-work.md',
-                        'default': 'inbox/ideas/{filename}.md'
+                        'summary-personal': 'inbox/ideas/',
+                        'summary-work': 'inbox/ideas/',
+                        'default': 'inbox/ideas/'
                     }
                 }),
                 'summary-personal': createMockPipelineStep({
@@ -464,7 +470,7 @@ describe('Validators Object', () => {
     it('should work the same as individual imports', () => {
         // Test that the object methods work the same as direct imports
         expect(() => Validators.path('valid/path', 'test')).not.toThrow();
-        expect(() => Validators.filePattern('valid/{filename}.md')).not.toThrow();
+        expect(() => Validators.filePattern('valid/directory/')).not.toThrow();
     });
 });
 
@@ -477,7 +483,7 @@ describe('validateCommon', () => {
         const data = {
             path: 'valid/path.md',
             apiKey: 'sk-proj-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
-            filePattern: 'inbox/{filename}.md'
+            filePattern: 'inbox/transcripts/'
         };
 
         expect(() => validateCommon(data)).not.toThrow();
@@ -522,10 +528,10 @@ describe('Routing-Aware Output Validation', () => {
         it('should validate well-formed routing-aware output objects', () => {
             const step = createMockPipelineStep({
                 routingAwareOutput: {
-                    'step1': 'inbox/step1/{filename}.md',
-                    'step2': 'inbox/step2/{filename}.md',
-                    'step3': 'inbox/step3/{filename}.md',
-                    'default': 'inbox/default/{filename}.md'
+                    'step1': 'inbox/step1/',
+                    'step2': 'inbox/step2/',
+                    'step3': 'inbox/step3/',
+                    'default': 'inbox/default/'
                 }
             });
             
@@ -534,7 +540,7 @@ describe('Routing-Aware Output Validation', () => {
 
         it('should accept steps without routing-aware output (terminal steps)', () => {
             const step = createMockPipelineStep({
-                output: 'inbox/terminal/{filename}.md'
+                output: 'inbox/terminal/'
                 // No routingAwareOutput - terminal step
             });
             
@@ -544,7 +550,7 @@ describe('Routing-Aware Output Validation', () => {
         it('should reject non-string step IDs in routing-aware output', () => {
             const invalidStep: any = createMockPipelineStep();
             invalidStep.routingAwareOutput = {
-                123: 'inbox/numeric/{filename}.md'
+                123: 'inbox/numeric/'
             };
             
             expect(() => validatePipelineStep(invalidStep, 'test-step')).toThrow();
@@ -562,9 +568,9 @@ describe('Routing-Aware Output Validation', () => {
         it('should validate step ID format in routing-aware output', () => {
             const step = createMockPipelineStep({
                 routingAwareOutput: {
-                    'valid-step-id': 'inbox/valid/{filename}.md',
-                    'invalid step id': 'inbox/invalid/{filename}.md',
-                    'default': 'inbox/default/{filename}.md'
+                    'valid-step-id': 'inbox/valid/',
+                    'invalid step id': 'inbox/invalid/',
+                    'default': 'inbox/default/'
                 }
             });
             

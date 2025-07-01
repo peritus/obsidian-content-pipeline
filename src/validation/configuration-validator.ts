@@ -169,12 +169,25 @@ class ConfigurationValidator {
                 const path = pathValue as string;
 
                 // Check for supported variables in path patterns
-                const supportedVariables = ['{filename}', '{timestamp}', '{date}', '{stepId}'];
-                const invalidVariables = this.extractVariables(path).filter(
-                    variable => !supportedVariables.includes(variable)
+                const supportedVariables = ['{timestamp}', '{date}', '{stepId}'];
+                const allVariables = this.extractVariables(path);
+                
+                // Reject any patterns containing {filename} - no longer supported
+                const filenameVariables = allVariables.filter(variable => variable === '{filename}');
+                if (filenameVariables.length > 0) {
+                    errors.push(`Step "${stepId}": {filename} template variable is no longer supported in output path "${key}". Use directory paths ending with '/' instead.`);
+                }
+                
+                const invalidVariables = allVariables.filter(
+                    variable => !supportedVariables.includes(variable) && variable !== '{filename}'
                 );
                 if (invalidVariables.length > 0) {
                     errors.push(`Step "${stepId}": Unsupported variables in output path "${key}": ${invalidVariables.join(', ')}`);
+                }
+
+                // Validate directory paths - should end with '/' for consistent behavior
+                if (!path.endsWith('/') && !allVariables.some(v => ['{timestamp}', '{date}', '{stepId}'].includes(v))) {
+                    errors.push(`Step "${stepId}": Output path "${key}" should end with '/' to indicate directory. Value: "${path}"`);
                 }
             }
 

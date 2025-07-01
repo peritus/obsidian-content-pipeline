@@ -28,7 +28,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
         
         // Create mock step with output pattern
         mockStep = createMockPipelineStep({
-            output: 'inbox/process-thoughts/{filename}-processed.md'
+            output: 'inbox/process-thoughts/'
         });
 
         // Create mock context with original filename
@@ -59,7 +59,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
             // Verify that the custom filename was used in the output path
             expect(writeFileSpy).toHaveBeenCalledWith(
-                'inbox/process-thoughts/my-custom-name-processed.md',
+                'inbox/process-thoughts/my-custom-name.md',
                 expect.stringContaining('Processed content here'),
                 expect.any(Object)
             );
@@ -84,7 +84,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
             // Verify that the original filename was used instead of the generic one
             expect(writeFileSpy).toHaveBeenCalledWith(
-                'inbox/process-thoughts/2024_11_18T11_53_32_01_00-transcript-processed.md',
+                'inbox/process-thoughts/2024_11_18T11_53_32_01_00-transcript.md',
                 expect.stringContaining('Processed content here'),
                 expect.any(Object)
             );
@@ -109,7 +109,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
             // Verify that the original filename was used (untitled.md is generic, so fallback occurs)
             expect(writeFileSpy).toHaveBeenCalledWith(
-                'inbox/process-thoughts/2024_11_18T11_53_32_01_00-transcript-processed.md',
+                'inbox/process-thoughts/2024_11_18T11_53_32_01_00-transcript.md',
                 expect.stringContaining('Processed content here'),
                 expect.any(Object)
             );
@@ -144,7 +144,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
 
                 // All generic filenames should result in using the original filename
                 expect(writeFileSpy).toHaveBeenCalledWith(
-                    'inbox/process-thoughts/2024_11_18T11_53_32_01_00-transcript-processed.md',
+                    'inbox/process-thoughts/2024_11_18T11_53_32_01_00-transcript.md',
                     expect.stringContaining('Processed content here'),
                     expect.any(Object)
                 );
@@ -178,7 +178,7 @@ describe('Priority 2 Fix: Filename Context Generation', () => {
                 // Custom filenames should be used (basename only, without extension)
                 const expectedBasename = filename.includes('.') ? filename.split('.')[0] : filename;
                 expect(writeFileSpy).toHaveBeenCalledWith(
-                    `inbox/process-thoughts/${expectedBasename}-processed.md`,
+                    `inbox/process-thoughts/${expectedBasename}.md`,
                     expect.stringContaining('Processed content here'),
                     expect.any(Object)
                 );

@@ -46,7 +46,7 @@ function validatePipelineStep(step: any, stepId: string, createValidPipeline: bo
                 if (nextStepId !== 'default' && !pipelineConfig[nextStepId]) {
                     pipelineConfig[nextStepId] = createMockPipelineStep({
                         modelConfig: 'openai-gpt',
-                        output: `inbox/${nextStepId}/{filename}.md`
+                        output: `inbox/${nextStepId}/`
                     });
                 }
             });
@@ -100,12 +100,12 @@ describe('Step Routing Configuration', () => {
         it('should accept valid routing-aware output configurations', () => {
             const step = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                output: 'inbox/test-step/{filename}.md',
+                output: 'inbox/test-step/',
                 routingAwareOutput: {
-                    'step1': 'inbox/step1/{filename}.md',
-                    'step2': 'inbox/step2/{filename}.md',
-                    'step3': 'inbox/step3/{filename}.md',
-                    'default': 'inbox/default/{filename}.md'
+                    'step1': 'inbox/step1/',
+                    'step2': 'inbox/step2/',
+                    'step3': 'inbox/step3/',
+                    'default': 'inbox/default/'
                 }
             });
 
@@ -115,7 +115,7 @@ describe('Step Routing Configuration', () => {
         it('should accept simple string output configurations', () => {
             const stepWithStringOutput = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                output: 'inbox/simple/{filename}.md'
+                output: 'inbox/simple/'
             });
 
             expect(() => validatePipelineStep(stepWithStringOutput, 'test-step'))
@@ -127,7 +127,7 @@ describe('Step Routing Configuration', () => {
                 modelConfig: 'openai-gpt',
                 routingAwareOutput: {
                     'step1': 123 as any, // Invalid - should be string
-                    'default': 'inbox/fallback/{filename}.md'
+                    'default': 'inbox/fallback/'
                 }
             });
 
@@ -139,10 +139,10 @@ describe('Step Routing Configuration', () => {
             const stepWithInvalidKeys = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
                 routingAwareOutput: {
-                    'valid-step': 'inbox/valid/{filename}.md',
-                    'invalid step with spaces': 'inbox/invalid/{filename}.md',
-                    '123-starts-with-number': 'inbox/numeric/{filename}.md',
-                    'default': 'inbox/default/{filename}.md'
+                    'valid-step': 'inbox/valid/',
+                    'invalid step with spaces': 'inbox/invalid/',
+                    '123-starts-with-number': 'inbox/numeric/',
+                    'default': 'inbox/default/'
                 }
             });
 
@@ -153,12 +153,12 @@ describe('Step Routing Configuration', () => {
         it('should accept complex routing-aware output paths', () => {
             const step = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                output: 'inbox/transcripts/{filename}.md',
+                output: 'inbox/transcripts/',
                 routingAwareOutput: {
-                    'process-thoughts': 'inbox/thoughts/{filename}-processed.md',
-                    'process-tasks': 'inbox/tasks/{filename}-work.md',
-                    'process-ideas': 'inbox/ideas/{filename}-creative.md',
-                    'default': 'inbox/general/{filename}-default.md'
+                    'process-thoughts': 'inbox/thoughts/',
+                    'process-tasks': 'inbox/tasks/',
+                    'process-ideas': 'inbox/ideas/',
+                    'default': 'inbox/general/'
                 }
             });
 
@@ -203,46 +203,46 @@ describe('Step Routing Configuration', () => {
             const branchingConfig = {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
-                    output: 'inbox/transcripts/{filename}.md',
+                    output: 'inbox/transcripts/',
                     routingAwareOutput: {
-                        'process-thoughts': 'inbox/transcripts/{filename}.md',
-                        'process-tasks': 'inbox/transcripts/{filename}.md',
-                        'process-ideas': 'inbox/transcripts/{filename}.md',
-                        'default': 'inbox/transcripts/{filename}.md'
+                        'process-thoughts': 'inbox/transcripts/',
+                        'process-tasks': 'inbox/transcripts/',
+                        'process-ideas': 'inbox/transcripts/',
+                        'default': 'inbox/transcripts/'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/thoughts/{filename}.md',
+                    output: 'inbox/thoughts/',
                     routingAwareOutput: {
-                        'summary-personal': 'inbox/thoughts/{filename}.md',
-                        'default': 'inbox/thoughts/{filename}.md'
+                        'summary-personal': 'inbox/thoughts/',
+                        'default': 'inbox/thoughts/'
                     }
                 }),
                 'process-tasks': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/tasks/{filename}.md',
+                    output: 'inbox/tasks/',
                     routingAwareOutput: {
-                        'summary-work': 'inbox/tasks/{filename}.md',
-                        'default': 'inbox/tasks/{filename}.md'
+                        'summary-work': 'inbox/tasks/',
+                        'default': 'inbox/tasks/'
                     }
                 }),
                 'process-ideas': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/ideas/{filename}.md',
+                    output: 'inbox/ideas/',
                     routingAwareOutput: {
-                        'summary-personal': 'inbox/ideas/{filename}-personal.md',
-                        'summary-work': 'inbox/ideas/{filename}-work.md',
-                        'default': 'inbox/ideas/{filename}.md'
+                        'summary-personal': 'inbox/ideas/',
+                        'summary-work': 'inbox/ideas/',
+                        'default': 'inbox/ideas/'
                     }
                 }),
                 'summary-personal': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/personal-summary/{filename}.md'
+                    output: 'inbox/personal-summary/'
                 }),
                 'summary-work': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/work-summary/{filename}.md'
+                    output: 'inbox/work-summary/'
                 })
             };
 
@@ -253,31 +253,31 @@ describe('Step Routing Configuration', () => {
             const convergentConfig = {
                 'input1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/input1/{filename}.md',
+                    output: 'inbox/input1/',
                     routingAwareOutput: {
-                        'processor': 'inbox/input1/{filename}.md',
-                        'default': 'inbox/input1/{filename}.md'
+                        'processor': 'inbox/input1/',
+                        'default': 'inbox/input1/'
                     }
                 }),
                 'input2': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/input2/{filename}.md',
+                    output: 'inbox/input2/',
                     routingAwareOutput: {
-                        'processor': 'inbox/input2/{filename}.md',
-                        'default': 'inbox/input2/{filename}.md'
+                        'processor': 'inbox/input2/',
+                        'default': 'inbox/input2/'
                     }
                 }),
                 'processor': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/processed/{filename}.md',
+                    output: 'inbox/processed/',
                     routingAwareOutput: {
-                        'output': 'inbox/processed/{filename}.md',
-                        'default': 'inbox/processed/{filename}.md'
+                        'output': 'inbox/processed/',
+                        'default': 'inbox/processed/'
                     }
                 }),
                 'output': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/final/{filename}.md'
+                    output: 'inbox/final/'
                 })
             };
 
@@ -288,32 +288,32 @@ describe('Step Routing Configuration', () => {
             const diamondConfig = {
                 'start': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/start/{filename}.md',
+                    output: 'inbox/start/',
                     routingAwareOutput: {
-                        'branch1': 'inbox/start/{filename}.md',
-                        'branch2': 'inbox/start/{filename}.md',
-                        'default': 'inbox/start/{filename}.md'
+                        'branch1': 'inbox/start/',
+                        'branch2': 'inbox/start/',
+                        'default': 'inbox/start/'
                     }
                 }),
                 'branch1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/branch1/{filename}.md',
+                    output: 'inbox/branch1/',
                     routingAwareOutput: {
-                        'merge': 'inbox/branch1/{filename}.md',
-                        'default': 'inbox/branch1/{filename}.md'
+                        'merge': 'inbox/branch1/',
+                        'default': 'inbox/branch1/'
                     }
                 }),
                 'branch2': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/branch2/{filename}.md',
+                    output: 'inbox/branch2/',
                     routingAwareOutput: {
-                        'merge': 'inbox/branch2/{filename}.md',
-                        'default': 'inbox/branch2/{filename}.md'
+                        'merge': 'inbox/branch2/',
+                        'default': 'inbox/branch2/'
                     }
                 }),
                 'merge': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/merged/{filename}.md'
+                    output: 'inbox/merged/'
                 })
             };
 
@@ -498,7 +498,7 @@ describe('Step Routing Error Handling', () => {
         it('should accept steps without routing-aware output (terminal steps)', () => {
             const terminalStep = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
-                output: 'inbox/terminal/{filename}.md'
+                output: 'inbox/terminal/'
                 // No routingAwareOutput - this is a terminal step
             });
 
@@ -510,8 +510,8 @@ describe('Step Routing Error Handling', () => {
             const stepWithInvalidRouting = createMockPipelineStep({
                 modelConfig: 'openai-gpt',
                 routingAwareOutput: {
-                    'valid-step': 'inbox/valid/{filename}.md',
-                    '': 'inbox/empty/{filename}.md', // Empty step ID
+                    'valid-step': 'inbox/valid/',
+                    '': 'inbox/empty/', // Empty step ID
                     'invalid-step': '' // Empty path
                 }
             });
@@ -579,12 +579,12 @@ describe('Advanced Routing Scenarios', () => {
             const contentBasedRouting = {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
-                    output: 'inbox/transcripts/{filename}.md',
+                    output: 'inbox/transcripts/',
                     routingAwareOutput: {
-                        'process-thoughts': 'inbox/transcripts/{filename}.md',
-                        'process-tasks': 'inbox/transcripts/{filename}.md',
-                        'process-ideas': 'inbox/transcripts/{filename}.md',
-                        'default': 'inbox/transcripts/{filename}.md'
+                        'process-thoughts': 'inbox/transcripts/',
+                        'process-tasks': 'inbox/transcripts/',
+                        'process-ideas': 'inbox/transcripts/',
+                        'default': 'inbox/transcripts/'
                     }
                 })
             };
@@ -597,12 +597,12 @@ describe('Advanced Routing Scenarios', () => {
             const priorityRouting = {
                 'classifier': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/classified/{filename}.md',
+                    output: 'inbox/classified/',
                     routingAwareOutput: {
-                        'urgent-processor': 'inbox/classified/{filename}.md',
-                        'standard-processor': 'inbox/classified/{filename}.md',
-                        'low-priority-processor': 'inbox/classified/{filename}.md',
-                        'default': 'inbox/classified/{filename}.md'
+                        'urgent-processor': 'inbox/classified/',
+                        'standard-processor': 'inbox/classified/',
+                        'low-priority-processor': 'inbox/classified/',
+                        'default': 'inbox/classified/'
                     }
                 })
             };
@@ -615,13 +615,13 @@ describe('Advanced Routing Scenarios', () => {
             const topicRouting = {
                 'topic-classifier': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/topics/{filename}.md',
+                    output: 'inbox/topics/',
                     routingAwareOutput: {
-                        'health-processor': 'inbox/topics/{filename}.md',
-                        'finance-processor': 'inbox/topics/{filename}.md',
-                        'tech-processor': 'inbox/topics/{filename}.md',
-                        'general-processor': 'inbox/topics/{filename}.md',
-                        'default': 'inbox/topics/{filename}.md'
+                        'health-processor': 'inbox/topics/',
+                        'finance-processor': 'inbox/topics/',
+                        'tech-processor': 'inbox/topics/',
+                        'general-processor': 'inbox/topics/',
+                        'default': 'inbox/topics/'
                     }
                 })
             };
@@ -635,40 +635,40 @@ describe('Advanced Routing Scenarios', () => {
             const sequentialConfig = {
                 'stage1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/stage1/{filename}.md',
+                    output: 'inbox/stage1/',
                     routingAwareOutput: {
-                        'stage2a': 'inbox/stage1/{filename}.md',
-                        'stage2b': 'inbox/stage1/{filename}.md',
-                        'default': 'inbox/stage1/{filename}.md'
+                        'stage2a': 'inbox/stage1/',
+                        'stage2b': 'inbox/stage1/',
+                        'default': 'inbox/stage1/'
                     }
                 }),
                 'stage2a': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/stage2a/{filename}.md',
+                    output: 'inbox/stage2a/',
                     routingAwareOutput: {
-                        'stage3': 'inbox/stage2a/{filename}.md',
-                        'default': 'inbox/stage2a/{filename}.md'
+                        'stage3': 'inbox/stage2a/',
+                        'default': 'inbox/stage2a/'
                     }
                 }),
                 'stage2b': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/stage2b/{filename}.md',
+                    output: 'inbox/stage2b/',
                     routingAwareOutput: {
-                        'stage3': 'inbox/stage2b/{filename}.md',
-                        'default': 'inbox/stage2b/{filename}.md'
+                        'stage3': 'inbox/stage2b/',
+                        'default': 'inbox/stage2b/'
                     }
                 }),
                 'stage3': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/stage3/{filename}.md',
+                    output: 'inbox/stage3/',
                     routingAwareOutput: {
-                        'final': 'inbox/stage3/{filename}.md',
-                        'default': 'inbox/stage3/{filename}.md'
+                        'final': 'inbox/stage3/',
+                        'default': 'inbox/stage3/'
                     }
                 }),
                 'final': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/final/{filename}.md'
+                    output: 'inbox/final/'
                 })
             };
 
@@ -679,41 +679,41 @@ describe('Advanced Routing Scenarios', () => {
             const parallelConfig = {
                 'splitter': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/splitter/{filename}.md',
+                    output: 'inbox/splitter/',
                     routingAwareOutput: {
-                        'parallel1': 'inbox/splitter/{filename}.md',
-                        'parallel2': 'inbox/splitter/{filename}.md',
-                        'parallel3': 'inbox/splitter/{filename}.md',
-                        'default': 'inbox/splitter/{filename}.md'
+                        'parallel1': 'inbox/splitter/',
+                        'parallel2': 'inbox/splitter/',
+                        'parallel3': 'inbox/splitter/',
+                        'default': 'inbox/splitter/'
                     }
                 }),
                 'parallel1': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/parallel1/{filename}.md',
+                    output: 'inbox/parallel1/',
                     routingAwareOutput: {
-                        'merger': 'inbox/parallel1/{filename}.md',
-                        'default': 'inbox/parallel1/{filename}.md'
+                        'merger': 'inbox/parallel1/',
+                        'default': 'inbox/parallel1/'
                     }
                 }),
                 'parallel2': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/parallel2/{filename}.md',
+                    output: 'inbox/parallel2/',
                     routingAwareOutput: {
-                        'merger': 'inbox/parallel2/{filename}.md',
-                        'default': 'inbox/parallel2/{filename}.md'
+                        'merger': 'inbox/parallel2/',
+                        'default': 'inbox/parallel2/'
                     }
                 }),
                 'parallel3': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/parallel3/{filename}.md',
+                    output: 'inbox/parallel3/',
                     routingAwareOutput: {
-                        'merger': 'inbox/parallel3/{filename}.md',
-                        'default': 'inbox/parallel3/{filename}.md'
+                        'merger': 'inbox/parallel3/',
+                        'default': 'inbox/parallel3/'
                     }
                 }),
                 'merger': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
-                    output: 'inbox/merged/{filename}.md'
+                    output: 'inbox/merged/'
                 })
             };
 

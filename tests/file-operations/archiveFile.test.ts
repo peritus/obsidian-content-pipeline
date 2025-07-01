@@ -36,7 +36,7 @@ describe('FileOperations - archiveFile', () => {
 
         const result = await fileOps.archiveFile(
             'inbox/source.md',
-            'inbox/archive/{stepId}',
+            'inbox/archive/transcribe/',
             context
         );
 
@@ -51,21 +51,24 @@ describe('FileOperations - archiveFile', () => {
 
         await expect(fileOps.archiveFile(
             'nonexistent.md',
-            'inbox/archive/{stepId}',
+            'inbox/archive/transcribe/',
             context
         )).rejects.toThrow('Source file not found');
     });
 
-    it('should handle incomplete archive path resolution', async () => {
+    it('should handle invalid archive directory path', async () => {
         const sourceFile = createMockTFile('source.md', 'source.md');
         mockVault.getAbstractFileByPath.mockReturnValue(sourceFile);
 
-        const incompleteContext = {}; // Missing required stepId variable
+        const context = createMockContext({ stepId: 'transcribe' });
 
-        await expect(fileOps.archiveFile(
+        const result = await fileOps.archiveFile(
             'source.md',
-            'inbox/archive/{stepId}',
-            incompleteContext
-        )).rejects.toThrow('Cannot resolve archive path');
+            '', // Empty archive path should fail
+            context
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Directory path must be a non-empty string');
     });
 });

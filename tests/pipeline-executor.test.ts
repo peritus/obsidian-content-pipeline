@@ -80,9 +80,9 @@ describe('Pipeline Executor', () => {
                 'transcribe': createMockPipelineStep({
                     modelConfig: 'openai-whisper',
                     routingAwareOutput: {
-                        'process-thoughts': 'inbox/transcripts/{filename}.md',
-                        'process-tasks': 'inbox/transcripts/{filename}.md',
-                        'default': 'inbox/transcripts/{filename}.md'
+                        'process-thoughts': 'inbox/transcripts/',
+                        'process-tasks': 'inbox/transcripts/',
+                        'default': 'inbox/transcripts/'
                     }
                 }),
                 'process-thoughts': createMockPipelineStep({
@@ -143,16 +143,16 @@ describe('Pipeline Executor', () => {
                     modelConfig: 'openai-whisper',
                     input: 'inbox/audio',
                     routingAwareOutput: {
-                        'audio-process': 'inbox/audio/{filename}.md',
-                        'default': 'inbox/audio/{filename}.md'
+                        'audio-process': 'inbox/audio/',
+                        'default': 'inbox/audio/'
                     }
                 }),
                 'text-entry': createMockPipelineStep({
                     modelConfig: 'openai-gpt',
                     input: 'inbox/text',
                     routingAwareOutput: {
-                        'text-process': 'inbox/text/{filename}.md',
-                        'default': 'inbox/text/{filename}.md'
+                        'text-process': 'inbox/text/',
+                        'default': 'inbox/text/'
                     }
                 }),
                 'audio-process': createMockPipelineStep({
@@ -366,9 +366,9 @@ describe('Step Chain', () => {
             // This tests the validation logic for nextStep values in routing-aware output
             const stepWithRouting = createMockPipelineStep({
                 routingAwareOutput: {
-                    'valid-step': 'inbox/valid/{filename}.md',
-                    'another-valid-step': 'inbox/another/{filename}.md',
-                    'default': 'inbox/default/{filename}.md'
+                    'valid-step': 'inbox/valid/',
+                    'another-valid-step': 'inbox/another/',
+                    'default': 'inbox/default/'
                 }
             });
 

@@ -4,7 +4,7 @@
     "modelConfig": "openai-whisper",
     "input": "Content Pipeline/Audio-Inbox/",
     "archive": "Content Pipeline/Archive/Audio/",
-    "output": "Content Pipeline/Transcripts/{filename}.md",
+    "output": "Content Pipeline/Transcripts/",
     "prompts": [
       "Content Pipeline/Prompts/transcribe.md"
     ]
@@ -13,9 +13,9 @@
     "modelConfig": "openai-gpt",
     "input": "Content Pipeline/Transcripts/",
     "output": {
-      "extract-todos": "Content Pipeline/Text-Todos/{filename}.md",
-      "create-note": "Content Pipeline/Text-Notes/{filename}.md",
-      "default": "Content Pipeline/Unclassified/{filename}.md"
+      "extract-todos": "Content Pipeline/Text-Todos/",
+      "create-note": "Content Pipeline/Text-Notes/",
+      "default": "Content Pipeline/Unclassified/"
     },
     "archive": "Content Pipeline/Archive/Transcripts/",
     "prompts": [
@@ -26,8 +26,8 @@
     "modelConfig": "openai-gpt",
     "input": "Content Pipeline/Text-Todos/",
     "output": {
-      "summarize": "Content Pipeline/Extracted-Todos/{filename}.md",
-      "default": "Content Pipeline/Extracted-Todos/{filename}.md"
+      "summarize": "Content Pipeline/Extracted-Todos/",
+      "default": "Content Pipeline/Extracted-Todos/"
     },
     "archive": "Content Pipeline/Archive/Text-Todos/",
     "prompts": [
@@ -37,7 +37,7 @@
   "create-note": {
     "modelConfig": "openai-gpt",
     "input": "Content Pipeline/Text-Notes/",
-    "output": "Content Pipeline/Notes/{filename}.md",
+    "output": "Content Pipeline/Notes/",
     "archive": "Content Pipeline/Archive/Text-Notes/",
     "prompts": [
       "Content Pipeline/Prompts/create-note.md"

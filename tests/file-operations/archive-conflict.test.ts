@@ -42,7 +42,7 @@ describe('Archive Conflict Resolution', () => {
 
         const result = await fileOps.archiveFile(
             'inbox/test.md',
-            'inbox/archive/{stepId}',
+            'inbox/archive/transcribe/',
             context
         );
 
@@ -77,7 +77,7 @@ describe('Archive Conflict Resolution', () => {
 
         const result = await fileOps.archiveFile(
             'inbox/test.md',
-            'inbox/archive/{stepId}',
+            'inbox/archive/transcribe/',
             context
         );
 

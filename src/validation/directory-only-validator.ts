@@ -282,7 +282,11 @@ export class DirectoryOnlyValidator {
             if (typeof stepConfig.output === 'string') {
                 directories.push(stepConfig.output);
             } else if (typeof stepConfig.output === 'object' && stepConfig.output !== null) {
-                directories.push(...Object.values(stepConfig.output));
+                for (const value of Object.values(stepConfig.output)) {
+                    if (typeof value === 'string') {
+                        directories.push(value);
+                    }
+                }
             }
 
             // Add archive directory

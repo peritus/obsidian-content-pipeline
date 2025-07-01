@@ -112,9 +112,9 @@ export const createMockModelsConfig = (overrides: Partial<ModelsConfig> = {}): M
 // Factory for creating mock pipeline steps - now uses prompts/context instead of include
 export const createMockPipelineStep = (overrides: Partial<PipelineStep> = {}): PipelineStep => ({
     modelConfig: 'test-model',  // Reference to models config
-    input: 'inbox/audio',
-    output: 'inbox/results/{filename}.md',
-    archive: 'inbox/archive/test-step',
+    input: 'inbox/audio/',
+    output: 'inbox/results/',
+    archive: 'inbox/archive/test-step/',
     prompts: ['prompt.md'],
     description: 'Test pipeline step for automated testing',
     ...overrides
@@ -194,69 +194,69 @@ export const createMockProcessingResult = (overrides: any = {}) => ({
 export const createComplexPipelineConfig = (): PipelineConfiguration => ({
     'transcribe': createMockPipelineStep({
         modelConfig: 'openai-whisper',
-        input: 'inbox/audio',
-        output: 'inbox/transcripts/{filename}-transcript.md',
+        input: 'inbox/audio/',
+        output: 'inbox/transcripts/',
         routingAwareOutput: {
-            'process-thoughts': 'inbox/transcripts/{filename}-transcript.md',
-            'process-tasks': 'inbox/transcripts/{filename}-transcript.md', 
-            'process-ideas': 'inbox/transcripts/{filename}-transcript.md',
-            'default': 'inbox/transcripts/{filename}-transcript.md'
+            'process-thoughts': 'inbox/transcripts/',
+            'process-tasks': 'inbox/transcripts/', 
+            'process-ideas': 'inbox/transcripts/',
+            'default': 'inbox/transcripts/'
         },
-        archive: 'inbox/archive/transcribe',
+        archive: 'inbox/archive/transcribe/',
         prompts: ['transcriptionprompt.md'],
         description: 'Transcribe audio files to text'
     }),
     'process-thoughts': createMockPipelineStep({
         modelConfig: 'openai-gpt',
-        input: 'inbox/transcripts',
-        output: 'inbox/process-thoughts/{filename}-processed.md',
+        input: 'inbox/transcripts/',
+        output: 'inbox/process-thoughts/',
         routingAwareOutput: {
-            'summary-personal': 'inbox/process-thoughts/{filename}-processed.md',
-            'default': 'inbox/process-thoughts/{filename}-processed.md'
+            'summary-personal': 'inbox/process-thoughts/',
+            'default': 'inbox/process-thoughts/'
         },
-        archive: 'inbox/archive/process-thoughts',
+        archive: 'inbox/archive/process-thoughts/',
         prompts: ['process-thoughts-prompt.md'],
         description: 'Process personal thoughts and reflections'
     }),
     'process-tasks': createMockPipelineStep({
         modelConfig: 'openai-gpt',
-        input: 'inbox/transcripts',
-        output: 'inbox/process-tasks/{filename}-processed.md',
+        input: 'inbox/transcripts/',
+        output: 'inbox/process-tasks/',
         routingAwareOutput: {
-            'summary-work': 'inbox/process-tasks/{filename}-processed.md',
-            'default': 'inbox/process-tasks/{filename}-processed.md'
+            'summary-work': 'inbox/process-tasks/',
+            'default': 'inbox/process-tasks/'
         },
-        archive: 'inbox/archive/process-tasks',
+        archive: 'inbox/archive/process-tasks/',
         prompts: ['process-tasks-prompt.md'],
         description: 'Process work content and action items'
     }),
     'process-ideas': createMockPipelineStep({
         modelConfig: 'openai-gpt',
-        input: 'inbox/transcripts',
-        output: 'inbox/process-ideas/{filename}-processed.md',
+        input: 'inbox/transcripts/',
+        output: 'inbox/process-ideas/',
         routingAwareOutput: {
-            'summary-personal': 'inbox/process-ideas/{filename}-personal.md',
-            'summary-work': 'inbox/process-ideas/{filename}-work.md',
-            'default': 'inbox/process-ideas/{filename}-processed.md'
+            'summary-personal': 'inbox/process-ideas/',
+            'summary-work': 'inbox/process-ideas/',
+            'default': 'inbox/process-ideas/'
         },
-        archive: 'inbox/archive/process-ideas',
+        archive: 'inbox/archive/process-ideas/',
         prompts: ['process-ideas-prompt.md'],
         description: 'Process innovative ideas and concepts'
     }),
     'summary-personal': createMockPipelineStep({
         modelConfig: 'openai-gpt',
-        input: 'inbox/process-thoughts',
+        input: 'inbox/process-thoughts/',
         output: 'inbox/summary-personal/',
-        archive: 'inbox/archive/summary-personal',
+        archive: 'inbox/archive/summary-personal/',
         prompts: ['summary-personal-prompt.md'],
         context: ['inbox/summary-personal/*'],
         description: 'Create personal summaries and insights'
     }),
     'summary-work': createMockPipelineStep({
         modelConfig: 'openai-gpt',
-        input: 'inbox/process-tasks',
+        input: 'inbox/process-tasks/',
         output: 'inbox/summary-work/',
-        archive: 'inbox/archive/summary-work',
+        archive: 'inbox/archive/summary-work/',
         prompts: ['summary-work-prompt.md'],
         context: ['inbox/summary-work/*'],
         description: 'Create work-focused summaries with action items'
@@ -284,25 +284,25 @@ export const createInvalidPipelineConfig = (errorType: string): PipelineConfigur
             return {
                 'step1': {
                     ...baseStep,
-                    routingAwareOutput: { 'step2': 'inbox/step2/{filename}.md' }
+                    routingAwareOutput: { 'step2': 'inbox/step2/' }
                 },
                 'step2': {
                     ...baseStep,
-                    routingAwareOutput: { 'step1': 'inbox/step1/{filename}.md' }
+                    routingAwareOutput: { 'step1': 'inbox/step1/' }
                 }
             };
         case 'missing-reference':
             return {
                 'step1': {
                     ...baseStep,
-                    routingAwareOutput: { 'non-existent': 'inbox/non-existent/{filename}.md' }
+                    routingAwareOutput: { 'non-existent': 'inbox/non-existent/' }
                 }
             };
         case 'orphaned':
             return {
                 'entry': {
                     ...baseStep,
-                    routingAwareOutput: { 'connected': 'inbox/connected/{filename}.md' }
+                    routingAwareOutput: { 'connected': 'inbox/connected/' }
                 },
                 'connected': { ...baseStep },
                 'orphaned': { ...baseStep }
@@ -312,7 +312,7 @@ export const createInvalidPipelineConfig = (errorType: string): PipelineConfigur
                 'text-only': {
                     ...baseStep,
                     modelConfig: 'openai-gpt',
-                    input: 'text/input'
+                    input: 'text/input/'
                 }
             };
         default:

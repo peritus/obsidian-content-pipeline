@@ -69,7 +69,7 @@ export class PipelineConfigSection {
         pipelineSetting.addTextArea(text => {
             this.pipelineTextarea = text;
             TextareaStyler.styleTextarea(text);
-            text.setPlaceholder('{\n  "transcribe": {\n    "modelConfig": "openai-whisper",\n    "input": "inbox/audio",\n    "output": "inbox/transcripts/{filename}-transcript.md"\n  }\n}');
+            text.setPlaceholder('{\n  "transcribe": {\n    "modelConfig": "openai-whisper",\n    "input": "inbox/audio",\n    "output": "inbox/transcripts/"\n  }\n}');
             text.setValue(this.plugin.settings.pipelineConfig);
             
             text.onChange((value) => {

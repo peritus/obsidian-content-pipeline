@@ -43,7 +43,7 @@ export function validateFilePattern(pattern: string): true {
 
     // Extract variables
     const variables = pattern.match(/\{([^}]+)\}/g) || [];
-    const supportedVariables = ['{filename}', '{timestamp}', '{date}', '{stepId}'];
+    const supportedVariables = ['{timestamp}', '{date}', '{stepId}'];
     
     // Check for unmatched brackets
     const openBrackets = (pattern.match(/\{/g) || []).length;
@@ -57,15 +57,21 @@ export function validateFilePattern(pattern: string): true {
         throw new Error('File pattern contains empty variable');
     }
 
+    // Reject {filename} template variable - no longer supported
+    const filenameVariables = variables.filter(v => v === '{filename}');
+    if (filenameVariables.length > 0) {
+        throw new Error('File pattern contains {filename} template variable which is no longer supported. Use directory paths ending with \'/\' instead');
+    }
+
     // Check for unsupported variables
-    const unsupportedVariables = variables.filter(v => !supportedVariables.includes(v));
+    const unsupportedVariables = variables.filter(v => !supportedVariables.includes(v) && v !== '{filename}');
     if (unsupportedVariables.length > 0) {
         throw new Error(`File pattern contains unsupported variables: ${unsupportedVariables.join(', ')}`);
     }
 
-    // Check if filename pattern should include extension
-    if (pattern.includes('{filename}') && !pattern.includes('.')) {
-        throw new Error('File pattern with {filename} should include file extension');
+    // Validate directory paths - should end with '/' for consistent behavior
+    if (!pattern.endsWith('/') && !variables.some(v => ['{timestamp}', '{date}', '{stepId}'].includes(v))) {
+        throw new Error('File pattern should end with \'/\' to indicate directory path');
     }
 
     return true;
