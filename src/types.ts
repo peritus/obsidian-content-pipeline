@@ -11,8 +11,9 @@
 
 /**
  * Supported model implementation types for automatic client mapping
+ * Currently supporting OpenAI implementations only
  */
-export type ModelImplementation = 'whisper' | 'chatgpt' | 'claude';
+export type ModelImplementation = 'whisper' | 'chatgpt';
 
 /**
  * Configuration for a single model (API credentials and implementation details)
@@ -417,9 +418,10 @@ export interface ContentPipelineSettings {
 
 /**
  * Type guard for validating model implementations
+ * Currently supporting OpenAI implementations only
  */
 export function isValidModelImplementation(value: any): value is ModelImplementation {
-    return ['whisper', 'chatgpt', 'claude'].includes(value);
+    return ['whisper', 'chatgpt'].includes(value);
 }
 
 /**

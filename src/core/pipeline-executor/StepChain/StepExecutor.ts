@@ -58,7 +58,7 @@ export class StepExecutor {
             
             if (implementation === 'whisper' && WhisperStepProcessor.isAudioFile(fileInfo)) {
                 return await this.whisperProcessor.executeWhisperStep(stepId, fileInfo, resolvedStep);
-            } else if (implementation === 'chatgpt' || implementation === 'claude') {
+            } else if (implementation === 'chatgpt') {
                 return await this.chatExecutor.execute(stepId, fileInfo, resolvedStep);
             }
 
@@ -67,7 +67,7 @@ export class StepExecutor {
                 `Unsupported model implementation: ${implementation}`,
                 `Model implementation "${implementation}" is not supported`,
                 { stepId, implementation, model: resolvedStep.modelConfig.model },
-                ['Use "whisper" for audio transcription', 'Use "chatgpt" or "claude" for text processing']
+                ['Use "whisper" for audio transcription', 'Use "chatgpt" for text processing']
             );
 
         } catch (error) {

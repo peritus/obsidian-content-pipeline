@@ -85,7 +85,9 @@
     "tslib": "^2.6.2",
     "typescript": "^5.3.3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "valibot": "^1.0.0"
+  },
   "peerDependencies": {
     "obsidian": "^1.0.0"
   },

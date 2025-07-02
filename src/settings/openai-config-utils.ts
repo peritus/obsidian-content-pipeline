@@ -6,7 +6,7 @@
  */
 
 import { ModelsConfig, ModelConfig } from '../types';
-import { validateApiKey } from '../validation/api-key/validateApiKey';
+import { validateApiKey } from '../validation';
 import { ErrorFactory } from '../error-handler';
 
 /**
