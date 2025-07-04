@@ -12,6 +12,7 @@
 import * as v from 'valibot';
 import { ModelImplementation, ModelsConfig, PipelineConfiguration, isRoutingAwareOutput } from '../types';
 import { CHAT_LIMITS } from '../api/chat-types';
+import { WHISPER_LIMITS } from '../api/whisper-types';
 
 /**
  * API Key Validation Schema
@@ -266,6 +267,45 @@ export const tokenValidationSchema = v.object({
     )
 });
 
+/**
+ * Validate supported audio file formats
+ */
+function isSupportedAudioFile(input: unknown): boolean {
+    if (typeof input !== 'string') return false;
+    const extension = input.toLowerCase().split('.').pop();
+    return WHISPER_LIMITS.supportedFormats.includes(extension as any);
+}
+
+/**
+ * Validate ArrayBuffer
+ */
+function isArrayBuffer(input: unknown): boolean {
+    return input instanceof ArrayBuffer;
+}
+
+/**
+ * Audio file validation schema
+ */
+export const audioFileSchema = v.object({
+    audioData: v.pipe(
+        v.custom(isArrayBuffer, 'Must be ArrayBuffer'),
+        v.custom((buffer: unknown) => {
+            if (!(buffer instanceof ArrayBuffer)) return false;
+            return buffer.byteLength > 0;
+        }, 'Audio data cannot be empty'),
+        v.custom((buffer: unknown) => {
+            if (!(buffer instanceof ArrayBuffer)) return false;
+            return buffer.byteLength <= WHISPER_LIMITS.maxFileSize;
+        }, `Audio file too large (max: ${WHISPER_LIMITS.maxFileSize} bytes)`)
+    ),
+    filename: v.pipe(
+        v.string('Filename must be a string'),
+        v.trim(),
+        v.nonEmpty('Filename cannot be empty'),
+        v.custom(isSupportedAudioFile, `Unsupported audio format. Supported: ${WHISPER_LIMITS.supportedFormats.join(', ')}`)
+    )
+});
+
 // =============================================================================
 // VALIDATION FUNCTIONS
 // =============================================================================
@@ -344,6 +384,14 @@ export function validateTokenCount(yamlRequest: string, estimatedTokens: number,
 }
 
 /**
+ * Validate audio file data
+ */
+export function validateAudioFile(audioData: ArrayBuffer, filename: string): true {
+    v.parse(audioFileSchema, { audioData, filename });
+    return true;
+}
+
+/**
  * Validators object for convenience
  */
 export const Validators = {
@@ -356,6 +404,7 @@ export const Validators = {
     pipelineConfig: validatePipelineConfig,
     chatRequest: validateChatRequest,
     tokenCount: validateTokenCount,
+    audioFile: validateAudioFile,
     config: validateConfig
 };
 

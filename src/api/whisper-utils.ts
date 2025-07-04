@@ -4,6 +4,7 @@
 
 import { WHISPER_LIMITS } from './whisper-types';
 import { ErrorFactory } from '../error-handler';
+import { validateAudioFile } from '../validation/schemas';
 
 /**
  * Generate unique request ID for tracking
@@ -40,30 +41,45 @@ function isSupportedAudioFile(filename: string): boolean {
  * Validate audio data before sending to API
  */
 export function validateAudioData(audioData: ArrayBuffer, filename: string): void {
-    if (!audioData || audioData.byteLength === 0) {
+    try {
+        validateAudioFile(audioData, filename);
+    } catch (error) {
+        // Convert Valibot validation errors to ErrorFactory format
+        const errorMessage = error instanceof Error ? error.message : 'Validation failed';
+        
+        if (errorMessage.includes('empty')) {
+            throw ErrorFactory.api(
+                'Audio data is empty or invalid',
+                'Cannot transcribe empty audio file',
+                { filename, audioSize: audioData?.byteLength },
+                ['Check if audio file is valid', 'Ensure file is not empty']
+            );
+        }
+        
+        if (errorMessage.includes('too large')) {
+            throw ErrorFactory.api(
+                `Audio file too large: ${audioData.byteLength} bytes (max: ${WHISPER_LIMITS.maxFileSize} bytes)`,
+                'Audio file exceeds OpenAI size limit',
+                { filename, size: audioData.byteLength, maxSize: WHISPER_LIMITS.maxFileSize },
+                ['Compress the audio file', 'Use a smaller audio file', 'Split large files']
+            );
+        }
+        
+        if (errorMessage.includes('Unsupported audio format')) {
+            throw ErrorFactory.api(
+                `Unsupported audio format: ${filename}`,
+                'File format not supported by Whisper API',
+                { filename, supportedFormats: WHISPER_LIMITS.supportedFormats },
+                ['Convert to a supported format', 'Use MP3, WAV, M4A, MP4, WebM, or OGG']
+            );
+        }
+        
+        // Fallback for other validation errors
         throw ErrorFactory.api(
-            'Audio data is empty or invalid',
-            'Cannot transcribe empty audio file',
+            `Audio validation failed: ${errorMessage}`,
+            'Invalid audio file format',
             { filename, audioSize: audioData?.byteLength },
-            ['Check if audio file is valid', 'Ensure file is not empty']
-        );
-    }
-
-    if (audioData.byteLength > WHISPER_LIMITS.maxFileSize) {
-        throw ErrorFactory.api(
-            `Audio file too large: ${audioData.byteLength} bytes (max: ${WHISPER_LIMITS.maxFileSize} bytes)`,
-            'Audio file exceeds OpenAI size limit',
-            { filename, size: audioData.byteLength, maxSize: WHISPER_LIMITS.maxFileSize },
-            ['Compress the audio file', 'Use a smaller audio file', 'Split large files']
-        );
-    }
-
-    if (!isSupportedAudioFile(filename)) {
-        throw ErrorFactory.api(
-            `Unsupported audio format: ${filename}`,
-            'File format not supported by Whisper API',
-            { filename, supportedFormats: WHISPER_LIMITS.supportedFormats },
-            ['Convert to a supported format', 'Use MP3, WAV, M4A, MP4, WebM, or OGG']
+            ['Check audio file format', 'Verify file is not corrupted']
         );
     }
 }
