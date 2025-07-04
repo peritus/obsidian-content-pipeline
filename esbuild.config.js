@@ -203,7 +203,7 @@ async function performBuild() {
         const size = result.metafile.outputs[output].bytes;
         console.log(`   ${output}: ${(size / 1024).toFixed(2)} KB`);
       });
-      writeFileSync('meta.json', JSON.stringify(result.metafile));
+      writeFileSync('build/meta.json', JSON.stringify(result.metafile));
     }
     
     return result;
