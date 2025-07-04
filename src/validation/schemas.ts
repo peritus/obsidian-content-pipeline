@@ -421,6 +421,42 @@ export const executionContextSchema = v.object({
 });
 
 // =============================================================================
+// OPENAI CONFIG VALIDATION SCHEMAS
+// =============================================================================
+
+/**
+ * OpenAI API key validation schema
+ * For validating OpenAI API keys specifically
+ */
+export const openAIApiKeySchema = v.pipe(
+    v.string('API key must be a string'),
+    v.trim(),
+    v.nonEmpty('API key cannot be empty')
+);
+
+/**
+ * OpenAI configuration validation schema
+ * For validating OpenAI model configurations
+ */
+export const openAIConfigSchema = v.object({
+    baseUrl: v.pipe(
+        v.string('Base URL must be a string'),
+        v.trim(),
+        v.nonEmpty('Base URL cannot be empty')
+    )
+});
+
+/**
+ * Models configuration JSON validation schema
+ * For validating JSON strings containing models configuration
+ */
+export const modelsConfigJsonSchema = v.pipe(
+    v.string('Models configuration must be a string'),
+    v.trim(),
+    v.nonEmpty('Models configuration cannot be empty')
+);
+
+// =============================================================================
 // VALIDATION FUNCTIONS
 // =============================================================================
 
@@ -546,6 +582,30 @@ export function validateExecutionContext(stepId: string, fileInfo: any, resolved
 }
 
 /**
+ * Validate OpenAI API key
+ */
+export function validateOpenAIApiKey(apiKey: string): true {
+    v.parse(openAIApiKeySchema, apiKey);
+    return true;
+}
+
+/**
+ * Validate OpenAI configuration
+ */
+export function validateOpenAIConfig(config: any): true {
+    v.parse(openAIConfigSchema, config);
+    return true;
+}
+
+/**
+ * Validate models configuration JSON string
+ */
+export function validateModelsConfigJson(modelsConfigJson: string): true {
+    v.parse(modelsConfigJsonSchema, modelsConfigJson);
+    return true;
+}
+
+/**
  * Validators object for convenience
  */
 export const Validators = {
@@ -564,6 +624,9 @@ export const Validators = {
     filenameInput: validateFilenameInput,
     inputPattern: validateInputPattern,
     executionContext: validateExecutionContext,
+    openAIApiKey: validateOpenAIApiKey,
+    openAIConfig: validateOpenAIConfig,
+    modelsConfigJson: validateModelsConfigJson,
     config: validateConfig
 };
 

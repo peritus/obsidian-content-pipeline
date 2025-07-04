@@ -6,7 +6,7 @@
  */
 
 import { ModelsConfig, ModelConfig } from '../types';
-import { validateApiKey } from '../validation';
+import { validateApiKey, validateOpenAIApiKey, validateOpenAIConfig } from '../validation/schemas';
 import { ErrorFactory } from '../error-handler';
 
 /**
@@ -176,11 +176,8 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
  * @returns true if valid OpenAI format, false otherwise
  */
 export function isValidOpenAIApiKey(apiKey: string): boolean {
-    if (!apiKey || typeof apiKey !== 'string') {
-        return false;
-    }
-
     try {
+        validateOpenAIApiKey(apiKey);
         validateApiKey(apiKey.trim());
         return true;
     } catch (error) {
@@ -218,15 +215,12 @@ export function getOpenAIConfigSummary(modelsConfigJson: string): string {
  * @returns true if this is an OpenAI configuration
  */
 function isOpenAIConfig(config: ModelConfig): boolean {
-    if (!config || typeof config !== 'object') {
+    try {
+        validateOpenAIConfig(config);
+        return OPENAI_BASE_URL_PATTERN.test(config.baseUrl.trim());
+    } catch (error) {
         return false;
     }
-
-    if (!config.baseUrl || typeof config.baseUrl !== 'string') {
-        return false;
-    }
-
-    return OPENAI_BASE_URL_PATTERN.test(config.baseUrl.trim());
 }
 
 /**
