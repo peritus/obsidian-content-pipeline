@@ -2,8 +2,7 @@ import { Plugin, Notice, TFile } from 'obsidian';
 import { DEFAULT_SETTINGS, SettingsTab } from './settings';
 import { ContentPipelineSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
-import { createConfigurationResolver } from './validation/configuration-resolver';
-import { createConfigurationValidator } from './validation/configuration-validator';
+import { validateConfig, parseAndValidateConfig, isValidConfig, getConfigErrors } from './validation';
 import { CommandHandler } from './commands';
 
 /**
@@ -161,23 +160,24 @@ export default class ContentPipelinePlugin extends Plugin {
      */
     private parseConfigurations(): void {
         try {
-            // Validate and parse both configurations using ConfigurationResolver
-            const resolver = createConfigurationResolver(
+            // Check if we have both configurations
+            if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
+                this.logger.debug('Missing configurations, clearing parsed configs');
+                this.settings.parsedModelsConfig = undefined;
+                this.settings.parsedPipelineConfig = undefined;
+                return;
+            }
+
+            // Parse and validate configurations
+            const { modelsConfig, pipelineConfig } = parseAndValidateConfig(
                 this.settings.modelsConfig,
                 this.settings.pipelineConfig
             );
             
-            const validationResult = resolver.validate();
+            this.settings.parsedModelsConfig = modelsConfig;
+            this.settings.parsedPipelineConfig = pipelineConfig;
+            this.logger.debug('Both configurations parsed and validated successfully');
             
-            if (validationResult.isValid) {
-                this.settings.parsedModelsConfig = JSON.parse(this.settings.modelsConfig) as ModelsConfig;
-                this.settings.parsedPipelineConfig = JSON.parse(this.settings.pipelineConfig) as PipelineConfiguration;
-                this.logger.debug('Both configurations parsed and validated successfully');
-            } else {
-                this.logger.warn('Configuration validation failed, clearing parsed configs:', validationResult);
-                this.settings.parsedModelsConfig = undefined;
-                this.settings.parsedPipelineConfig = undefined;
-            }
         } catch (error) {
             this.logger.error('Failed to parse configurations:', error);
             this.settings.parsedModelsConfig = undefined;
@@ -186,11 +186,21 @@ export default class ContentPipelinePlugin extends Plugin {
     }
 
     /**
-     * Get configuration status for display using centralized validator
+     * Get configuration status for display
      */
     private getConfigurationStatus(): string {
-        const validator = createConfigurationValidator(this.settings);
-        return validator.getConfigurationStatus();
+        if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
+            return 'Invalid configuration';
+        }
+
+        try {
+            validateConfig(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
+            const stepCount = Object.keys(this.settings.parsedPipelineConfig).length;
+            return `Valid (${stepCount} steps)`;
+        } catch (error) {
+            const errors = getConfigErrors(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
+            return `Invalid (${errors.length} errors)`;
+        }
     }
 
     /**

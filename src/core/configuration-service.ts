@@ -11,8 +11,13 @@ import {
     ModelsConfig,
     ResolvedPipelineStep 
 } from '../types';
-import { createConfigurationValidator } from '../validation/configuration-validator';
-import { createConfigurationResolver } from '../validation/configuration-resolver';
+import { 
+    validateConfig, 
+    isValidConfig, 
+    getConfigErrors,
+    resolveStep,
+    parseAndValidateConfig
+} from '../validation';
 import { ErrorFactory } from '../error-handler';
 import { createLogger } from '../logger';
 
@@ -34,9 +39,16 @@ class ConfigurationService {
      * Validate both models and pipeline configurations
      */
     validateConfigurations(): ConfigurationValidationResult {
+        if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
+            return { 
+                isValid: false, 
+                error: 'Configurations not parsed'
+            };
+        }
+
         try {
-            const validator = createConfigurationValidator(this.settings);
-            return validator.validateConfigurations();
+            validateConfig(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
+            return { isValid: true };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             logger.error('Configuration validation failed:', errorMessage);
@@ -52,8 +64,36 @@ class ConfigurationService {
      * @throws Error if configuration is invalid
      */
     getValidatedPipelineConfiguration(): PipelineConfiguration {
-        const validator = createConfigurationValidator(this.settings);
-        return validator.getValidatedPipelineConfiguration();
+        if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
+            throw ErrorFactory.configuration(
+                'Dual configuration not available',
+                'Both models and pipeline configurations are required',
+                { hasModels: !!this.settings.modelsConfig, hasPipeline: !!this.settings.pipelineConfig },
+                ['Configure both models and pipeline in settings', 'Ensure configurations are saved']
+            );
+        }
+
+        if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
+            throw ErrorFactory.configuration(
+                'Parsed configurations not available',
+                'Configurations are not properly parsed',
+                {},
+                ['Reload plugin', 'Re-save configuration in settings']
+            );
+        }
+
+        try {
+            validateConfig(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
+            return this.settings.parsedPipelineConfig;
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            throw ErrorFactory.configuration(
+                `Configuration validation failed: ${errorMessage}`,
+                'Pipeline configuration contains validation errors',
+                { error: errorMessage },
+                ['Fix configuration errors in settings', 'Validate configuration before processing']
+            );
+        }
     }
 
     /**
@@ -117,15 +157,21 @@ class ConfigurationService {
             );
         }
 
-        try {
-            // Create resolver and resolve step
-            const resolver = createConfigurationResolver(
-                this.settings.modelsConfig,
-                this.settings.pipelineConfig
+        if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
+            throw ErrorFactory.configuration(
+                'Parsed configurations not available',
+                'Configurations are not properly parsed',
+                { stepId },
+                ['Reload plugin', 'Re-save configuration in settings']
             );
+        }
 
-            return resolver.resolveStep(stepId);
-
+        try {
+            return resolveStep(
+                stepId,
+                this.settings.parsedPipelineConfig,
+                this.settings.parsedModelsConfig
+            );
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             throw ErrorFactory.configuration(
@@ -175,6 +221,17 @@ class ConfigurationService {
             hasPipelineConfig,
             validationError: validationResult.error
         };
+    }
+
+    /**
+     * Get detailed validation errors
+     */
+    getValidationErrors(): string[] {
+        if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
+            return ['Configurations not parsed'];
+        }
+
+        return getConfigErrors(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
     }
 }
 

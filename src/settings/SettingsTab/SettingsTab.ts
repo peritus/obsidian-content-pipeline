@@ -7,7 +7,8 @@ import { PipelineConfigSection } from '../PipelineConfigSection';
 import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
 import { FolderSetupSection } from '../folder-setup-section';
 import { PromptsManager } from './PromptsManager';
-import { createConfigurationResolver } from '../../validation/configuration-resolver';
+import { getConfigErrors, isValidConfig } from '../../validation/config-validation';
+import { parseAndValidateConfig } from '../../validation/config-resolver';
 import { ConfigValidationResult } from '../../types';
 import { SettingsNotifier } from '../settings-notifier';
 
@@ -261,11 +262,34 @@ export class SettingsTab extends PluginSettingTab {
      */
     private validateConfigurations(): ConfigValidationResult {
         try {
-            const resolver = createConfigurationResolver(
+            const { modelsConfig, pipelineConfig } = parseAndValidateConfig(
                 this.plugin.settings.modelsConfig,
                 this.plugin.settings.pipelineConfig
             );
-            return resolver.validate();
+            
+            const errors = getConfigErrors(modelsConfig, pipelineConfig);
+            
+            if (errors.length === 0) {
+                return {
+                    isValid: true,
+                    modelsErrors: [],
+                    pipelineErrors: [],
+                    crossRefErrors: [],
+                    outputRoutingErrors: [],
+                    warnings: [],
+                    entryPoints: []
+                };
+            } else {
+                return {
+                    isValid: false,
+                    modelsErrors: [],
+                    pipelineErrors: errors,
+                    crossRefErrors: [],
+                    outputRoutingErrors: [],
+                    warnings: [],
+                    entryPoints: []
+                };
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             return {

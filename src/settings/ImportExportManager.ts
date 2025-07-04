@@ -3,7 +3,8 @@
  */
 
 import { Notice } from 'obsidian';
-import { createConfigurationResolver } from '../validation/configuration-resolver';
+import { parseAndValidateConfig } from '../validation/config-resolver';
+import { getConfigErrors } from '../validation/config-validation';
 
 export interface ImportExportCallbacks {
     onPipelineImport: (config: string) => void;
@@ -22,25 +23,11 @@ export class ImportExportManager {
      */
     exportPipelineConfig(modelsConfig: string, pipelineConfig: string): void {
         try {
-            const resolver = createConfigurationResolver(modelsConfig, pipelineConfig);
-            const validationResult = resolver.validate();
+            const { modelsConfig: models, pipelineConfig: pipeline } = parseAndValidateConfig(modelsConfig, pipelineConfig);
+            const errors = getConfigErrors(models, pipeline);
 
-            if (!validationResult.isValid) {
-                const errorSections = [];
-                if (validationResult.modelsErrors.length > 0) {
-                    errorSections.push(`Models: ${validationResult.modelsErrors.join('; ')}`);
-                }
-                if (validationResult.pipelineErrors.length > 0) {
-                    errorSections.push(`Pipeline: ${validationResult.pipelineErrors.join('; ')}`);
-                }
-                if (validationResult.crossRefErrors.length > 0) {
-                    errorSections.push(`Cross-reference: ${validationResult.crossRefErrors.join('; ')}`);
-                }
-                
-                const message = errorSections.length > 0 
-                    ? `❌ Configuration errors: ${errorSections.join(' | ')}`
-                    : '❌ Configuration validation failed';
-                    
+            if (errors.length > 0) {
+                const message = `❌ Configuration errors: ${errors.join('; ')}`;
                 new Notice(message, 8000);
                 return;
             }
@@ -49,7 +36,7 @@ export class ImportExportManager {
                 version: '1.2',
                 exported: new Date().toISOString(),
                 description: 'Content Pipeline Pipeline Configuration',
-                pipeline: resolver.exportPipelineConfig()
+                pipeline: pipeline
             };
 
             const dataStr = JSON.stringify(exportData, null, 2);
