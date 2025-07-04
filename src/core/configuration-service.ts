@@ -18,7 +18,7 @@ import {
     resolveStep,
     parseAndValidateConfig
 } from '../validation';
-import { ErrorFactory } from '../error-handler';
+import { ContentPipelineError } from '../errors';
 import { createLogger } from '../logger';
 
 const logger = createLogger('ConfigurationService');
@@ -61,64 +61,36 @@ class ConfigurationService {
 
     /**
      * Get validated pipeline configuration
-     * @throws Error if configuration is invalid
+     * @throws ContentPipelineError if configuration is invalid
      */
     getValidatedPipelineConfiguration(): PipelineConfiguration {
         if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
-            throw ErrorFactory.configuration(
-                'Dual configuration not available',
-                'Both models and pipeline configurations are required',
-                { hasModels: !!this.settings.modelsConfig, hasPipeline: !!this.settings.pipelineConfig },
-                ['Configure both models and pipeline in settings', 'Ensure configurations are saved']
-            );
+            throw new ContentPipelineError('Configuration not available - both models and pipeline configurations are required');
         }
 
         if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
-            throw ErrorFactory.configuration(
-                'Parsed configurations not available',
-                'Configurations are not properly parsed',
-                {},
-                ['Reload plugin', 'Re-save configuration in settings']
-            );
+            throw new ContentPipelineError('Configuration not available - configurations are not properly parsed');
         }
 
         try {
             validateConfig(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
             return this.settings.parsedPipelineConfig;
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw ErrorFactory.configuration(
-                `Configuration validation failed: ${errorMessage}`,
-                'Pipeline configuration contains validation errors',
-                { error: errorMessage },
-                ['Fix configuration errors in settings', 'Validate configuration before processing']
-            );
+            throw new ContentPipelineError(`Configuration validation failed: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error : undefined);
         }
     }
 
     /**
      * Get validated models configuration
-     * @throws Error if configuration is invalid
+     * @throws ContentPipelineError if configuration is invalid
      */
     getValidatedModelsConfiguration(): ModelsConfig {
-        // Validate that models configuration is available
         if (!this.settings.modelsConfig) {
-            throw ErrorFactory.configuration(
-                'Models configuration not available',
-                'Models configuration is required',
-                {},
-                ['Configure models in settings', 'Ensure models configuration is saved']
-            );
+            throw new ContentPipelineError('Models configuration not available');
         }
 
-        // Validate that parsed models configuration is available
         if (!this.settings.parsedModelsConfig) {
-            throw ErrorFactory.configuration(
-                'Parsed models configuration not available',
-                'Models configuration is not parsed',
-                {},
-                ['Reload plugin', 'Re-save configuration in settings']
-            );
+            throw new ContentPipelineError('Models configuration is not parsed');
         }
 
         logger.debug('Models configuration validated and returned');
@@ -144,26 +116,15 @@ class ConfigurationService {
 
     /**
      * Resolve a specific pipeline step with full validation
-     * @throws Error if step cannot be resolved
+     * @throws ContentPipelineError if step cannot be resolved
      */
     resolveStep(stepId: string): ResolvedPipelineStep {
-        // Validate settings are available
         if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
-            throw ErrorFactory.configuration(
-                'Configuration not available',
-                'Both models and pipeline configurations are required',
-                { stepId },
-                ['Configure models and pipeline in settings', 'Ensure configurations are saved']
-            );
+            throw new ContentPipelineError(`Configuration not available for step "${stepId}" - both models and pipeline configurations are required`);
         }
 
         if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
-            throw ErrorFactory.configuration(
-                'Parsed configurations not available',
-                'Configurations are not properly parsed',
-                { stepId },
-                ['Reload plugin', 'Re-save configuration in settings']
-            );
+            throw new ContentPipelineError(`Configuration not available for step "${stepId}" - configurations are not properly parsed`);
         }
 
         try {
@@ -173,13 +134,7 @@ class ConfigurationService {
                 this.settings.parsedModelsConfig
             );
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            throw ErrorFactory.configuration(
-                `Failed to resolve step configuration: ${errorMessage}`,
-                `Cannot resolve step "${stepId}" configuration`,
-                { stepId, error: errorMessage },
-                ['Check step exists in pipeline configuration', 'Verify model config reference is valid', 'Validate configuration syntax']
-            );
+            throw new ContentPipelineError(`Failed to resolve step "${stepId}" configuration: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error : undefined);
         }
     }
 
