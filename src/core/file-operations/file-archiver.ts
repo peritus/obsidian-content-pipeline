@@ -7,7 +7,7 @@ import { SimplePathBuilder } from '../SimplePathBuilder';
 import { FilenameResolver } from '../FilenameResolver';
 import { ArchiveResult } from './types';
 import { DirectoryManager } from './directory-manager';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError, isContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('FileArchiver');
@@ -35,12 +35,7 @@ export class FileArchiver {
             // Get source file
             const sourceFile = this.vault.getAbstractFileByPath(sourceFilePath);
             if (!sourceFile || !(sourceFile instanceof TFile)) {
-                throw ErrorFactory.fileSystem(
-                    `Source file not found: ${sourceFilePath}`,
-                    `Cannot archive file: source file not found`,
-                    { sourceFilePath },
-                    ['Check if source file exists', 'Verify file path']
-                );
+                throw new ContentPipelineError(`Source file not found: ${sourceFilePath}`);
             }
 
             // Ensure archive directory exists
@@ -69,7 +64,7 @@ export class FileArchiver {
             };
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'ContentPipelineError') {
+            if (isContentPipelineError(error)) {
                 throw error; // Re-throw our custom errors
             }
 

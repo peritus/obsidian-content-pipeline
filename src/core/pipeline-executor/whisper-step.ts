@@ -17,7 +17,7 @@ import {
     isRoutingAwareOutput,
     RoutingAwareOutput
 } from '../../types';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('WhisperStep');
@@ -205,20 +205,7 @@ export class WhisperStepProcessor {
 
             // Priority 3: If no default, throw error
             const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
-            throw ErrorFactory.routing(
-                `Whisper step: No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`,
-                'Cannot determine where to save Whisper output file - routing configuration is incomplete',
-                { 
-                    nextStep, 
-                    availableRoutes,
-                    routingConfig: routingOutput 
-                },
-                [
-                    'Add a "default" fallback path to your Whisper step output routing configuration',
-                    `Ensure nextStep value matches one of: ${availableRoutes.join(', ')}`,
-                    'Consider using simple string output for Whisper steps if routing is not needed'
-                ]
-            );
+            throw new ContentPipelineError(`Whisper step: No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`);
         }
 
         // Fallback to resolved step output as directory
@@ -243,12 +230,7 @@ export class WhisperStepProcessor {
             return await this.app.vault.readBinary(file as any);
 
         } catch (error) {
-            throw ErrorFactory.fileSystem(
-                `Failed to read audio file: ${error instanceof Error ? error.message : String(error)}`,
-                'Cannot read audio file for transcription',
-                { filePath },
-                ['Check file exists', 'Verify file permissions']
-            );
+            throw new ContentPipelineError(`Failed to read audio file: ${filePath}`, error instanceof Error ? error : undefined);
         }
     }
 

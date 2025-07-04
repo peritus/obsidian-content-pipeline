@@ -8,7 +8,7 @@
 import { App } from 'obsidian';
 import { FileOperations, FileUtils } from '../file-operations';
 import { FileInfo, ProcessingContext, ResolvedPipelineStep, ContentPipelineSettings } from '../../types';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('PromptBuilder');
@@ -63,12 +63,7 @@ export class PromptBuilder {
             return prompt;
 
         } catch (error) {
-            throw ErrorFactory.parsing(
-                `Failed to build prompt: ${error instanceof Error ? error.message : String(error)}`,
-                'Could not create prompt for LLM processing',
-                { fileInfo, resolvedStep, context, originalError: error },
-                ['Check file accessibility', 'Verify prompt and context file paths']
-            );
+            throw new ContentPipelineError(`Failed to build prompt: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error : undefined);
         }
     }
 
@@ -137,16 +132,7 @@ export class PromptBuilder {
             }
             
             // If no match found, throw error to abort processing
-            throw ErrorFactory.parsing(
-                `Prompt file not found: ${filePath}`,
-                `Required prompt file "${filePath}" was not found in vault or config-defined prompts`,
-                { filePath, availableConfigDefinedPrompts: this.settings?.configDefinedPrompts ? Object.keys(this.settings.configDefinedPrompts) : [] },
-                [
-                    'Create the prompt file in your vault', 
-                    'Check the file path is correct',
-                    'Ensure config-defined prompts are properly imported if using configurations'
-                ]
-            );
+            throw new ContentPipelineError(`Prompt file not found: ${filePath}`);
         }
     }
 

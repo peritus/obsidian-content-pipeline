@@ -19,9 +19,9 @@ import {
     RoutingAwareOutput,
     ContentPipelineSettings
 } from '../../../types';
-import { ErrorFactory } from '../../../error-handler';
 import { createLogger } from '../../../logger';
-import { validateExecutionContext } from '../../../validation/schemas';
+import * as v from 'valibot';
+import { executionContextSchema } from '../../../validation/schemas';
 
 const logger = createLogger('ChatStepExecutor');
 
@@ -304,19 +304,8 @@ export class ChatStepExecutor {
      * Validate input parameters for chat execution
      */
     private validateInput(stepId: string, fileInfo: FileInfo, resolvedStep: ResolvedPipelineStep): void {
-        try {
-            validateExecutionContext(stepId, fileInfo, resolvedStep);
-        } catch (error) {
-            // Convert Valibot validation errors to ErrorFactory format
-            const errorMessage = error instanceof Error ? error.message : 'Validation failed';
-            
-            throw ErrorFactory.validation(
-                `Input validation failed: ${errorMessage}`,
-                'Invalid parameters provided to ChatStepExecutor',
-                { stepId, fileInfo: { path: fileInfo?.path, name: fileInfo?.name }, resolvedStep: !!resolvedStep },
-                ['Check input parameters', 'Ensure all required fields are provided', 'Verify file information is complete']
-            );
-        }
+        // Use direct Valibot validation - let errors bubble up naturally
+        v.parse(executionContextSchema, { stepId, fileInfo, resolvedStep });
 
         // Log validation success for debugging
         logger.debug('Input validation passed', { 

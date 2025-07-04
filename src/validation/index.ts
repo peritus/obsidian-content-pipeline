@@ -10,16 +10,6 @@
 
 // All validation functions and schemas (consolidated)
 export {
-    // Basic validation functions
-    validateApiKey,
-    validatePath,
-    validateFilePattern,
-    validateModelConfig,
-    validateModelsConfig,
-    validatePipelineStep,
-    validatePipelineConfig,
-    validateCommon,
-    
     // Advanced configuration validation
     validateConfig,
     isValidConfig,
@@ -27,7 +17,7 @@ export {
     parseAndValidateConfig,
     resolveStep,
     
-    // Schemas for advanced usage
+    // Schemas for direct usage (use v.parse(schema, data) instead of wrapper functions)
     configSchema,
     pipelineConfigAdvanced,
     apiKeySchema,
@@ -39,7 +29,18 @@ export {
     stepIdSchema,
     pipelineStepSchema,
     pipelineConfigSchema,
-    
-    // Convenience object
-    Validators
+    chatRequestSchema,
+    tokenValidationSchema,
+    audioFileSchema,
+    directoryPathInputSchema,
+    filePathInputSchema,
+    filenameInputSchema,
+    inputPatternSchema,
+    fileInfoSchema,
+    executionModelConfigSchema,
+    resolvedStepSchema,
+    executionContextSchema,
+    openAIApiKeySchema,
+    openAIConfigSchema,
+    modelsConfigJsonSchema
 } from './schemas';

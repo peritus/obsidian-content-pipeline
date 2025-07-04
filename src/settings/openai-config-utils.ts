@@ -6,8 +6,8 @@
  */
 
 import { ModelsConfig, ModelConfig } from '../types';
-import { validateApiKey, validateOpenAIApiKey, validateOpenAIConfig } from '../validation/schemas';
-import { ErrorFactory } from '../error-handler';
+import { apiKeySchema, openAIApiKeySchema, openAIConfigSchema } from '../validation/schemas';
+import * as v from 'valibot';
 
 /**
  * OpenAI API endpoint pattern for identification
@@ -114,7 +114,7 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
     // Validate the new API key first
     try {
         if (newApiKey && newApiKey.trim() !== '') {
-            validateApiKey(newApiKey.trim());
+            v.parse(apiKeySchema, newApiKey.trim());
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -177,8 +177,8 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
  */
 export function isValidOpenAIApiKey(apiKey: string): boolean {
     try {
-        validateOpenAIApiKey(apiKey);
-        validateApiKey(apiKey.trim());
+        v.parse(openAIApiKeySchema, apiKey);
+        v.parse(apiKeySchema, apiKey.trim());
         return true;
     } catch (error) {
         return false;
@@ -216,7 +216,7 @@ export function getOpenAIConfigSummary(modelsConfigJson: string): string {
  */
 function isOpenAIConfig(config: ModelConfig): boolean {
     try {
-        validateOpenAIConfig(config);
+        v.parse(openAIConfigSchema, config);
         return OPENAI_BASE_URL_PATTERN.test(config.baseUrl.trim());
     } catch (error) {
         return false;
