@@ -63,7 +63,6 @@ export const pathSchema = v.pipe(
     v.trim(),
     v.nonEmpty('Path cannot be empty'),
     v.regex(/^[^\/]/, 'Path cannot be absolute (cannot start with /)'),
-    v.regex(/^[^A-Z]:/, 'Path cannot be absolute (cannot start with drive letter)'),
     v.check((input: string) => {
         return !(input.includes('../') || input.includes('..\\'));
     }, 'Path cannot contain parent directory references (..)'),
@@ -83,7 +82,6 @@ export const pathWithGlobsSchema = v.pipe(
     v.trim(),
     v.nonEmpty('Path cannot be empty'),
     v.regex(/^[^\/]/, 'Path cannot be absolute (cannot start with /)'),
-    v.regex(/^[^A-Z]:/, 'Path cannot be absolute (cannot start with drive letter)'),
     v.check((input: string) => {
         return !(input.includes('../') || input.includes('..\\'));
     }, 'Path cannot contain parent directory references (..)'),
@@ -103,7 +101,6 @@ export const filePatternSchema = v.pipe(
     v.trim(),
     v.nonEmpty('File pattern cannot be empty'),
     v.regex(/^[^\/]/, 'File pattern cannot be absolute'),
-    v.regex(/^[^A-Z]:/, 'File pattern cannot be absolute (cannot start with drive letter)'),
     v.check((input: string) => {
         return !(input.includes('../') || input.includes('..\\'));
     }, 'File pattern cannot contain parent directory references (..)'),
@@ -547,42 +544,6 @@ const circularDependencyValidator = v.custom<{ models: ModelsConfig; pipeline: P
 }, 'Circular dependency detected in routing configuration');
 
 /**
- * Output path conflict validation: Ensure no duplicate paths
- */
-const outputConflictValidator = v.custom<{ models: ModelsConfig; pipeline: PipelineConfiguration }>((input) => {
-    const config = input as { models: ModelsConfig; pipeline: PipelineConfiguration };
-    const pathMapping = new Map<string, string[]>();
-
-    for (const [stepId, step] of Object.entries(config.pipeline)) {
-        const outputPaths: string[] = [];
-
-        if (typeof step.output === 'string') {
-            outputPaths.push(step.output);
-        } else if (isRoutingAwareOutput(step.output)) {
-            outputPaths.push(...Object.values(step.output));
-        }
-
-        if (step.archive) {
-            outputPaths.push(step.archive);
-        }
-
-        outputPaths.forEach(path => {
-            if (!pathMapping.has(path)) {
-                pathMapping.set(path, []);
-            }
-            pathMapping.get(path)!.push(stepId);
-        });
-    }
-
-    // Check for conflicts
-    for (const [path, stepIds] of Array.from(pathMapping.entries())) {
-        if (stepIds.length > 1) return false;
-    }
-
-    return true;
-}, 'Output path conflict: same path used by multiple steps');
-
-/**
  * Pipeline topology validation: Entry points and orphaned steps
  */
 const topologyValidator = v.custom<{ models: ModelsConfig; pipeline: PipelineConfiguration }>((input) => {
@@ -687,7 +648,6 @@ export const configSchema = v.pipe(
     }),
     crossRefValidator,
     circularDependencyValidator,
-    outputConflictValidator,
     topologyValidator,
     directoryFormatValidator,
     routingConsistencyValidator
