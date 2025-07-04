@@ -165,7 +165,7 @@ describe('FileOperations - getFileInfo and Integration', () => {
             expect(processedResult.success).toBe(true);
 
             // Step 4: Archive original file to step-specific archive
-            const archiveResult = await fileOps.archiveFile('inbox/audio/recording.mp3', 'inbox/archive/transcribe');
+            const archiveResult = await fileOps.archiveFile('inbox/audio/recording.mp3', 'inbox/archive/transcribe/');
             expect(archiveResult.success).toBe(true);
         });
 
@@ -298,9 +298,9 @@ describe('FileOperations - getFileInfo and Integration', () => {
         it('should handle step-based archive paths correctly', async () => {
             // Test that files are archived to the correct step-specific directories
             const testFiles = [
-                { input: 'inbox/audio/test1.mp3', step: 'transcribe', expectedArchive: 'inbox/archive/transcribe' },
-                { input: 'inbox/transcripts/test2.md', step: 'process-thoughts', expectedArchive: 'inbox/archive/process-thoughts' },
-                { input: 'inbox/process-thoughts/test3.md', step: 'summary-personal', expectedArchive: 'inbox/archive/summary-personal' }
+                { input: 'inbox/audio/test1.mp3', step: 'transcribe', expectedArchive: 'inbox/archive/transcribe/' },
+                { input: 'inbox/transcripts/test2.md', step: 'process-thoughts', expectedArchive: 'inbox/archive/process-thoughts/' },
+                { input: 'inbox/process-thoughts/test3.md', step: 'summary-personal', expectedArchive: 'inbox/archive/summary-personal/' }
             ];
 
             // Use for...of loop instead of forEach to properly handle async operations
