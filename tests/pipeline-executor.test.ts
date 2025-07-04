@@ -59,7 +59,7 @@ describe('Pipeline Executor', () => {
             const executorWithoutConfig = new PipelineExecutor(mockApp, settingsWithoutConfig);
             
             await expect(executorWithoutConfig.processNextFile())
-                .rejects.toThrow('Configuration validation failed');
+                .rejects.toThrow('Configuration not available');
         });
 
         it('should validate routing-aware output pipeline configuration', () => {
