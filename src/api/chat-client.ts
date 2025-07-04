@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '../logger';
-import { ErrorFactory } from '../error-handler';
+import { ContentPipelineError, isContentPipelineError } from '../errors';
 import { 
     ChatConfig, 
     ChatOptions, 
@@ -29,7 +29,7 @@ export class ChatClient {
         this.config = { ...DEFAULT_CHAT_CONFIG, ...config };
         
         if (!this.config.apiKey) {
-            throw ErrorFactory.api('API key required', 'No API key provided', {}, ['Provide OpenAI API key']);
+            throw new ContentPipelineError('API key required');
         }
     }
 
@@ -81,7 +81,7 @@ export class ChatClient {
             const responseData: OpenAIChatResponse = await response.json();
             
             if (!responseData.choices?.[0]?.message?.content) {
-                throw ErrorFactory.api('Empty response', 'No content in structured response', { requestId, responseData });
+                throw new ContentPipelineError('Empty response from API');
             }
 
             const jsonContent = responseData.choices[0].message.content;
@@ -114,16 +114,11 @@ export class ChatClient {
         } catch (error) {
             logger.error(`Structured request failed`, { requestId, error, duration: Date.now() - startTime });
             
-            if (error instanceof Error && error.name === 'ContentPipelineError') {
+            if (isContentPipelineError(error)) {
                 throw error;
             }
 
-            throw ErrorFactory.api(
-                `Structured request failed: ${error instanceof Error ? error.message : String(error)}`,
-                'Failed to process structured request',
-                { requestId, model, promptSize: prompt.length },
-                ['Check connection', 'Verify API key', 'Check JSON schema compatibility']
-            );
+            throw new ContentPipelineError(`Chat API request failed: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error : undefined);
         }
     }
 

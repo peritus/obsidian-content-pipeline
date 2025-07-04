@@ -3,9 +3,11 @@
  */
 
 import { createLogger } from '../logger';
-import { ErrorFactory } from '../error-handler';
+import { ContentPipelineError, isContentPipelineError } from '../errors';
 import { WhisperConfig, TranscriptionOptions, TranscriptionResult, DEFAULT_WHISPER_CONFIG } from './whisper-types';
-import { generateRequestId, getMimeType, validateAudioData, calculateBackoffDelay, shouldRetryError } from './whisper-utils';
+import { generateRequestId, getMimeType, calculateBackoffDelay, shouldRetryError } from './whisper-utils';
+import * as v from 'valibot';
+import { audioFileSchema } from '../validation/schemas';
 
 const logger = createLogger('WhisperClient');
 
@@ -16,7 +18,7 @@ export class WhisperClient {
         this.config = { ...DEFAULT_WHISPER_CONFIG, ...config };
         
         if (!this.config.apiKey) {
-            throw ErrorFactory.api('API key required', 'No API key provided', {}, ['Provide OpenAI API key']);
+            throw new ContentPipelineError('API key required');
         }
     }
 
@@ -30,14 +32,16 @@ export class WhisperClient {
 
         try {
             logger.info(`Transcribing: ${filename}`, { requestId });
-            validateAudioData(audioData, filename);
+            
+            // Validate audio data directly with Valibot
+            v.parse(audioFileSchema, { audioData, filename });
 
             const formData = this.createFormData(audioData, filename, options);
             const response = await this.makeRequestWithRetry(formData, requestId);
             const text = await response.text();
             
             if (!text?.trim()) {
-                throw ErrorFactory.api('Empty transcription', 'No text transcribed', { requestId });
+                throw new ContentPipelineError('Empty transcription from API');
             }
 
             logger.info(`Transcription complete: ${filename}`, { requestId });
@@ -51,16 +55,11 @@ export class WhisperClient {
         } catch (error) {
             logger.error(`Transcription failed: ${filename}`, { requestId, error });
             
-            if (error instanceof Error && error.name === 'ContentPipelineError') {
+            if (isContentPipelineError(error)) {
                 throw error;
             }
 
-            throw ErrorFactory.api(
-                `Transcription failed: ${error instanceof Error ? error.message : String(error)}`,
-                'Failed to transcribe audio',
-                { filename, requestId },
-                ['Check connection', 'Verify API key']
-            );
+            throw new ContentPipelineError(`Whisper API request failed: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error : undefined);
         }
     }
 
