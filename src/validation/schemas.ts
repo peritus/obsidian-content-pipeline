@@ -460,194 +460,21 @@ export const modelsConfigJsonSchema = v.pipe(
 // VALIDATION FUNCTIONS
 // =============================================================================
 
-/**
- * Validate API key
- */
-export function validateApiKey(apiKey: string): true {
-    v.parse(apiKeySchema, apiKey);
-    return true;
-}
-
-/**
- * Validate file path
- */
-export function validatePath(path: string, context: string, allowGlobs: boolean = false): true {
-    const schema = allowGlobs ? pathWithGlobsSchema : pathSchema;
-    v.parse(schema, path);
-    return true;
-}
-
-/**
- * Validate file pattern
- */
-export function validateFilePattern(pattern: string): true {
-    v.parse(filePatternSchema, pattern);
-    return true;
-}
-
-/**
- * Validate model configuration
- */
-export function validateModelConfig(config: any, configId?: string): true {
-    v.parse(modelConfigSchema, config);
-    return true;
-}
-
-/**
- * Validate models configuration
- */
-export function validateModelsConfig(config: any): true {
-    v.parse(modelsConfigSchema, config);
-    return true;
-}
-
-/**
- * Validate pipeline step
- */
-export function validatePipelineStep(step: any, stepId?: string): true {
-    v.parse(pipelineStepSchema, step);
-    return true;
-}
-
-/**
- * Validate pipeline configuration
- */
-export function validatePipelineConfig(config: any): true {
-    v.parse(pipelineConfigSchema, config);
-    return true;
-}
-
-/**
- * Validate chat request
- */
-export function validateChatRequest(yamlRequest: string, model: string): true {
-    v.parse(chatRequestSchema, { yamlRequest, model });
-    return true;
-}
-
-/**
- * Validate token count
- */
-export function validateTokenCount(yamlRequest: string, estimatedTokens: number, maxTokens?: number): true {
-    v.parse(tokenValidationSchema, { yamlRequest, estimatedTokens, maxTokens });
-    return true;
-}
-
-/**
- * Validate audio file data
- */
-export function validateAudioFile(audioData: ArrayBuffer, filename: string): true {
-    v.parse(audioFileSchema, { audioData, filename });
-    return true;
-}
-
-/**
- * Validate directory path input
- */
-export function validateDirectoryPathInput(directoryPath: string): true {
-    v.parse(directoryPathInputSchema, directoryPath);
-    return true;
-}
-
-/**
- * Validate file path input
- */
-export function validateFilePathInput(filePath: string): true {
-    v.parse(filePathInputSchema, filePath);
-    return true;
-}
-
-/**
- * Validate filename input
- */
-export function validateFilenameInput(filename: string): true {
-    v.parse(filenameInputSchema, filename);
-    return true;
-}
-
-/**
- * Validate input pattern
- */
-export function validateInputPattern(inputPattern: string): true {
-    v.parse(inputPatternSchema, inputPattern);
-    return true;
-}
-
-/**
- * Validate execution context
- */
-export function validateExecutionContext(stepId: string, fileInfo: any, resolvedStep: any): true {
-    v.parse(executionContextSchema, { stepId, fileInfo, resolvedStep });
-    return true;
-}
-
-/**
- * Validate OpenAI API key
- */
-export function validateOpenAIApiKey(apiKey: string): true {
-    v.parse(openAIApiKeySchema, apiKey);
-    return true;
-}
-
-/**
- * Validate OpenAI configuration
- */
-export function validateOpenAIConfig(config: any): true {
-    v.parse(openAIConfigSchema, config);
-    return true;
-}
-
-/**
- * Validate models configuration JSON string
- */
-export function validateModelsConfigJson(modelsConfigJson: string): true {
-    v.parse(modelsConfigJsonSchema, modelsConfigJson);
-    return true;
-}
-
-/**
- * Validators object for convenience
- */
-export const Validators = {
-    path: validatePath,
-    apiKey: validateApiKey,
-    filePattern: validateFilePattern,
-    modelConfig: validateModelConfig,
-    modelsConfig: validateModelsConfig,
-    pipelineStep: validatePipelineStep,
-    pipelineConfig: validatePipelineConfig,
-    chatRequest: validateChatRequest,
-    tokenCount: validateTokenCount,
-    audioFile: validateAudioFile,
-    directoryPathInput: validateDirectoryPathInput,
-    filePathInput: validateFilePathInput,
-    filenameInput: validateFilenameInput,
-    inputPattern: validateInputPattern,
-    executionContext: validateExecutionContext,
-    openAIApiKey: validateOpenAIApiKey,
-    openAIConfig: validateOpenAIConfig,
-    modelsConfigJson: validateModelsConfigJson,
-    config: validateConfig
-};
-
-/**
- * Validate multiple common fields at once
- */
-export function validateCommon(data: any): true {
-    if (data.path !== undefined) {
-        validatePath(data.path, 'common validation');
-    }
-
-    if (data.apiKey !== undefined) {
-        validateApiKey(data.apiKey);
-    }
-
-    if (data.filePattern !== undefined) {
-        validateFilePattern(data.filePattern);
-    }
-
-    return true;
-}
+// Simple validation wrapper functions have been removed!
+// 
+// Instead of: validateApiKey(key)
+// Use directly: v.parse(apiKeySchema, key)
+//
+// Instead of: validatePath(path, 'context')  
+// Use directly: v.parse(pathSchema, path)
+//
+// Instead of: validateChatRequest(yaml, model)
+// Use directly: v.parse(chatRequestSchema, { yamlRequest: yaml, model })
+//
+// This eliminates 20+ wrapper functions and ~4KB of code while providing
+// better error messages directly from Valibot.
+//
+// Only complex validation functions with business logic are kept below.
 
 // =============================================================================
 // ADVANCED CONFIGURATION VALIDATION
