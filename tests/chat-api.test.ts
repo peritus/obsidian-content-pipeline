@@ -3,8 +3,10 @@
  * Updated with YAML routing communication
  */
 
+import * as v from 'valibot';
 import { ChatClient } from '../src/api/chat-client';
-import { validateYamlRequest, yamlToMessages, isSupportedChatModel } from '../src/api/chat-utils';
+import { yamlToMessages, isSupportedChatModel } from '../src/api/chat-utils';
+import { chatRequestSchema } from '../src/validation';
 import { DEFAULT_CHAT_CONFIG } from '../src/api/chat-types';
 import { createMockStepRouting } from './setup';
 
@@ -38,10 +40,10 @@ describe('Chat API Integration', () => {
     describe('YAML Utilities', () => {
         test('should validate YAML requests', () => {
             const validRequest = 'This is a test request';
-            expect(() => validateYamlRequest(validRequest, 'gpt-4o')).not.toThrow();
+            expect(() => v.parse(chatRequestSchema, { yamlRequest: validRequest, model: 'gpt-4o' })).not.toThrow();
             
-            expect(() => validateYamlRequest('', 'gpt-4o')).toThrow(/empty/);
-            expect(() => validateYamlRequest('test', 'invalid-model')).toThrow(/Unsupported model/);
+            expect(() => v.parse(chatRequestSchema, { yamlRequest: '', model: 'gpt-4o' })).toThrow();
+            expect(() => v.parse(chatRequestSchema, { yamlRequest: 'test', model: 'invalid-model' })).toThrow();
         });
 
         test('should convert YAML to messages with routing information', () => {

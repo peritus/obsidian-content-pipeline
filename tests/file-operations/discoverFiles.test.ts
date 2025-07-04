@@ -29,7 +29,7 @@ describe('FileOperations - discoverFiles', () => {
         mockVault.getMarkdownFiles.mockReturnValue([mockFile1, mockFile2]);
         mockVault.getFiles.mockReturnValue([mockFile1, mockFile2]);
 
-        const files = await fileOps.discoverFiles('inbox/transcripts', { stepId: 'transcribe' });
+        const files = await fileOps.discoverFiles('inbox/transcripts/', { stepId: 'transcribe' });
 
         expect(files).toHaveLength(2);
         expect(files[0].name).toBe('file1.md');
@@ -42,7 +42,7 @@ describe('FileOperations - discoverFiles', () => {
         mockVault.getMarkdownFiles.mockReturnValue([]);
         mockVault.getFiles.mockReturnValue([]);
 
-        const files = await fileOps.discoverFiles('inbox/process-thoughts');
+        const files = await fileOps.discoverFiles('inbox/process-thoughts/');
 
         expect(files).toHaveLength(0); // No files found but no error
     });
@@ -58,7 +58,7 @@ describe('FileOperations - discoverFiles', () => {
         mockVault.getMarkdownFiles.mockReturnValue([mdFile]);
         mockVault.getFiles.mockReturnValue([mdFile, txtFile, mp3File]);
 
-        const files = await fileOps.discoverFiles('folder', {}, { extensions: ['.md', '.txt'] });
+        const files = await fileOps.discoverFiles('folder/', {}, { extensions: ['.md', '.txt'] });
 
         expect(files).toHaveLength(2);
         expect(files.some(f => f.name === 'file.md')).toBe(true);
@@ -77,13 +77,13 @@ describe('FileOperations - discoverFiles', () => {
         mockVault.getFiles.mockReturnValue([file1, file2]);
 
         // Test name sorting
-        const filesByName = await fileOps.discoverFiles('folder', {}, { sortBy: 'name' });
+        const filesByName = await fileOps.discoverFiles('folder/', {}, { sortBy: 'name' });
         expect(filesByName).toHaveLength(2);
         expect(filesByName[0].name).toBe('a.md');
         expect(filesByName[1].name).toBe('b.md');
 
         // Test size sorting
-        const filesBySize = await fileOps.discoverFiles('folder', {}, { sortBy: 'size' });
+        const filesBySize = await fileOps.discoverFiles('folder/', {}, { sortBy: 'size' });
         expect(filesBySize).toHaveLength(2);
         expect(filesBySize[0].size).toBe(100);
         expect(filesBySize[1].size).toBe(200);
@@ -100,7 +100,7 @@ describe('FileOperations - discoverFiles', () => {
         mockVault.getMarkdownFiles.mockReturnValue(files);
         mockVault.getFiles.mockReturnValue(files);
 
-        const limitedFiles = await fileOps.discoverFiles('folder', {}, { limit: 5 });
+        const limitedFiles = await fileOps.discoverFiles('folder/', {}, { limit: 5 });
 
         expect(limitedFiles).toHaveLength(5);
     });
