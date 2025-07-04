@@ -31,7 +31,7 @@ npm_install = ["npm", "install"]
 # Quick test status - minimal output, failures only
 test_status = ["npm", "test", "--", "--silent"]
 
-test_grep_fail = ["sh","-c", "npm test -- --silent | grep FAIL"]`
+test_grep_fail = ["sh","-c", "npm test -- --silent 2>&1 | grep FAIL"]
 
 # All tests with failures-only output (most common use case)
 test_failures_only = ["npm", "test", "--", "--silent", "--onlyFailures"]
