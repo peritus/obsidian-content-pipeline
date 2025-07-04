@@ -21,6 +21,7 @@ import {
 } from '../../../types';
 import { ErrorFactory } from '../../../error-handler';
 import { createLogger } from '../../../logger';
+import { validateExecutionContext } from '../../../validation/schemas';
 
 const logger = createLogger('ChatStepExecutor');
 
@@ -303,77 +304,21 @@ export class ChatStepExecutor {
      * Validate input parameters for chat execution
      */
     private validateInput(stepId: string, fileInfo: FileInfo, resolvedStep: ResolvedPipelineStep): void {
-        // Validate stepId
-        if (!stepId || typeof stepId !== 'string') {
+        try {
+            validateExecutionContext(stepId, fileInfo, resolvedStep);
+        } catch (error) {
+            // Convert Valibot validation errors to ErrorFactory format
+            const errorMessage = error instanceof Error ? error.message : 'Validation failed';
+            
             throw ErrorFactory.validation(
-                'Invalid stepId provided to ChatStepExecutor',
-                'Step ID must be a non-empty string',
-                { stepId },
-                ['Provide a valid step ID string']
+                `Input validation failed: ${errorMessage}`,
+                'Invalid parameters provided to ChatStepExecutor',
+                { stepId, fileInfo: { path: fileInfo?.path, name: fileInfo?.name }, resolvedStep: !!resolvedStep },
+                ['Check input parameters', 'Ensure all required fields are provided', 'Verify file information is complete']
             );
         }
 
-        // Validate resolved step configuration
-        if (!resolvedStep) {
-            throw ErrorFactory.validation(
-                'No resolved step configuration provided to ChatStepExecutor',
-                'Resolved pipeline step configuration is required',
-                { stepId },
-                ['Ensure step configuration is properly resolved', 'Check ConfigurationResolver is working']
-            );
-        }
-
-        // Validate model configuration exists
-        if (!resolvedStep.modelConfig) {
-            throw ErrorFactory.validation(
-                'No model configuration in resolved step',
-                'Model configuration is required for chat processing',
-                { stepId, resolvedStep },
-                ['Ensure model config reference is valid', 'Check models configuration contains referenced config']
-            );
-        }
-
-        // Validate fileInfo
-        if (!fileInfo) {
-            throw ErrorFactory.validation(
-                'No fileInfo provided to ChatStepExecutor',
-                'File information is required for processing',
-                { stepId },
-                ['Ensure file discovery is working correctly', 'Check file exists and is accessible']
-            );
-        }
-
-        // Validate fileInfo properties
-        if (!fileInfo.path || typeof fileInfo.path !== 'string') {
-            throw ErrorFactory.validation(
-                'Invalid or missing file path in FileInfo',
-                'File path is required and must be a valid string',
-                { stepId, fileInfo: { ...fileInfo, path: fileInfo?.path } },
-                [
-                    'Check file discovery process', 
-                    'Ensure FileInfo objects are created correctly',
-                    'Verify file exists in vault'
-                ]
-            );
-        }
-
-        if (!fileInfo.name || typeof fileInfo.name !== 'string') {
-            throw ErrorFactory.validation(
-                'Invalid or missing file name in FileInfo',
-                'File name is required and must be a valid string',
-                { stepId, fileInfo },
-                ['Check FileInfo creation process']
-            );
-        }
-
-        // Validate prompt configuration
-        if (!resolvedStep.prompts || resolvedStep.prompts.length === 0) {
-            logger.warn(`Step '${stepId}' has no prompt files configured. This may result in poor LLM performance.`);
-        }
-        
-        // Context files are optional, so no validation needed
-
-        // Log validation success
+        // Log validation success for debugging
         logger.debug('Input validation passed', { 
             stepId, 
             fileName: fileInfo.name, 

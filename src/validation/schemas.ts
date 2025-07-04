@@ -354,6 +354,73 @@ export const inputPatternSchema = v.pipe(
 );
 
 // =============================================================================
+// EXECUTION CONTEXT VALIDATION SCHEMAS
+// =============================================================================
+
+/**
+ * File info validation schema
+ * For FileInfo objects used in pipeline execution
+ */
+export const fileInfoSchema = v.object({
+    path: v.pipe(
+        v.string('File path must be a string'),
+        v.trim(),
+        v.nonEmpty('File path cannot be empty')
+    ),
+    name: v.pipe(
+        v.string('File name must be a string'),
+        v.trim(),
+        v.nonEmpty('File name cannot be empty')
+    )
+});
+
+/**
+ * Model configuration schema for execution
+ * For model configs used in pipeline execution
+ */
+export const executionModelConfigSchema = v.object({
+    model: v.pipe(
+        v.string('Model must be a string'),
+        v.trim(),
+        v.nonEmpty('Model cannot be empty')
+    ),
+    apiKey: v.pipe(
+        v.string('API key must be a string'),
+        v.trim(),
+        v.nonEmpty('API key cannot be empty')
+    ),
+    baseUrl: v.pipe(
+        v.string('Base URL must be a string'),
+        v.trim(),
+        v.url('Base URL must be valid')
+    )
+});
+
+/**
+ * Resolved pipeline step schema for execution
+ * For ResolvedPipelineStep objects used in execution
+ */
+export const resolvedStepSchema = v.object({
+    modelConfig: executionModelConfigSchema,
+    prompts: v.optional(v.array(v.string('Prompt must be a string'))),
+    context: v.optional(v.array(v.string('Context must be a string')))
+});
+
+/**
+ * Execution context validation schema
+ * For validating complete execution context in ChatStepExecutor
+ */
+export const executionContextSchema = v.object({
+    stepId: v.pipe(
+        v.string('Step ID must be a string'),
+        v.trim(),
+        v.nonEmpty('Step ID cannot be empty')
+    ),
+    fileInfo: fileInfoSchema,
+    resolvedStep: resolvedStepSchema
+});
+
+// =============================================================================
 // VALIDATION FUNCTIONS
 // =============================================================================
 
@@ -471,6 +538,14 @@ export function validateInputPattern(inputPattern: string): true {
 }
 
 /**
+ * Validate execution context
+ */
+export function validateExecutionContext(stepId: string, fileInfo: any, resolvedStep: any): true {
+    v.parse(executionContextSchema, { stepId, fileInfo, resolvedStep });
+    return true;
+}
+
+/**
  * Validators object for convenience
  */
 export const Validators = {
@@ -488,6 +563,7 @@ export const Validators = {
     filePathInput: validateFilePathInput,
     filenameInput: validateFilenameInput,
     inputPattern: validateInputPattern,
+    executionContext: validateExecutionContext,
     config: validateConfig
 };
 
