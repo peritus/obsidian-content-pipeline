@@ -7,11 +7,12 @@
 
 import { createLogger } from '../logger';
 import { 
-    validateInputPattern, 
-    validateDirectoryPathInput, 
-    validateFilenameInput, 
-    validateFilePathInput 
+    inputPatternSchema, 
+    directoryPathInputSchema, 
+    filenameInputSchema, 
+    filePathInputSchema 
 } from '../validation/schemas';
+import * as v from 'valibot';
 
 const logger = createLogger('SimplePathBuilder');
 
@@ -27,7 +28,7 @@ export class SimplePathBuilder {
      * No variable substitution - just direct path normalization
      */
     static resolveInputDirectory(inputPattern: string): string {
-        validateInputPattern(inputPattern);
+        v.parse(inputPatternSchema, inputPattern);
 
         // Simple normalization - no variable substitution needed
         return this.normalizeDirectoryPath(inputPattern);
@@ -78,8 +79,8 @@ export class SimplePathBuilder {
         extension: string = '.md'
     ): string {
         // Validate inputs using Valibot schemas
-        validateDirectoryPathInput(directoryPath);
-        validateFilenameInput(filename);
+        v.parse(directoryPathInputSchema, directoryPath);
+        v.parse(filenameInputSchema, filename);
 
         // Normalize directory path
         const normalizedDir = this.normalizeDirectoryPath(directoryPath);
@@ -109,8 +110,8 @@ export class SimplePathBuilder {
      */
     static buildArchivePath(directoryPath: string, filename: string): string {
         // Validate inputs using Valibot schemas
-        validateDirectoryPathInput(directoryPath);
-        validateFilenameInput(filename);
+        v.parse(directoryPathInputSchema, directoryPath);
+        v.parse(filenameInputSchema, filename);
 
         // Normalize directory path
         const normalizedDir = this.normalizeDirectoryPath(directoryPath);
@@ -134,7 +135,7 @@ export class SimplePathBuilder {
      * @returns Normalized directory path ending with '/'
      */
     static normalizeDirectoryPath(directoryPath: string): string {
-        validateDirectoryPathInput(directoryPath);
+        v.parse(directoryPathInputSchema, directoryPath);
 
         // Convert backslashes to forward slashes
         let normalized = directoryPath.replace(/\\/g, '/');
@@ -161,7 +162,7 @@ export class SimplePathBuilder {
      */
     static isDirectoryPath(path: string): boolean {
         try {
-            validateFilePathInput(path);
+            v.parse(filePathInputSchema, path);
             // Directory paths should end with '/'
             return path.endsWith('/');
         } catch {
@@ -177,7 +178,7 @@ export class SimplePathBuilder {
      */
     static extractDirectoryPath(filePath: string): string {
         try {
-            validateFilePathInput(filePath);
+            v.parse(filePathInputSchema, filePath);
         } catch {
             return '';
         }
@@ -198,7 +199,7 @@ export class SimplePathBuilder {
      */
     static extractFilename(filePath: string): string {
         try {
-            validateFilePathInput(filePath);
+            v.parse(filePathInputSchema, filePath);
         } catch {
             return '';
         }
@@ -214,7 +215,7 @@ export class SimplePathBuilder {
      * @throws Error if path is invalid
      */
     static validateDirectoryPath(directoryPath: string): void {
-        validateDirectoryPathInput(directoryPath);
+        v.parse(directoryPathInputSchema, directoryPath);
     }
 
     /**

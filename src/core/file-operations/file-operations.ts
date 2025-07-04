@@ -18,7 +18,7 @@ import { FileReader } from './file-reader';
 import { FileWriter } from './file-writer';
 import { FileArchiver } from './file-archiver';
 import { FileDiscovery } from './file-discovery';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('FileOperations');
@@ -76,12 +76,7 @@ export class FileOperations {
         const directoryPath = SimplePathBuilder.resolveInputDirectory(pathPattern);
         
         if (!directoryPath) {
-            throw ErrorFactory.fileSystem(
-                'Cannot determine directory from path pattern',
-                'Path pattern does not resolve to a valid directory',
-                { pathPattern },
-                ['Check path pattern format', 'Ensure pattern includes directory structure']
-            );
+            throw new ContentPipelineError(`Cannot determine directory from path pattern: ${pathPattern}`);
         }
 
         return await this.directoryManager.ensureDirectory(directoryPath);

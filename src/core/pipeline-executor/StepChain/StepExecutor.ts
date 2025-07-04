@@ -13,7 +13,7 @@ import {
     ProcessingStatus,
     ResolvedPipelineStep
 } from '../../../types';
-import { ErrorFactory } from '../../../error-handler';
+import { ContentPipelineError } from '../../../errors';
 import { createLogger } from '../../../logger';
 
 const logger = createLogger('StepExecutor');
@@ -45,12 +45,7 @@ export class StepExecutor {
 
             // Validate API key exists
             if (!resolvedStep.modelConfig.apiKey || resolvedStep.modelConfig.apiKey.trim() === '') {
-                throw ErrorFactory.configuration(
-                    'No API key configured for step',
-                    `Step "${stepId}" requires an API key in model configuration "${resolvedStep.modelConfig.model}"`,
-                    { stepId, modelConfigId: resolvedStep.stepId, model: resolvedStep.modelConfig.model },
-                    ['Configure API key in models configuration', 'Add valid API key for the model']
-                );
+                throw new ContentPipelineError(`No API key configured for step "${stepId}"`);
             }
 
             // Route to appropriate processor based on model implementation
@@ -63,12 +58,7 @@ export class StepExecutor {
             }
 
             // Unsupported implementation
-            throw ErrorFactory.pipeline(
-                `Unsupported model implementation: ${implementation}`,
-                `Model implementation "${implementation}" is not supported`,
-                { stepId, implementation, model: resolvedStep.modelConfig.model },
-                ['Use "whisper" for audio transcription', 'Use "chatgpt" for text processing']
-            );
+            throw new ContentPipelineError(`Unsupported model implementation: ${implementation}`);
 
         } catch (error) {
             logger.error(`Step execution failed: ${stepId}`, error);

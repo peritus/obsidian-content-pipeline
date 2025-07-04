@@ -35,7 +35,7 @@ export function isContentPipelineError(error: unknown): error is ContentPipeline
 /**
  * Type guard to check if an error is a Valibot validation error
  */
-export function isValibotError(error: unknown): error is import('valibot').ValiError {
+export function isValibotError(error: unknown): error is import('valibot').ValiError<any> {
     return error instanceof Error && 'issues' in error && Array.isArray((error as any).issues);
 }
 
@@ -52,7 +52,7 @@ export function getErrorMessage(error: unknown): string {
 /**
  * Get detailed message from Valibot error
  */
-export function getDetailedValiMessage(error: import('valibot').ValiError): string {
+export function getDetailedValiMessage(error: import('valibot').ValiError<any>): string {
     // Extract the most specific error message from Valibot issues
     return error.issues[0]?.message || error.message;
 }

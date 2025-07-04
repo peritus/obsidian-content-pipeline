@@ -6,7 +6,7 @@ import { App, TFile, Vault, normalizePath } from 'obsidian';
 import { SimplePathBuilder } from '../SimplePathBuilder';
 import { FileOperationOptions, FileOperationResult } from './types';
 import { DirectoryManager } from './directory-manager';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError, isContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('FileWriter');
@@ -57,12 +57,7 @@ export class FileWriter {
             // Check if file already exists
             const existingFile = this.vault.getAbstractFileByPath(filePath);
             if (existingFile && !overwrite) {
-                throw ErrorFactory.fileSystem(
-                    `File already exists: ${filePath}`,
-                    `File already exists and overwrite is disabled: ${filePath}`,
-                    { filePath, overwrite },
-                    ['Enable overwrite option', 'Use a different filename', 'Delete existing file first']
-                );
+                throw new ContentPipelineError(`File already exists: ${filePath}`);
             }
 
             let file: TFile;
@@ -86,7 +81,7 @@ export class FileWriter {
             };
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'ContentPipelineError') {
+            if (isContentPipelineError(error)) {
                 throw error; // Re-throw our custom errors
             }
 
@@ -109,11 +104,7 @@ export class FileWriter {
         try {
             const file = this.vault.getAbstractFileByPath(filePath);
             if (!file || !(file instanceof TFile)) {
-                throw ErrorFactory.fileSystem(
-                    `File not found: ${filePath}`,
-                    `Cannot delete file: file not found`,
-                    { filePath }
-                );
+                throw new ContentPipelineError(`File not found: ${filePath}`);
             }
 
             await this.vault.delete(file);
@@ -121,7 +112,7 @@ export class FileWriter {
             return true;
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'ContentPipelineError') {
+            if (isContentPipelineError(error)) {
                 throw error;
             }
 

@@ -9,7 +9,7 @@ import { SimplePathBuilder } from '../SimplePathBuilder';
 import { FileInfo, PipelineConfiguration, isRoutingAwareOutput } from '../../types';
 import { FileDiscoveryOptions, FileDiscoveryResult } from './types';
 import { FileInfoProvider } from './file-info-provider';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('FileDiscovery');
@@ -65,12 +65,7 @@ export class FileDiscovery {
             return limitedFiles;
 
         } catch (error) {
-            throw ErrorFactory.fileSystem(
-                `Failed to discover files: ${error instanceof Error ? error.message : String(error)}`,
-                'Could not search for files',
-                { inputPattern, context, originalError: error },
-                ['Check search pattern', 'Verify directory exists', 'Check permissions']
-            );
+            throw new ContentPipelineError(`Failed to discover files: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error : undefined);
         }
     }
 
@@ -126,12 +121,7 @@ export class FileDiscovery {
         const allSteps = Object.keys(config);
         
         if (allSteps.length === 0) {
-            throw ErrorFactory.pipeline(
-                'No steps found in pipeline configuration',
-                'Pipeline configuration is empty',
-                { configSteps: allSteps },
-                ['Add steps to pipeline configuration', 'Check pipeline configuration']
-            );
+            throw new ContentPipelineError('No steps found in pipeline configuration');
         }
 
         logger.debug(`Searching for files in ${allSteps.length} steps: ${allSteps.join(', ')}`);

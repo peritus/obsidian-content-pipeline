@@ -15,7 +15,7 @@ import {
     isRoutingAwareOutput
 } from '../../../types';
 import { createLogger } from '../../../logger';
-import { ErrorFactory } from '../../../error-handler';
+import { ContentPipelineError } from '../../../errors';
 
 const logger = createLogger('OutputHandler');
 
@@ -70,29 +70,11 @@ export class OutputHandler {
 
             // Priority 3: If no default, throw error
             const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
-            throw ErrorFactory.routing(
-                `No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`,
-                'Cannot determine where to save output file - routing configuration is incomplete',
-                { 
-                    nextStep, 
-                    availableRoutes,
-                    routingConfig: routingOutput 
-                },
-                [
-                    'Add a "default" fallback path to your output routing configuration',
-                    `Ensure nextStep value matches one of: ${availableRoutes.join(', ')}`,
-                    'Check your routing prompt instructions for clarity'
-                ]
-            );
+            throw new ContentPipelineError(`No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`);
         }
 
         // Should not reach here with proper typing, but handle gracefully
-        throw ErrorFactory.validation(
-            'Invalid output configuration - not string or routing-aware object',
-            'Output configuration must be either a string directory path or routing-aware object',
-            { stepOutput: step.output },
-            ['Check your pipeline configuration format', 'Ensure output is string or object with routing paths']
-        );
+        throw new ContentPipelineError('Invalid output configuration - not string or routing-aware object');
     }
 
     async save(

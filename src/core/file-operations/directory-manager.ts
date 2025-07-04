@@ -3,7 +3,7 @@
  */
 
 import { App, TFolder, TFile, Vault, normalizePath } from 'obsidian';
-import { ErrorFactory } from '../../error-handler';
+import { ContentPipelineError, isContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('DirectoryManager');
@@ -30,12 +30,7 @@ export class DirectoryManager {
             }
 
             if (existing instanceof TFile) {
-                throw ErrorFactory.fileSystem(
-                    `Path exists as file, not directory: ${normalizedPath}`,
-                    `Cannot create directory: path is already a file`,
-                    { dirPath: normalizedPath },
-                    ['Use a different directory path', 'Remove the existing file']
-                );
+                throw new ContentPipelineError(`Path exists as file, not directory: ${normalizedPath}`);
             }
 
             // Create the directory
@@ -44,16 +39,11 @@ export class DirectoryManager {
             return folder;
 
         } catch (error) {
-            if (error instanceof Error && error.name === 'ContentPipelineError') {
+            if (isContentPipelineError(error)) {
                 throw error; // Re-throw our custom errors
             }
 
-            throw ErrorFactory.fileSystem(
-                `Failed to create directory: ${error instanceof Error ? error.message : String(error)}`,
-                `Could not create directory: ${dirPath}`,
-                { dirPath, originalError: error },
-                ['Check parent directory exists', 'Verify permissions', 'Ensure valid directory name']
-            );
+            throw new ContentPipelineError(`Failed to create directory: ${dirPath}`, error instanceof Error ? error : undefined);
         }
     }
 
