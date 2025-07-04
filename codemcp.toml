@@ -29,12 +29,11 @@ npm_install = ["npm", "install"]
 # ===== TESTS =====
 
 # Quick test status - minimal output, failures only
-test_status = ["npm", "test", "--", "--silent"]
-
 test_grep_fail = ["sh","-c", "npm test -- --silent 2>&1 | grep FAIL"]
 
 # All tests with failures-only output (most common use case)
 test_failures_only = ["npm", "test", "--", "--silent", "--onlyFailures"]
+test_status = ["sh","-c", "npm test -- --silent 2>&1 | grep -E 'PASS|FAIL'"]
 
 # Test specific files
 test_file = { cmd = ["npm", "test", "--"], files = ["tests/**/*.test.ts", "tests/**/*.spec.ts", "**/*.test.ts", "**/*.spec.ts"] }
