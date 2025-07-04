@@ -1,5 +1,5 @@
 const { build, context } = require('esbuild');
-const { copyFileSync, existsSync, readFileSync, readdirSync } = require('fs');
+const { copyFileSync, existsSync, readFileSync, readdirSync, writeFileSync } = require('fs');
 const { join } = require('path');
 
 /**
@@ -203,6 +203,7 @@ async function performBuild() {
         const size = result.metafile.outputs[output].bytes;
         console.log(`   ${output}: ${(size / 1024).toFixed(2)} KB`);
       });
+      writeFileSync('meta.json', JSON.stringify(result.metafile));
     }
     
     return result;
