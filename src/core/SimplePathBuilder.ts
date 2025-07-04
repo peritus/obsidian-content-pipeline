@@ -6,6 +6,12 @@
  */
 
 import { createLogger } from '../logger';
+import { 
+    validateInputPattern, 
+    validateDirectoryPathInput, 
+    validateFilenameInput, 
+    validateFilePathInput 
+} from '../validation/schemas';
 
 const logger = createLogger('SimplePathBuilder');
 
@@ -21,9 +27,7 @@ export class SimplePathBuilder {
      * No variable substitution - just direct path normalization
      */
     static resolveInputDirectory(inputPattern: string): string {
-        if (!inputPattern || typeof inputPattern !== 'string') {
-            throw new Error('Input pattern is required and must be a string');
-        }
+        validateInputPattern(inputPattern);
 
         // Simple normalization - no variable substitution needed
         return this.normalizeDirectoryPath(inputPattern);
@@ -73,14 +77,9 @@ export class SimplePathBuilder {
         filename: string, 
         extension: string = '.md'
     ): string {
-        // Validate inputs
-        if (!directoryPath || typeof directoryPath !== 'string') {
-            throw new Error('Directory path is required and must be a string');
-        }
-        
-        if (!filename || typeof filename !== 'string') {
-            throw new Error('Filename is required and must be a string');
-        }
+        // Validate inputs using Valibot schemas
+        validateDirectoryPathInput(directoryPath);
+        validateFilenameInput(filename);
 
         // Normalize directory path
         const normalizedDir = this.normalizeDirectoryPath(directoryPath);
@@ -109,14 +108,9 @@ export class SimplePathBuilder {
      * @returns Complete archive file path
      */
     static buildArchivePath(directoryPath: string, filename: string): string {
-        // Validate inputs
-        if (!directoryPath || typeof directoryPath !== 'string') {
-            throw new Error('Directory path is required and must be a string');
-        }
-        
-        if (!filename || typeof filename !== 'string') {
-            throw new Error('Filename is required and must be a string');
-        }
+        // Validate inputs using Valibot schemas
+        validateDirectoryPathInput(directoryPath);
+        validateFilenameInput(filename);
 
         // Normalize directory path
         const normalizedDir = this.normalizeDirectoryPath(directoryPath);
@@ -140,9 +134,7 @@ export class SimplePathBuilder {
      * @returns Normalized directory path ending with '/'
      */
     static normalizeDirectoryPath(directoryPath: string): string {
-        if (!directoryPath || typeof directoryPath !== 'string') {
-            throw new Error('Directory path must be a non-empty string');
-        }
+        validateDirectoryPathInput(directoryPath);
 
         // Convert backslashes to forward slashes
         let normalized = directoryPath.replace(/\\/g, '/');
@@ -168,12 +160,13 @@ export class SimplePathBuilder {
      * @returns True if path appears to be a directory
      */
     static isDirectoryPath(path: string): boolean {
-        if (!path || typeof path !== 'string') {
+        try {
+            validateFilePathInput(path);
+            // Directory paths should end with '/'
+            return path.endsWith('/');
+        } catch {
             return false;
         }
-
-        // Directory paths should end with '/'
-        return path.endsWith('/');
     }
 
     /**
@@ -183,7 +176,9 @@ export class SimplePathBuilder {
      * @returns Directory portion of the path
      */
     static extractDirectoryPath(filePath: string): string {
-        if (!filePath || typeof filePath !== 'string') {
+        try {
+            validateFilePathInput(filePath);
+        } catch {
             return '';
         }
 
@@ -202,7 +197,9 @@ export class SimplePathBuilder {
      * @returns Filename portion of the path
      */
     static extractFilename(filePath: string): string {
-        if (!filePath || typeof filePath !== 'string') {
+        try {
+            validateFilePathInput(filePath);
+        } catch {
             return '';
         }
 
@@ -217,23 +214,7 @@ export class SimplePathBuilder {
      * @throws Error if path is invalid
      */
     static validateDirectoryPath(directoryPath: string): void {
-        if (!directoryPath || typeof directoryPath !== 'string') {
-            throw new Error('Directory path must be a non-empty string');
-        }
-
-        if (!directoryPath.endsWith('/')) {
-            throw new Error('Directory path must end with "/" - got: ' + directoryPath);
-        }
-
-        // Check for path traversal attempts
-        if (directoryPath.includes('..')) {
-            throw new Error('Directory path cannot contain path traversal (..) - got: ' + directoryPath);
-        }
-
-        // Check for absolute paths (should be vault-relative)
-        if (directoryPath.startsWith('/')) {
-            throw new Error('Directory path should be vault-relative (no leading /) - got: ' + directoryPath);
-        }
+        validateDirectoryPathInput(directoryPath);
     }
 
     /**
