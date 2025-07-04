@@ -66,6 +66,6 @@ describe('FileOperations - archiveFile', () => {
         );
 
         expect(result.success).toBe(false);
-        expect(result.error).toContain('Directory path must be a non-empty string');
+        expect(result.error).toContain('Directory path cannot be empty');
     });
 });
