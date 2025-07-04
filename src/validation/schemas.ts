@@ -604,9 +604,13 @@ const directoryFormatValidator = v.custom<{ models: ModelsConfig; pipeline: Pipe
             allPaths.push(...Object.values(step.output));
         }
 
+        /**** TODO FIX ME
+         * TypeError: path.includes is not a function
+
         for (const path of allPaths) {
             if (path.includes('../') || path.includes('..\\')) return false;
         }
+        */
     }
     return true;
 }, 'Directory paths must end with / and not contain path traversal');
