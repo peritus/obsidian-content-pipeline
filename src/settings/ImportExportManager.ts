@@ -3,8 +3,7 @@
  */
 
 import { Notice } from 'obsidian';
-import { parseAndValidateConfig } from '../validation/config-resolver';
-import { getConfigErrors } from '../validation/config-validation';
+import { parseAndValidateConfig, getConfigErrors } from '../validation';
 
 export interface ImportExportCallbacks {
     onPipelineImport: (config: string) => void;

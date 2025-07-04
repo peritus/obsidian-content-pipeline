@@ -7,8 +7,7 @@ import { PipelineConfigSection } from '../PipelineConfigSection';
 import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
 import { FolderSetupSection } from '../folder-setup-section';
 import { PromptsManager } from './PromptsManager';
-import { getConfigErrors, isValidConfig } from '../../validation/config-validation';
-import { parseAndValidateConfig } from '../../validation/config-resolver';
+import { getConfigErrors, isValidConfig, parseAndValidateConfig } from '../../validation';
 import { ConfigValidationResult } from '../../types';
 import { SettingsNotifier } from '../settings-notifier';
 
