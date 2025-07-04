@@ -11,6 +11,7 @@
 
 import * as v from 'valibot';
 import { ModelImplementation, ModelsConfig, PipelineConfiguration, isRoutingAwareOutput } from '../types';
+import { CHAT_LIMITS } from '../api/chat-types';
 
 /**
  * API Key Validation Schema
@@ -221,6 +222,51 @@ export const pipelineConfigSchema = v.pipe(
 );
 
 // =============================================================================
+// API CLIENT VALIDATION SCHEMAS
+// =============================================================================
+
+/**
+ * Validate supported chat models
+ */
+function isSupportedChatModel(input: unknown): boolean {
+    if (typeof input !== 'string') return false;
+    return CHAT_LIMITS.supportedModels.includes(input as any);
+}
+
+/**
+ * Chat request validation schema
+ */
+export const chatRequestSchema = v.object({
+    yamlRequest: v.pipe(
+        v.string('YAML request must be a string'),
+        v.trim(),
+        v.nonEmpty('YAML request cannot be empty'),
+        v.maxLength(CHAT_LIMITS.maxRequestSize, `Request too large (max: ${CHAT_LIMITS.maxRequestSize} bytes)`)
+    ),
+    model: v.pipe(
+        v.string('Model must be a string'),
+        v.trim(),
+        v.nonEmpty('Model cannot be empty'),
+        v.custom(isSupportedChatModel, 'Unsupported model')
+    )
+});
+
+/**
+ * Token count validation schema
+ */
+export const tokenValidationSchema = v.object({
+    yamlRequest: v.string('YAML request must be a string'),
+    maxTokens: v.optional(v.number('Max tokens must be a number')),
+    estimatedTokens: v.pipe(
+        v.number('Estimated tokens must be a number'),
+        v.custom((tokens: unknown) => {
+            if (typeof tokens !== 'number') return false;
+            return tokens <= CHAT_LIMITS.maxTokens * 0.8; // Use 80% of limit as safety margin
+        }, 'Request may exceed token limit')
+    )
+});
+
+// =============================================================================
 // VALIDATION FUNCTIONS
 // =============================================================================
 
@@ -282,6 +328,22 @@ export function validatePipelineConfig(config: any): true {
 }
 
 /**
+ * Validate chat request
+ */
+export function validateChatRequest(yamlRequest: string, model: string): true {
+    v.parse(chatRequestSchema, { yamlRequest, model });
+    return true;
+}
+
+/**
+ * Validate token count
+ */
+export function validateTokenCount(yamlRequest: string, estimatedTokens: number, maxTokens?: number): true {
+    v.parse(tokenValidationSchema, { yamlRequest, estimatedTokens, maxTokens });
+    return true;
+}
+
+/**
  * Validators object for convenience
  */
 export const Validators = {
@@ -292,6 +354,8 @@ export const Validators = {
     modelsConfig: validateModelsConfig,
     pipelineStep: validatePipelineStep,
     pipelineConfig: validatePipelineConfig,
+    chatRequest: validateChatRequest,
+    tokenCount: validateTokenCount,
     config: validateConfig
 };
 

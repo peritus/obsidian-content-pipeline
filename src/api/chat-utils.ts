@@ -4,6 +4,7 @@
 
 import { CHAT_LIMITS } from './chat-types';
 import { ErrorFactory } from '../error-handler';
+import { validateChatRequest, validateTokenCount as validateTokenCountSchema } from '../validation/schemas';
 
 /**
  * Generate unique request ID for tracking
@@ -23,30 +24,45 @@ export function isSupportedChatModel(model: string): boolean {
  * Validate YAML request data before sending to API
  */
 export function validateYamlRequest(yamlRequest: string, model: string): void {
-    if (!yamlRequest || yamlRequest.trim().length === 0) {
+    try {
+        validateChatRequest(yamlRequest, model);
+    } catch (error) {
+        // Convert Valibot validation errors to ErrorFactory format
+        const errorMessage = error instanceof Error ? error.message : 'Validation failed';
+        
+        if (errorMessage.includes('empty')) {
+            throw ErrorFactory.api(
+                'YAML request is empty or invalid',
+                'Cannot process empty request',
+                { requestSize: yamlRequest?.length },
+                ['Check if YAML request is properly formatted', 'Ensure request content is not empty']
+            );
+        }
+        
+        if (errorMessage.includes('too large')) {
+            throw ErrorFactory.api(
+                `Request too large: ${yamlRequest.length} bytes (max: ${CHAT_LIMITS.maxRequestSize} bytes)`,
+                'Request exceeds OpenAI size limit',
+                { requestSize: yamlRequest.length, maxSize: CHAT_LIMITS.maxRequestSize },
+                ['Reduce request content', 'Split large requests', 'Use fewer prompt/context files']
+            );
+        }
+        
+        if (errorMessage.includes('Unsupported model')) {
+            throw ErrorFactory.api(
+                `Unsupported model: ${model}`,
+                'Model not supported by Chat API',
+                { model, supportedModels: CHAT_LIMITS.supportedModels },
+                ['Use a supported model', 'Check model name spelling']
+            );
+        }
+        
+        // Fallback for other validation errors
         throw ErrorFactory.api(
-            'YAML request is empty or invalid',
-            'Cannot process empty request',
-            { requestSize: yamlRequest?.length },
-            ['Check if YAML request is properly formatted', 'Ensure request content is not empty']
-        );
-    }
-
-    if (yamlRequest.length > CHAT_LIMITS.maxRequestSize) {
-        throw ErrorFactory.api(
-            `Request too large: ${yamlRequest.length} bytes (max: ${CHAT_LIMITS.maxRequestSize} bytes)`,
-            'Request exceeds OpenAI size limit',
-            { requestSize: yamlRequest.length, maxSize: CHAT_LIMITS.maxRequestSize },
-            ['Reduce request content', 'Split large requests', 'Use fewer prompt/context files']
-        );
-    }
-
-    if (!isSupportedChatModel(model)) {
-        throw ErrorFactory.api(
-            `Unsupported model: ${model}`,
-            'Model not supported by Chat API',
-            { model, supportedModels: CHAT_LIMITS.supportedModels },
-            ['Use a supported model', 'Check model name spelling']
+            `Request validation failed: ${errorMessage}`,
+            'Invalid request format',
+            { yamlRequest: yamlRequest?.substring(0, 100), model },
+            ['Check request format', 'Verify model is supported']
         );
     }
 }
@@ -123,9 +139,11 @@ function estimateTokenCount(text: string): number {
  */
 export function validateTokenCount(yamlRequest: string, maxTokens?: number): void {
     const estimatedTokens = estimateTokenCount(yamlRequest);
-    const limit = maxTokens || CHAT_LIMITS.maxTokens;
     
-    if (estimatedTokens > limit * 0.8) { // Use 80% of limit as safety margin
+    try {
+        validateTokenCountSchema(yamlRequest, estimatedTokens, maxTokens);
+    } catch (error) {
+        const limit = maxTokens || CHAT_LIMITS.maxTokens;
         throw ErrorFactory.api(
             `Request may exceed token limit: ~${estimatedTokens} tokens (limit: ${limit})`,
             'Request might be too long for the model',
