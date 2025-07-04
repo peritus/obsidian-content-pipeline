@@ -300,36 +300,10 @@ export interface ProcessingResult {
 // ERROR HANDLING TYPES
 // =============================================================================
 
-/**
- * Error categories for the plugin
- */
-export enum ErrorType {
-    CONFIGURATION = 'configuration',
-    FILE_SYSTEM = 'filesystem',
-    API = 'api',
-    PIPELINE = 'pipeline',
-    VALIDATION = 'validation',
-    PARSING = 'parsing',
-    ROUTING = 'routing'
-}
-
-/**
- * Structured error information
- */
-export interface ErrorInfo {
-    /** Error type/category */
-    type: ErrorType;
-    /** Technical error message */
-    message: string;
-    /** User-friendly error message */
-    userMessage: string;
-    /** Additional context for debugging */
-    context?: any;
-    /** Stack trace (if available) */
-    stack?: string;
-    /** Suggested recovery actions */
-    suggestions?: string[];
-}
+// Error handling is now simplified:
+// - ContentPipelineError for plugin-specific operations (file I/O, API calls)
+// - Valibot validation errors bubble up naturally with excellent messages
+// See src/errors.ts for the simple error system
 
 // =============================================================================
 // NOTIFICATION TYPES
