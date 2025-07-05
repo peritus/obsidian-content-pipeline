@@ -53,7 +53,10 @@ describe('Pipeline Executor', () => {
         it('should throw error when configuration validation fails', async () => {
             const settingsWithoutConfig: ContentPipelineSettings = {
                 ...mockSettings,
-                parsedPipelineConfig: undefined
+                modelsConfig: '', // Remove JSON configurations to trigger proper error
+                pipelineConfig: '',
+                parsedPipelineConfig: undefined,
+                parsedModelsConfig: undefined
             };
             
             const executorWithoutConfig = new PipelineExecutor(mockApp, settingsWithoutConfig);
