@@ -81,29 +81,8 @@ export default class ContentPipelinePlugin extends Plugin {
                 // Only process TFile instances
                 if (!(file instanceof TFile)) return;
 
-                // Check if file can be processed using the synchronous discovery system
-                try {
-                    const canProcess = this.commandHandler.canFileBeProcessedSync(file);
-                    if (!canProcess) return;
-
-                    // Get the step that would process this file for dynamic title
-                    const stepId = this.getStepForFile(file);
-                    const menuTitle = stepId 
-                        ? `Apply [${stepId}] to this file.`
-                        : 'Process File with Content Pipeline 🎵';
-
-                    // Add menu item for processable files
-                    menu.addItem((item) => {
-                        item
-                            .setTitle(menuTitle)
-                            .setIcon('microphone')
-                            .onClick(async () => {
-                                await this.commandHandler.processSpecificFile(file);
-                            });
-                    });
-                } catch (error) {
-                    this.logger.warn('Error checking if file can be processed for menu:', error);
-                }
+                // Check if file can be processed - use async operation
+                this.addFileMenuItemAsync(menu, file);
             })
         );
 
@@ -111,16 +90,44 @@ export default class ContentPipelinePlugin extends Plugin {
     }
 
     /**
-     * Get the step that would process a specific file (synchronous)
+     * Add file menu item asynchronously after checking if file can be processed
      */
-    private getStepForFile(file: TFile): string | null {
+    private async addFileMenuItemAsync(menu: any, file: TFile): Promise<void> {
+        try {
+            const canProcess = await this.commandHandler.canFileBeProcessed(file);
+            if (!canProcess) return;
+
+            // Get the step that would process this file for dynamic title
+            const stepId = await this.getStepForFile(file);
+            const menuTitle = stepId 
+                ? `Apply [${stepId}] to this file.`
+                : 'Process File with Content Pipeline 🎵';
+
+            // Add menu item for processable files
+            menu.addItem((item: any) => {
+                item
+                    .setTitle(menuTitle)
+                    .setIcon('microphone')
+                    .onClick(async () => {
+                        await this.commandHandler.processSpecificFile(file);
+                    });
+            });
+        } catch (error) {
+            this.logger.warn('Error checking if file can be processed for menu:', error);
+        }
+    }
+
+    /**
+     * Get the step that would process a specific file
+     */
+    private async getStepForFile(file: TFile): Promise<string | null> {
         try {
             const pipelineConfig = this.getPipelineConfiguration();
             if (!pipelineConfig) return null;
 
             const { FileDiscovery } = require('./core/file-operations');
             const fileDiscovery = new FileDiscovery(this.app);
-            return fileDiscovery.findStepForFileSync(file, pipelineConfig);
+            return await fileDiscovery.findStepForFile(file, pipelineConfig);
         } catch (error) {
             this.logger.warn('Error finding step for file:', error);
             return null;

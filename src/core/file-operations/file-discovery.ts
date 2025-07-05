@@ -162,60 +162,26 @@ export class FileDiscovery {
     }
 
     /**
-     * Check if a specific file can be processed by any step in the pipeline (synchronous)
+     * Check if a specific file can be processed by any step in the pipeline
      */
-    canFileBeProcessedSync(
-        file: TFile,
-        config: PipelineConfiguration
-    ): boolean {
-        // Quick synchronous check without file system operations
-        const supportedExtensions = ['.mp3', '.wav', '.m4a', '.mp4', '.md', '.txt'];
-        const fileExtension = file.extension ? `.${file.extension}` : '';
-        
-        // Check if file has supported extension
-        if (!supportedExtensions.includes(fileExtension.toLowerCase())) {
-            logger.debug(`File ${file.path} has unsupported extension: ${fileExtension}`);
-            return false;
-        }
-
-        // Check if file path matches any step's input pattern
-        const stepId = this.findStepForFileSync(file, config);
-        const canProcess = stepId !== null;
-        
-        if (canProcess) {
-            logger.debug(`File ${file.path} can be processed by step: ${stepId} (sync check)`);
-        } else {
-            logger.debug(`File ${file.path} cannot be processed by any step (sync check)`);
-        }
-        
-        return canProcess;
-    }
-
-    /**
-     * Check if a specific file can be processed by any step in the pipeline (async)
-     */
-    async canFileBeProcessed(
-        file: TFile,
-        config: PipelineConfiguration
-    ): Promise<boolean> {
+    async canFileBeProcessed(file: TFile, config: PipelineConfiguration): Promise<boolean> {
         const stepId = await this.findStepForFile(file, config);
         return stepId !== null;
     }
 
+
+
     /**
-     * Find which step can process a specific file (synchronous)
+     * Find which step can process a specific file
      */
-    findStepForFileSync(
-        file: TFile,
-        config: PipelineConfiguration
-    ): string | null {
+    async findStepForFile(file: TFile, config: PipelineConfiguration): Promise<string | null> {
         const allSteps = Object.keys(config);
         
         for (const stepId of allSteps) {
             const step = config[stepId];
             
             try {
-                // Use path matching to check if file is in step's input directory
+                // Use fast path matching
                 if (this.isFileInInputDirectory(file.path, step.input)) {
                     logger.debug(`File ${file.path} matches step ${stepId} input pattern: ${step.input}`);
                     return stepId;
@@ -226,48 +192,11 @@ export class FileDiscovery {
             }
         }
 
-        return null;
-    }
-
-    /**
-     * Find which step can process a specific file (async with full discovery)
-     */
-    async findStepForFile(
-        file: TFile,
-        config: PipelineConfiguration
-    ): Promise<string | null> {
-        const allSteps = Object.keys(config);
-        
-        for (const stepId of allSteps) {
-            const step = config[stepId];
-            
-            try {
-                // Use FileDiscovery to check if this file would be discovered in this step's input directory
-                const files = await this.discoverFiles(step.input, {}, {
-                    extensions: ['.mp3', '.wav', '.m4a', '.mp4', '.md', '.txt'], // Same as findNextAvailableFile
-                    sortBy: 'name',
-                    sortOrder: 'asc'
-                });
-
-                // Check if our target file is in the discovered files
-                const matchingFile = files.find(discoveredFile => 
-                    discoveredFile.path === file.path
-                );
-
-                if (matchingFile) {
-                    logger.debug(`File ${file.path} can be processed by step: ${stepId}`);
-                    return stepId;
-                }
-            } catch (error) {
-                // Continue checking other steps if this one fails
-                logger.debug(`Could not check step ${stepId} for file ${file.path}:`, error);
-                continue;
-            }
-        }
-
         logger.debug(`File ${file.path} cannot be processed by any step`);
         return null;
     }
+
+
 
     /**
      * Find entry points in the pipeline (steps not referenced by others via routing-aware output)
