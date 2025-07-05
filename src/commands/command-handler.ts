@@ -23,35 +23,7 @@ export class CommandHandler {
     }
 
     /**
-     * Check if a specific file can be processed using the existing discovery system (synchronous)
-     * This is used for file menu integration where we need immediate results
-     */
-    canFileBeProcessedSync(file: TFile): boolean {
-        try {
-            // Check configuration validity using centralized configuration service
-            const configService = createConfigurationService(this.settings);
-            const validationResult = configService.validateConfigurations();
-            if (!validationResult.isValid) {
-                return false;
-            }
-
-            const pipelineConfig = configService.getSafePipelineConfiguration();
-            if (!pipelineConfig) {
-                return false;
-            }
-
-            // Use the unified FileDiscovery system (synchronous version)
-            const fileDiscovery = new FileDiscovery(this.app);
-            return fileDiscovery.canFileBeProcessedSync(file, pipelineConfig);
-
-        } catch (error) {
-            logger.warn('Error checking if file can be processed (sync):', error);
-            return false;
-        }
-    }
-
-    /**
-     * Check if a specific file can be processed using the existing discovery system (async)
+     * Check if a specific file can be processed using the existing discovery system
      */
     async canFileBeProcessed(file: TFile): Promise<boolean> {
         try {
