@@ -708,16 +708,110 @@ export function getConfigErrors(modelsConfig: ModelsConfig, pipelineConfig: Pipe
     }
 }
 
+// =============================================================================
+// CONFIGURATION MANAGEMENT FUNCTIONS
+// =============================================================================
+
 /**
- * Parse configuration from JSON strings with validation
+ * Result type for configuration parsing operations
  */
-export function parseAndValidateConfig(modelsJson: string, pipelineJson: string): {
+interface ConfigurationParseResult {
+    success: boolean;
+    modelsConfig?: ModelsConfig;
+    pipelineConfig?: PipelineConfiguration;
+    error?: string;
+}
+
+/**
+ * Result type for configuration validation operations
+ */
+interface ConfigurationValidationResult {
+    isValid: boolean;
+    error?: string;
+}
+
+/**
+ * Parse JSON configuration strings and update settings with parsed configs
+ * This is the single source of truth for all configuration parsing
+ */
+export function parseAndStoreConfigurations(settings: import('../types').ContentPipelineSettings): ConfigurationParseResult {
+    try {
+        // Clear existing parsed configs
+        settings.parsedModelsConfig = undefined;
+        settings.parsedPipelineConfig = undefined;
+
+        // Check if we have both JSON configurations
+        if (!settings.modelsConfig || !settings.pipelineConfig) {
+            return {
+                success: false,
+                error: 'Missing required JSON configurations'
+            };
+        }
+
+        // Parse models configuration
+        let modelsConfig: ModelsConfig;
+        try {
+            modelsConfig = JSON.parse(settings.modelsConfig);
+        } catch (error) {
+            const errorMsg = `Invalid models configuration JSON: ${error instanceof Error ? error.message : String(error)}`;
+            return {
+                success: false,
+                error: errorMsg
+            };
+        }
+
+        // Parse pipeline configuration
+        let pipelineConfig: PipelineConfiguration;
+        try {
+            pipelineConfig = JSON.parse(settings.pipelineConfig);
+        } catch (error) {
+            const errorMsg = `Invalid pipeline configuration JSON: ${error instanceof Error ? error.message : String(error)}`;
+            return {
+                success: false,
+                error: errorMsg
+            };
+        }
+
+        // Validate the parsed configurations
+        try {
+            validateConfig(modelsConfig, pipelineConfig);
+        } catch (error) {
+            const errorMsg = `Configuration validation failed: ${error instanceof Error ? error.message : String(error)}`;
+            return {
+                success: false,
+                error: errorMsg
+            };
+        }
+
+        // Store parsed and validated configurations
+        settings.parsedModelsConfig = modelsConfig;
+        settings.parsedPipelineConfig = pipelineConfig;
+        
+        return {
+            success: true,
+            modelsConfig,
+            pipelineConfig
+        };
+
+    } catch (error) {
+        const errorMsg = `Unexpected error during configuration parsing: ${error instanceof Error ? error.message : String(error)}`;
+        return {
+            success: false,
+            error: errorMsg
+        };
+    }
+}
+
+/**
+ * Parse and validate JSON configuration strings without storing them
+ * Useful for external validation (e.g., import/export, settings validation)
+ */
+export function parseAndValidateFromJson(modelsJson: string, pipelineJson: string): {
     modelsConfig: ModelsConfig;
     pipelineConfig: PipelineConfiguration;
 } {
+    // Parse models configuration
     let modelsConfig: ModelsConfig;
-    let pipelineConfig: PipelineConfiguration;
-
     try {
         modelsConfig = JSON.parse(modelsJson);
     } catch (error) {
@@ -726,6 +820,8 @@ export function parseAndValidateConfig(modelsJson: string, pipelineJson: string)
         );
     }
 
+    // Parse pipeline configuration
+    let pipelineConfig: PipelineConfiguration;
     try {
         pipelineConfig = JSON.parse(pipelineJson);
     } catch (error) {
@@ -738,6 +834,173 @@ export function parseAndValidateConfig(modelsJson: string, pipelineJson: string)
     validateConfig(modelsConfig, pipelineConfig);
 
     return { modelsConfig, pipelineConfig };
+}
+
+/**
+ * Validate both models and pipeline configurations in settings
+ */
+export function validateSettingsConfigurations(settings: import('../types').ContentPipelineSettings): ConfigurationValidationResult {
+    if (!settings.parsedModelsConfig || !settings.parsedPipelineConfig) {
+        // Try to parse configurations if they haven't been parsed yet
+        const parseResult = parseAndStoreConfigurations(settings);
+        if (!parseResult.success) {
+            return { 
+                isValid: false, 
+                error: parseResult.error || 'Configurations not parsed'
+            };
+        }
+    }
+
+    try {
+        validateConfig(settings.parsedModelsConfig!, settings.parsedPipelineConfig!);
+        return { isValid: true };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+            isValid: false,
+            error: errorMessage
+        };
+    }
+}
+
+/**
+ * Get validated pipeline configuration from settings
+ * @throws Error if configuration is invalid
+ */
+export function getValidatedPipelineConfiguration(settings: import('../types').ContentPipelineSettings): PipelineConfiguration {
+    if (!settings.modelsConfig || !settings.pipelineConfig) {
+        throw new Error('Configuration not available - both models and pipeline configurations are required');
+    }
+
+    if (!settings.parsedModelsConfig || !settings.parsedPipelineConfig) {
+        // Try to parse configurations automatically
+        const parseResult = parseAndStoreConfigurations(settings);
+        if (!parseResult.success) {
+            throw new Error(`Configuration parsing failed: ${parseResult.error || 'Unknown error'}`);
+        }
+    }
+
+    try {
+        validateConfig(settings.parsedModelsConfig!, settings.parsedPipelineConfig!);
+        return settings.parsedPipelineConfig!;
+    } catch (error) {
+        throw new Error(`Configuration validation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * Get validated models configuration from settings
+ * @throws Error if configuration is invalid
+ */
+export function getValidatedModelsConfiguration(settings: import('../types').ContentPipelineSettings): ModelsConfig {
+    if (!settings.modelsConfig) {
+        throw new Error('Models configuration not available');
+    }
+
+    if (!settings.parsedModelsConfig) {
+        // Try to parse configurations automatically
+        const parseResult = parseAndStoreConfigurations(settings);
+        if (!parseResult.success) {
+            throw new Error(`Configuration parsing failed: ${parseResult.error || 'Unknown error'}`);
+        }
+    }
+
+    return settings.parsedModelsConfig!;
+}
+
+/**
+ * Safely get pipeline configuration with validation
+ * Returns null if invalid, avoiding exceptions
+ */
+export function getSafePipelineConfiguration(settings: import('../types').ContentPipelineSettings): PipelineConfiguration | null {
+    try {
+        const validationResult = validateSettingsConfigurations(settings);
+        if (!validationResult.isValid) {
+            return null;
+        }
+        return settings.parsedPipelineConfig || null;
+    } catch (error) {
+        return null;
+    }
+}
+
+/**
+ * Resolve a specific pipeline step with full validation
+ * @throws Error if step cannot be resolved
+ */
+export function resolveStepFromSettings(stepId: string, settings: import('../types').ContentPipelineSettings): import('../types').ResolvedPipelineStep {
+    if (!settings.modelsConfig || !settings.pipelineConfig) {
+        throw new Error(`Configuration not available for step "${stepId}" - both models and pipeline configurations are required`);
+    }
+
+    if (!settings.parsedModelsConfig || !settings.parsedPipelineConfig) {
+        // Try to parse configurations automatically
+        const parseResult = parseAndStoreConfigurations(settings);
+        if (!parseResult.success) {
+            throw new Error(`Configuration parsing failed for step "${stepId}": ${parseResult.error || 'Unknown error'}`);
+        }
+    }
+
+    try {
+        return resolveStep(
+            stepId,
+            settings.parsedPipelineConfig!,
+            settings.parsedModelsConfig!
+        );
+    } catch (error) {
+        throw new Error(`Failed to resolve step "${stepId}" configuration: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * Check if configurations are ready for processing
+ */
+export function isConfigurationReady(settings: import('../types').ContentPipelineSettings): boolean {
+    const validationResult = validateSettingsConfigurations(settings);
+    return validationResult.isValid;
+}
+
+/**
+ * Get configuration status with detailed information
+ */
+export function getConfigurationStatus(settings: import('../types').ContentPipelineSettings): {
+    isReady: boolean;
+    hasModelsConfig: boolean;
+    hasPipelineConfig: boolean;
+    validationError?: string;
+} {
+    const hasModelsConfig = !!(settings.modelsConfig && 
+        Object.keys(settings.modelsConfig).length > 0);
+    const hasPipelineConfig = !!(settings.pipelineConfig && 
+        Object.keys(settings.pipelineConfig).length > 0);
+
+    if (!hasModelsConfig || !hasPipelineConfig) {
+        return {
+            isReady: false,
+            hasModelsConfig,
+            hasPipelineConfig,
+            validationError: 'Missing required configuration'
+        };
+    }
+
+    const validationResult = validateSettingsConfigurations(settings);
+    return {
+        isReady: validationResult.isValid,
+        hasModelsConfig,
+        hasPipelineConfig,
+        validationError: validationResult.error
+    };
+}
+
+/**
+ * Get detailed validation errors from settings
+ */
+export function getSettingsValidationErrors(settings: import('../types').ContentPipelineSettings): string[] {
+    if (!settings.parsedModelsConfig || !settings.parsedPipelineConfig) {
+        return ['Configurations not parsed'];
+    }
+
+    return getConfigErrors(settings.parsedModelsConfig, settings.parsedPipelineConfig);
 }
 
 /**

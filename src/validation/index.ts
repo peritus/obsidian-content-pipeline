@@ -14,8 +14,19 @@ export {
     validateConfig,
     isValidConfig,
     getConfigErrors,
-    parseAndValidateConfig,
     resolveStep,
+    
+    // Configuration management functions
+    parseAndStoreConfigurations,
+    parseAndValidateFromJson,
+    validateSettingsConfigurations,
+    getValidatedPipelineConfiguration,
+    getValidatedModelsConfiguration,
+    getSafePipelineConfiguration,
+    resolveStepFromSettings,
+    isConfigurationReady,
+    getConfigurationStatus,
+    getSettingsValidationErrors,
     
     // Schemas for direct usage (use v.parse(schema, data) instead of wrapper functions)
     configSchema,

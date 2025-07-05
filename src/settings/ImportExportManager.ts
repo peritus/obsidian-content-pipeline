@@ -3,7 +3,7 @@
  */
 
 import { Notice } from 'obsidian';
-import { parseAndValidateConfig, getConfigErrors } from '../validation';
+import { parseAndValidateFromJson } from '../validation';
 
 export interface ImportExportCallbacks {
     onPipelineImport: (config: string) => void;
@@ -22,14 +22,8 @@ export class ImportExportManager {
      */
     exportPipelineConfig(modelsConfig: string, pipelineConfig: string): void {
         try {
-            const { modelsConfig: models, pipelineConfig: pipeline } = parseAndValidateConfig(modelsConfig, pipelineConfig);
-            const errors = getConfigErrors(models, pipeline);
-
-            if (errors.length > 0) {
-                const message = `❌ Configuration errors: ${errors.join('; ')}`;
-                new Notice(message, 8000);
-                return;
-            }
+            // Use centralized validation function
+            const { modelsConfig: models, pipelineConfig: pipeline } = parseAndValidateFromJson(modelsConfig, pipelineConfig);
 
             const exportData = {
                 version: '1.2',

@@ -7,7 +7,7 @@ import { PipelineConfigSection } from '../PipelineConfigSection';
 import { ImportExportManager, ImportExportCallbacks } from '../ImportExportManager';
 import { FolderSetupSection } from '../folder-setup-section';
 import { PromptsManager } from './PromptsManager';
-import { getConfigErrors, isValidConfig, parseAndValidateConfig } from '../../validation';
+import { parseAndValidateFromJson } from '../../validation';
 import { ConfigValidationResult } from '../../types';
 import { SettingsNotifier } from '../settings-notifier';
 
@@ -261,34 +261,22 @@ export class SettingsTab extends PluginSettingTab {
      */
     private validateConfigurations(): ConfigValidationResult {
         try {
-            const { modelsConfig, pipelineConfig } = parseAndValidateConfig(
+            // Use centralized validation function
+            const { modelsConfig, pipelineConfig } = parseAndValidateFromJson(
                 this.plugin.settings.modelsConfig,
                 this.plugin.settings.pipelineConfig
             );
             
-            const errors = getConfigErrors(modelsConfig, pipelineConfig);
-            
-            if (errors.length === 0) {
-                return {
-                    isValid: true,
-                    modelsErrors: [],
-                    pipelineErrors: [],
-                    crossRefErrors: [],
-                    outputRoutingErrors: [],
-                    warnings: [],
-                    entryPoints: []
-                };
-            } else {
-                return {
-                    isValid: false,
-                    modelsErrors: [],
-                    pipelineErrors: errors,
-                    crossRefErrors: [],
-                    outputRoutingErrors: [],
-                    warnings: [],
-                    entryPoints: []
-                };
-            }
+            // If parsing and validation succeeded, configuration is valid
+            return {
+                isValid: true,
+                modelsErrors: [],
+                pipelineErrors: [],
+                crossRefErrors: [],
+                outputRoutingErrors: [],
+                warnings: [],
+                entryPoints: []
+            };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             return {

@@ -2,7 +2,13 @@ import { Plugin, Notice, TFile } from 'obsidian';
 import { DEFAULT_SETTINGS, SettingsTab } from './settings';
 import { ContentPipelineSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
-import { validateConfig, parseAndValidateConfig, isValidConfig, getConfigErrors } from './validation';
+import { 
+    parseAndStoreConfigurations,
+    getConfigurationStatus,
+    getSafePipelineConfiguration,
+    getValidatedModelsConfiguration,
+    getSettingsValidationErrors
+} from './validation';
 import { CommandHandler } from './commands';
 
 /**
@@ -135,7 +141,7 @@ export default class ContentPipelinePlugin extends Plugin {
     }
 
     /**
-     * Load plugin settings from disk with no automatic configuration initialization
+     * Load plugin settings from disk with centralized configuration parsing
      */
     async loadSettings() {
         try {
@@ -146,9 +152,6 @@ export default class ContentPipelinePlugin extends Plugin {
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
             
-            // Parse and validate configurations (if any exist)
-            this.parseConfigurations();
-            
             // Save settings (but don't initialize with defaults)
             await this.saveSettings();
             
@@ -158,37 +161,6 @@ export default class ContentPipelinePlugin extends Plugin {
             this.settings = Object.assign({}, DEFAULT_SETTINGS);
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
-            this.parseConfigurations();
-        }
-    }
-
-    /**
-     * Parse both configurations and store parsed versions
-     */
-    private parseConfigurations(): void {
-        try {
-            // Check if we have both configurations
-            if (!this.settings.modelsConfig || !this.settings.pipelineConfig) {
-                this.logger.debug('Missing configurations, clearing parsed configs');
-                this.settings.parsedModelsConfig = undefined;
-                this.settings.parsedPipelineConfig = undefined;
-                return;
-            }
-
-            // Parse and validate configurations
-            const { modelsConfig, pipelineConfig } = parseAndValidateConfig(
-                this.settings.modelsConfig,
-                this.settings.pipelineConfig
-            );
-            
-            this.settings.parsedModelsConfig = modelsConfig;
-            this.settings.parsedPipelineConfig = pipelineConfig;
-            this.logger.debug('Both configurations parsed and validated successfully');
-            
-        } catch (error) {
-            this.logger.error('Failed to parse configurations:', error);
-            this.settings.parsedModelsConfig = undefined;
-            this.settings.parsedPipelineConfig = undefined;
         }
     }
 
@@ -196,16 +168,21 @@ export default class ContentPipelinePlugin extends Plugin {
      * Get configuration status for display
      */
     private getConfigurationStatus(): string {
-        if (!this.settings.parsedModelsConfig || !this.settings.parsedPipelineConfig) {
-            return 'Invalid configuration';
+        const status = getConfigurationStatus(this.settings);
+        
+        if (!status.isReady) {
+            return status.validationError || 'Invalid configuration';
         }
 
         try {
-            validateConfig(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
-            const stepCount = Object.keys(this.settings.parsedPipelineConfig).length;
-            return `Valid (${stepCount} steps)`;
+            const pipelineConfig = getSafePipelineConfiguration(this.settings);
+            if (pipelineConfig) {
+                const stepCount = Object.keys(pipelineConfig).length;
+                return `Valid (${stepCount} steps)`;
+            }
+            return 'Invalid configuration';
         } catch (error) {
-            const errors = getConfigErrors(this.settings.parsedModelsConfig, this.settings.parsedPipelineConfig);
+            const errors = getSettingsValidationErrors(this.settings);
             return `Invalid (${errors.length} errors)`;
         }
     }
@@ -218,8 +195,8 @@ export default class ContentPipelinePlugin extends Plugin {
             // Update timestamp before saving
             this.settings.lastSaved = new Date().toISOString();
             
-            // Parse configurations before saving to ensure consistency
-            this.parseConfigurations();
+            // Parse configurations using centralized service to ensure consistency
+            parseAndStoreConfigurations(this.settings);
             
             // Update command handler with new settings
             this.commandHandler = new CommandHandler(this.app, this.settings);
@@ -236,14 +213,19 @@ export default class ContentPipelinePlugin extends Plugin {
      * Get parsed pipeline configuration (type-safe)
      */
     public getPipelineConfiguration(): PipelineConfiguration | undefined {
-        return this.settings.parsedPipelineConfig;
+        return getSafePipelineConfiguration(this.settings) || undefined;
     }
 
     /**
      * Get parsed models configuration (type-safe)
      */
     public getModelsConfiguration(): ModelsConfig | undefined {
-        return this.settings.parsedModelsConfig;
+        try {
+            return getValidatedModelsConfiguration(this.settings);
+        } catch (error) {
+            // Return undefined if configuration is not valid
+            return undefined;
+        }
     }
 
     /**

@@ -6,7 +6,7 @@ import { App } from 'obsidian';
 import { ExecutionState } from './execution-state';
 import { FileDiscovery } from '../file-operations';
 import { StepChain } from './StepChain';
-import { createConfigurationService } from '../configuration-service';
+import { getValidatedPipelineConfiguration } from '../../validation';
 import { 
     ContentPipelineSettings, 
     PipelineConfiguration, 
@@ -93,9 +93,8 @@ export class PipelineExecutor {
     }
 
     private getPipelineConfiguration(): PipelineConfiguration {
-        // Use centralized configuration service for validated configuration
-        const configService = createConfigurationService(this.settings);
-        return configService.getValidatedPipelineConfiguration();
+        // Use centralized validation function for validated configuration
+        return getValidatedPipelineConfiguration(this.settings);
     }
 
     private createResult(status: ProcessingStatus, error?: string): ProcessingResult {
