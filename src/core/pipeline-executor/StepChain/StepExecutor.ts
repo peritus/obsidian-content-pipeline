@@ -5,7 +5,7 @@
 import { App } from 'obsidian';
 import { WhisperStepProcessor } from '../whisper-step';
 import { ChatStepExecutor } from './ChatStepExecutor';
-import { createConfigurationService } from '../../configuration-service';
+import { resolveStepFromSettings } from '../../../validation';
 import { 
     ContentPipelineSettings,
     FileInfo, 
@@ -77,10 +77,9 @@ export class StepExecutor {
     }
 
     /**
-     * Resolve pipeline step using centralized configuration service
+     * Resolve pipeline step using centralized validation function
      */
     private resolveStep(stepId: string): ResolvedPipelineStep {
-        const configService = createConfigurationService(this.settings);
-        return configService.resolveStep(stepId);
+        return resolveStepFromSettings(stepId, this.settings);
     }
 }

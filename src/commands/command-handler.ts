@@ -8,7 +8,10 @@ import { App, Notice, TFile } from 'obsidian';
 import { ContentPipelineSettings, ProcessingStatus } from '../types';
 import { PipelineExecutor } from '../core/pipeline-executor';
 import { FileDiscovery } from '../core/file-operations';
-import { createConfigurationService } from '../core/configuration-service';
+import { 
+    validateSettingsConfigurations,
+    getSafePipelineConfiguration
+} from '../validation';
 import { createLogger } from '../logger';
 
 const logger = createLogger('CommandHandler');
@@ -27,14 +30,13 @@ export class CommandHandler {
      */
     async canFileBeProcessed(file: TFile): Promise<boolean> {
         try {
-            // Check configuration validity using centralized configuration service
-            const configService = createConfigurationService(this.settings);
-            const validationResult = configService.validateConfigurations();
+            // Check configuration validity using centralized validation functions
+            const validationResult = validateSettingsConfigurations(this.settings);
             if (!validationResult.isValid) {
                 return false;
             }
 
-            const pipelineConfig = configService.getSafePipelineConfiguration();
+            const pipelineConfig = getSafePipelineConfiguration(this.settings);
             if (!pipelineConfig) {
                 return false;
             }
@@ -56,9 +58,8 @@ export class CommandHandler {
         try {
             logger.info(`Process specific file command triggered for: ${file.path}`);
             
-            // Check if both configurations are available and valid using centralized configuration service
-            const configService = createConfigurationService(this.settings);
-            const validationResult = configService.validateConfigurations();
+            // Check if both configurations are available and valid using centralized validation functions
+            const validationResult = validateSettingsConfigurations(this.settings);
             if (!validationResult.isValid) {
                 new Notice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', validationResult.error);
@@ -109,9 +110,8 @@ export class CommandHandler {
         try {
             logger.info('Process Next File command triggered');
             
-            // Check if both configurations are available and valid using centralized configuration service
-            const configService = createConfigurationService(this.settings);
-            const validationResult = configService.validateConfigurations();
+            // Check if both configurations are available and valid using centralized validation functions
+            const validationResult = validateSettingsConfigurations(this.settings);
             if (!validationResult.isValid) {
                 new Notice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', validationResult.error);
@@ -150,9 +150,8 @@ export class CommandHandler {
         try {
             logger.info('Process All Files command triggered');
             
-            // Check if both configurations are available and valid using centralized configuration service
-            const configService = createConfigurationService(this.settings);
-            const validationResult = configService.validateConfigurations();
+            // Check if both configurations are available and valid using centralized validation functions
+            const validationResult = validateSettingsConfigurations(this.settings);
             if (!validationResult.isValid) {
                 new Notice(`❌ Configuration invalid: ${validationResult.error}. Please check settings.`, 8000);
                 logger.error('Configuration validation failed:', validationResult.error);
@@ -263,8 +262,7 @@ export class CommandHandler {
      */
     private async findStepForFile(file: TFile): Promise<string | null> {
         try {
-            const configService = createConfigurationService(this.settings);
-            const pipelineConfig = configService.getSafePipelineConfiguration();
+            const pipelineConfig = getSafePipelineConfiguration(this.settings);
             if (!pipelineConfig) {
                 return null;
             }
