@@ -304,53 +304,6 @@ export const audioFileSchema = v.object({
 });
 
 // =============================================================================
-// PATH BUILDER VALIDATION SCHEMAS
-// =============================================================================
-
-/**
- * Directory path input validation schema
- * For directory paths that must end with '/' and be vault-relative
- */
-export const directoryPathInputSchema = v.pipe(
-    v.string('Directory path must be a string'),
-    v.trim(),
-    v.nonEmpty('Directory path cannot be empty'),
-    v.check(path => path.endsWith('/'), 'Directory path must end with "/"'),
-    v.check(path => !path.includes('..'), 'Directory path cannot contain path traversal (..)'),
-    v.check(path => !path.startsWith('/'), 'Directory path should be vault-relative (no leading /)')
-);
-
-/**
- * File path input validation schema
- * For general file paths (input validation)
- */
-export const filePathInputSchema = v.pipe(
-    v.string('File path must be a string'),
-    v.trim(),
-    v.nonEmpty('File path cannot be empty')
-);
-
-/**
- * Filename input validation schema
- * For standalone filenames
- */
-export const filenameInputSchema = v.pipe(
-    v.string('Filename must be a string'),
-    v.trim(),
-    v.nonEmpty('Filename cannot be empty')
-);
-
-/**
- * Input pattern validation schema
- * For input patterns used in path resolution
- */
-export const inputPatternSchema = v.pipe(
-    v.string('Input pattern must be a string'),
-    v.trim(),
-    v.nonEmpty('Input pattern is required and must be a string')
-);
-
-// =============================================================================
 // EXECUTION CONTEXT VALIDATION SCHEMAS
 // =============================================================================
 

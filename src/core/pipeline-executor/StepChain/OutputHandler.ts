@@ -4,7 +4,8 @@
 
 import { App } from 'obsidian';
 import { FileOperations } from '../../file-operations';
-import { SimplePathBuilder } from '../../SimplePathBuilder';
+import { normalizeDirectoryPath } from '../../path-operations/normalize-directory-path';
+import { buildOutputPath } from '../../path-operations/build-output-path';
 import { FilenameResolver } from '../../FilenameResolver';
 import { ProcessedSection } from '../../../api/chat-types';
 import { 
@@ -42,7 +43,7 @@ export class OutputHandler {
             });
             
             // Ensure it's formatted as a directory path
-            return SimplePathBuilder.normalizeDirectoryPath(step.output);
+            return normalizeDirectoryPath(step.output);
         }
 
         // Handle routing-aware output (multiple directory paths)
@@ -55,7 +56,7 @@ export class OutputHandler {
                     nextStep, 
                     outputPath: routingOutput[nextStep] 
                 });
-                return SimplePathBuilder.normalizeDirectoryPath(routingOutput[nextStep]);
+                return normalizeDirectoryPath(routingOutput[nextStep]);
             }
 
             // Priority 2: Use default fallback if nextStep is invalid/missing
@@ -65,7 +66,7 @@ export class OutputHandler {
                     defaultPath: routingOutput.default,
                     availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
                 });
-                return SimplePathBuilder.normalizeDirectoryPath(routingOutput.default);
+                return normalizeDirectoryPath(routingOutput.default);
             }
 
             // Priority 3: If no default, throw error
@@ -96,8 +97,8 @@ export class OutputHandler {
             // Get appropriate file extension for the step type
             const extension = FilenameResolver.getExtensionForStepType(context.stepId);
             
-            // Build complete output path using SimplePathBuilder
-            const outputPath = SimplePathBuilder.buildOutputPath(
+            // Build complete output path using path operations
+            const outputPath = buildOutputPath(
                 outputDirectory,
                 effectiveFilename,
                 extension

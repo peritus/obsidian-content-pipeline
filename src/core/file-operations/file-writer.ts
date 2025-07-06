@@ -3,7 +3,7 @@
  */
 
 import { App, TFile, Vault, normalizePath } from 'obsidian';
-import { SimplePathBuilder } from '../SimplePathBuilder';
+import { extractDirectoryPath } from '../path-operations/extract-directory-path';
 import { FileOperationOptions, FileOperationResult } from './types';
 import { DirectoryManager } from './directory-manager';
 import { ContentPipelineError, isContentPipelineError } from '../../errors';
@@ -48,7 +48,7 @@ export class FileWriter {
 
             // Create parent directories if needed
             if (createDirectories) {
-                const directory = SimplePathBuilder.extractDirectoryPath(filePath);
+                const directory = extractDirectoryPath(filePath);
                 if (directory) {
                     await this.directoryManager.ensureDirectory(directory);
                 }

@@ -5,7 +5,8 @@
  */
 
 import { App, TFile, TFolder, Vault, normalizePath } from 'obsidian';
-import { SimplePathBuilder } from '../SimplePathBuilder';
+import { resolveInputDirectory } from '../path-operations/resolve-input-directory';
+import { matchesInputPattern } from '../path-operations/match-input-pattern';
 import { FileInfo, PipelineConfiguration, isRoutingAwareOutput } from '../../types';
 import { FileDiscoveryOptions, FileDiscoveryResult } from './types';
 import { FileInfoProvider } from './file-info-provider';
@@ -45,8 +46,8 @@ export class FileDiscovery {
         } = options;
 
         try {
-            // Resolve the search pattern using SimplePathBuilder
-            const searchPath = SimplePathBuilder.resolveInputDirectory(inputPattern);
+            // Resolve the search pattern using path operations
+            const searchPath = resolveInputDirectory(inputPattern);
 
             // Search for files in the resolved path
             const files = await this.searchFilesInPath(searchPath, {
@@ -231,8 +232,8 @@ export class FileDiscovery {
      */
     private isFileInInputDirectory(filePath: string, inputPattern: string): boolean {
         try {
-            // Use SimplePathBuilder for pattern matching
-            const isMatch = SimplePathBuilder.matchesInputPattern(filePath, inputPattern);
+            // Use path operations for pattern matching
+            const isMatch = matchesInputPattern(filePath, inputPattern);
             
             logger.debug(`Path check: ${filePath} in ${inputPattern} = ${isMatch}`);
             return isMatch;
