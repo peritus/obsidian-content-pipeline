@@ -3,7 +3,10 @@
  */
 
 import { App, TFile, Vault } from 'obsidian';
-import { SimplePathBuilder } from '../SimplePathBuilder';
+import { normalizeDirectoryPath } from '../path-operations/normalize-directory-path';
+import { extractFilename } from '../path-operations/extract-filename';
+import { buildArchivePath } from '../path-operations/build-archive-path';
+import { extractDirectoryPath } from '../path-operations/extract-directory-path';
 import { FilenameResolver } from '../FilenameResolver';
 import { ArchiveResult } from './types';
 import { DirectoryManager } from './directory-manager';
@@ -30,7 +33,7 @@ export class FileArchiver {
     ): Promise<ArchiveResult> {
         try {
             // Normalize archive directory path (now expects simple directory path)
-            const normalizedArchiveDir = SimplePathBuilder.normalizeDirectoryPath(archiveDirectory);
+            const normalizedArchiveDir = normalizeDirectoryPath(archiveDirectory);
 
             // Get source file
             const sourceFile = this.vault.getAbstractFileByPath(sourceFilePath);
@@ -42,8 +45,8 @@ export class FileArchiver {
             await this.directoryManager.ensureDirectory(normalizedArchiveDir);
 
             // Extract source filename and build archive path
-            const sourceFilename = SimplePathBuilder.extractFilename(sourceFilePath);
-            const baseArchivePath = SimplePathBuilder.buildArchivePath(normalizedArchiveDir, sourceFilename);
+            const sourceFilename = extractFilename(sourceFilePath);
+            const baseArchivePath = buildArchivePath(normalizedArchiveDir, sourceFilename);
 
             // Generate unique archive filename if needed
             const finalArchivePath = await this.generateUniqueFilename(baseArchivePath);
@@ -89,8 +92,8 @@ export class FileArchiver {
 
         while (this.fileExists(testPath)) {
             counter++;
-            const dir = SimplePathBuilder.extractDirectoryPath(basePath);
-            const filename = SimplePathBuilder.extractFilename(basePath);
+            const dir = extractDirectoryPath(basePath);
+            const filename = extractFilename(basePath);
             const basename = FilenameResolver.getBasename(filename);
             const extension = filename.includes('.') ? '.' + filename.split('.').pop() : '';
             const uniqueName = `${basename}-${counter}${extension}`;

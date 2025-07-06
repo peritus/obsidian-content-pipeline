@@ -3,7 +3,11 @@
  */
 
 import { App } from 'obsidian';
-import { SimplePathBuilder } from '../SimplePathBuilder';
+import { normalizeDirectoryPath } from '../path-operations/normalize-directory-path';
+import { buildOutputPath } from '../path-operations/build-output-path';
+import { buildArchivePath } from '../path-operations/build-archive-path';
+import { extractDirectoryPath } from '../path-operations/extract-directory-path';
+import { extractFilename } from '../path-operations/extract-filename';
 import { FilenameResolver } from '../FilenameResolver';
 import { FileOperations } from '../file-operations';
 import { WhisperClient } from '../../api';
@@ -68,7 +72,7 @@ export class WhisperStepProcessor {
                 archivePath,
                 stepId,
                 inputPath: fileInfo.path,
-                outputPath: '' // Will be resolved using SimplePathBuilder
+                outputPath: '' // Will be resolved using path operations
             };
 
             // Determine next step and routing for Whisper step
@@ -104,14 +108,14 @@ export class WhisperStepProcessor {
                 context
             );
             
-            // Build output path using SimplePathBuilder
+            // Build output path using path operations
             const effectiveFilename = FilenameResolver.resolveOutputFilename(
                 undefined, // Whisper doesn't get LLM filename suggestions
                 context.filename,
                 stepId
             );
             const extension = FilenameResolver.getExtensionForStepType(stepId);
-            const outputPath = SimplePathBuilder.buildOutputPath(
+            const outputPath = buildOutputPath(
                 outputDirectory,
                 effectiveFilename,
                 extension
@@ -177,7 +181,7 @@ export class WhisperStepProcessor {
                 output, 
                 nextStep 
             });
-            return SimplePathBuilder.normalizeDirectoryPath(output);
+            return normalizeDirectoryPath(output);
         }
 
         // Handle routing-aware output (multiple directories)
@@ -190,7 +194,7 @@ export class WhisperStepProcessor {
                     nextStep, 
                     outputPath: routingOutput[nextStep] 
                 });
-                return SimplePathBuilder.normalizeDirectoryPath(routingOutput[nextStep]);
+                return normalizeDirectoryPath(routingOutput[nextStep]);
             }
 
             // Priority 2: Use default fallback if nextStep is invalid/missing
@@ -200,7 +204,7 @@ export class WhisperStepProcessor {
                     defaultPath: routingOutput.default,
                     availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
                 });
-                return SimplePathBuilder.normalizeDirectoryPath(routingOutput.default);
+                return normalizeDirectoryPath(routingOutput.default);
             }
 
             // Priority 3: If no default, throw error
@@ -209,7 +213,7 @@ export class WhisperStepProcessor {
         }
 
         // Fallback to resolved step output as directory
-        return SimplePathBuilder.normalizeDirectoryPath(resolvedStep.output);
+        return normalizeDirectoryPath(resolvedStep.output);
     }
 
     /**
@@ -268,11 +272,11 @@ export class WhisperStepProcessor {
     private async archiveFile(sourcePath: string, archivePattern: string, fileInfo: FileInfo): Promise<string> {
         try {
             // Archive pattern should be step-based directory: inbox/archive/{stepId}/
-            const archiveDirectory = SimplePathBuilder.normalizeDirectoryPath(archivePattern);
-            const archivePath = SimplePathBuilder.buildArchivePath(archiveDirectory, fileInfo.name);
+            const archiveDirectory = normalizeDirectoryPath(archivePattern);
+            const archivePath = buildArchivePath(archiveDirectory, fileInfo.name);
             
             // Ensure archive directory exists
-            const archiveDir = SimplePathBuilder.extractDirectoryPath(archivePath);
+            const archiveDir = extractDirectoryPath(archivePath);
             if (archiveDir) {
                 await this.fileOps.ensureDirectory(archiveDir);
             }
@@ -306,8 +310,8 @@ export class WhisperStepProcessor {
 
         while (this.fileExists(testPath)) {
             counter++;
-            const dir = SimplePathBuilder.extractDirectoryPath(basePath);
-            const filename = SimplePathBuilder.extractFilename(basePath);
+            const dir = extractDirectoryPath(basePath);
+            const filename = extractFilename(basePath);
             const basename = FilenameResolver.getBasename(filename);
             const extension = filename.includes('.') ? '.' + filename.split('.').pop() : '';
             const uniqueName = `${basename}-${counter}${extension}`;
