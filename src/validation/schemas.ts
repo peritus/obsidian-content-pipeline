@@ -1,9 +1,9 @@
 /**
  * Complete Validation System using Valibot
- * 
+ *
  * Unified validation system with optimized internal implementation.
  * Provides type-safe, composable validation with consistent error messages.
- * 
+ *
  * ✅ File size: Significantly reduced from 32.9KB
  * ✅ Zero breaking changes: All exports identical
  * ✅ Performance: Optimized with internal patterns
@@ -88,7 +88,7 @@ export const modelsConfigSchema = v.pipe(
     v.record(v.string(), modelConfigSchema),
     v.check((input: Record<string, any>) => {
         const ids = Object.keys(input);
-        return ids.length > 0 && ids.length <= CONFIG.limits.maxModels && 
+        return ids.length > 0 && ids.length <= CONFIG.limits.maxModels &&
                ids.every(id => CONFIG.patterns.configId.test(id));
     }, 'Models configuration validation failed')
 );
@@ -139,8 +139,8 @@ export const audioFileSchema = v.object({
     audioData: v.pipe(
         v.custom((input: unknown) => input instanceof ArrayBuffer, 'Must be ArrayBuffer'),
         v.custom((buffer: unknown) => (buffer as ArrayBuffer).byteLength > 0, 'Audio data cannot be empty'),
-        v.custom((buffer: unknown) => (buffer as ArrayBuffer).byteLength <= WHISPER_LIMITS.maxFileSize, 
-                `Audio file too large (max: ${WHISPER_LIMITS.maxFileSize} bytes)`)
+        v.custom((buffer: unknown) => (buffer as ArrayBuffer).byteLength <= WHISPER_LIMITS.maxFileSize,
+            `Audio file too large (max: ${WHISPER_LIMITS.maxFileSize} bytes)`)
     ),
     filename: v.pipe(
         v.string('Filename must be a string'),
@@ -196,7 +196,7 @@ const circularDependencyValidator = v.custom<{ models: ModelsConfig; pipeline: P
     const config = input as { models: ModelsConfig; pipeline: PipelineConfiguration };
     const stepIds = Object.keys(config.pipeline);
     const deps = new Map<string, Set<string>>();
-    
+
     stepIds.forEach(id => {
         deps.set(id, new Set());
         const step = config.pipeline[id];
@@ -211,7 +211,7 @@ const circularDependencyValidator = v.custom<{ models: ModelsConfig; pipeline: P
 
     const visited = new Set<string>();
     const stack = new Set<string>();
-    
+
     function hasCycle(id: string): boolean {
         if (stack.has(id)) return true;
         if (visited.has(id)) return false;
@@ -224,7 +224,7 @@ const circularDependencyValidator = v.custom<{ models: ModelsConfig; pipeline: P
         stack.delete(id);
         return false;
     }
-    
+
     return !stepIds.some(id => hasCycle(id));
 }, 'Circular dependency detected in routing configuration');
 
@@ -317,7 +317,7 @@ export function parseAndStoreConfigurations(settings: import('../types').Content
 
         let modelsConfig: ModelsConfig;
         let pipelineConfig: PipelineConfiguration;
-        
+
         try {
             modelsConfig = JSON.parse(settings.modelsConfig);
         } catch (error) {
@@ -338,7 +338,7 @@ export function parseAndStoreConfigurations(settings: import('../types').Content
 
         settings.parsedModelsConfig = modelsConfig;
         settings.parsedPipelineConfig = pipelineConfig;
-        
+
         return { success: true, modelsConfig, pipelineConfig };
     } catch (error) {
         return { success: false, error: `Unexpected error during configuration parsing: ${error instanceof Error ? error.message : String(error)}` };

@@ -5,8 +5,8 @@
 import { App } from 'obsidian';
 import { FileOperations } from '../../file-operations';
 import { StepExecutor } from './StepExecutor';
-import { 
-    FileInfo, 
+import {
+    FileInfo,
     ProcessingResult,
     ProcessingStatus
 } from '../../../types';
@@ -26,12 +26,12 @@ export class ChainExecutor {
     }
 
     async execute(
-        startStepId: string, 
+        startStepId: string,
         inputFile: FileInfo
     ): Promise<ProcessingResult> {
         let currentStepId = startStepId;
         let currentFile = inputFile;
-        let allResults: ProcessingResult[] = [];
+        const allResults: ProcessingResult[] = [];
 
         try {
             logger.info(`Starting chain execution: ${startStepId} for ${inputFile.path}`);

@@ -46,7 +46,7 @@ export class FolderSetupSection {
             if (existingSection) {
                 existingSection.remove();
             }
-            
+
             // Re-render with current configuration
             this.renderContent();
         }
@@ -71,10 +71,10 @@ export class FolderSetupSection {
             if (missingFolders.length > 0) {
                 // Create container with class for easy removal
                 const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
-                
+
                 // Create proper Obsidian heading
                 new Setting(sectionContainer).setName('Entry point folders').setHeading();
-                
+
                 // Add description using Setting
                 new Setting(sectionContainer)
                     .setName('')
@@ -86,10 +86,10 @@ export class FolderSetupSection {
 
         } catch (error) {
             console.error('Error in FolderSetupSection render:', error);
-            
+
             // Create container with class for easy removal
             const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
-            
+
             // Show error using proper Setting structure
             new Setting(sectionContainer).setName('Entry point folders').setHeading();
             new Setting(sectionContainer)
@@ -131,7 +131,7 @@ export class FolderSetupSection {
     private checkEntryPointFolders(pipelineConfig: PipelineConfiguration): EntryPointFolderStatus[] {
         const allStepIds = Object.keys(pipelineConfig);
         const referencedSteps = new Set<string>();
-        
+
         // Find steps referenced by routing-aware output
         for (const step of Object.values(pipelineConfig)) {
             if (step.routingAwareOutput && typeof step.routingAwareOutput === 'object') {
@@ -168,7 +168,7 @@ export class FolderSetupSection {
         try {
             // Create the folder
             await this.directoryManager.ensureDirectory(folderStatus.inputPath);
-            
+
             // Show success notice with instruction to refresh
             new Notice(`✅ Created folder: ${folderStatus.inputPath}. Reload settings to update the list.`, 5000);
 

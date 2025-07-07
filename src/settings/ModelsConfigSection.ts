@@ -37,7 +37,7 @@ export class ModelsConfigSection {
             });
 
         // Collapsible content container
-        this.contentContainer = containerEl.createEl('div', { 
+        this.contentContainer = containerEl.createEl('div', {
             cls: 'content-pipeline-collapsible-content'
         });
         this.contentContainer.style.display = 'none';
@@ -59,17 +59,17 @@ export class ModelsConfigSection {
             .setDesc('JSON configuration for your AI models and API endpoints');
 
         TextareaStyler.styleSettingElement(modelsSetting.settingEl);
-        
+
         modelsSetting.addTextArea(text => {
             this.modelsTextarea = text;
             TextareaStyler.styleTextarea(text);
             text.setPlaceholder('{\n  "openai-gpt": {\n    "baseUrl": "https://api.openai.com/v1",\n    "apiKey": "your-api-key",\n    "implementation": "chatgpt",\n    "model": "gpt-4"\n  }\n}');
             text.setValue(this.plugin.settings.modelsConfig);
-            
+
             text.onChange((value) => {
                 this.onChangeCallback(value);
             });
-            
+
             return text;
         });
 

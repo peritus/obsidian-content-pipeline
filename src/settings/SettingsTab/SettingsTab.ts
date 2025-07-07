@@ -72,13 +72,13 @@ export class SettingsTab extends PluginSettingTab {
                 // Update OpenAI section
                 this.openAISection.refresh();
             }
-            
+
             if (event.type === 'pipeline' && event.pipelineConfig !== undefined) {
                 // Update pipeline section (but only if the value is different to avoid loops)
                 if (this.pipelineSection.getValue() !== event.pipelineConfig) {
                     this.pipelineSection.setValue(event.pipelineConfig);
                 }
-                
+
                 // Refresh folder section when pipeline config changes
                 this.folderSection.refresh();
             }
@@ -121,10 +121,10 @@ export class SettingsTab extends PluginSettingTab {
     private async handleExamplePromptsImport(prompts: Record<string, string>): Promise<void> {
         // Store config-defined prompts in settings
         this.plugin.settings.configDefinedPrompts = prompts;
-        
+
         // Update the prompts manager
         this.promptsManager.setConfigDefinedPrompts(prompts);
-        
+
         // Save settings immediately to persist the config-defined prompts
         try {
             await this.plugin.saveSettings();
@@ -142,12 +142,12 @@ export class SettingsTab extends PluginSettingTab {
     private renderValidationSection(containerEl: HTMLElement): void {
         // Create the validation section
         const validationSection = containerEl.createEl('div', { cls: 'content-pipeline-validation-section' });
-        
+
         // Validation message (instead of button)
-        this.validationMessageEl = validationSection.createEl('div', { 
+        this.validationMessageEl = validationSection.createEl('div', {
             cls: 'content-pipeline-validation-message'
         });
-        
+
         // Set initial message
         this.updateValidationMessage();
     }
@@ -157,9 +157,9 @@ export class SettingsTab extends PluginSettingTab {
      */
     private updateValidationMessage(): void {
         if (!this.validationMessageEl) return;
-        
+
         const validationResult = this.validateConfigurations();
-        
+
         if (validationResult.isValid) {
             this.validationMessageEl.textContent = '✅ Configuration is valid';
             this.validationMessageEl.className = 'content-pipeline-validation-message valid';
@@ -171,7 +171,7 @@ export class SettingsTab extends PluginSettingTab {
                 ...validationResult.crossRefErrors,
                 ...validationResult.outputRoutingErrors
             ];
-            
+
             if (allErrors.length > 0) {
                 // Show the first error as the main message
                 this.validationMessageEl.textContent = `❌ ${allErrors[0]}`;
@@ -192,10 +192,10 @@ export class SettingsTab extends PluginSettingTab {
      */
     private handleModelsConfigChange(value: string): void {
         this.plugin.settings.modelsConfig = value;
-        
+
         // Notify other components through the notifier system
         this.settingsNotifier.notifyModelsChange(value);
-        
+
         this.debounceValidationAndAutoSave();
     }
 
@@ -204,10 +204,10 @@ export class SettingsTab extends PluginSettingTab {
      */
     private handlePipelineConfigChange(value: string): void {
         this.plugin.settings.pipelineConfig = value;
-        
-        // Notify other components through the notifier system  
+
+        // Notify other components through the notifier system
         this.settingsNotifier.notifyPipelineChange(value);
-        
+
         this.debounceValidationAndAutoSave();
     }
 
@@ -218,7 +218,7 @@ export class SettingsTab extends PluginSettingTab {
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
-        
+
         this.debounceTimer = setTimeout(async () => {
             await this.performValidationAndAutoSave();
         }, 300);
@@ -266,7 +266,7 @@ export class SettingsTab extends PluginSettingTab {
                 this.plugin.settings.modelsConfig,
                 this.plugin.settings.pipelineConfig
             );
-            
+
             // If parsing and validation succeeded, configuration is valid
             return {
                 isValid: true,

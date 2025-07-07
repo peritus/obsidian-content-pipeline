@@ -5,9 +5,9 @@
 import { App } from 'obsidian';
 import { StepExecutor } from './StepExecutor';
 import { ChainExecutor } from './ChainExecutor';
-import { 
+import {
     ContentPipelineSettings,
-    FileInfo, 
+    FileInfo,
     ProcessingResult
 } from '../../../types';
 import { createLogger } from '../../../logger';
@@ -25,14 +25,14 @@ export class StepChain {
     }
 
     async executeStep(
-        stepId: string, 
+        stepId: string,
         fileInfo: FileInfo
     ): Promise<ProcessingResult> {
         return await this.stepExecutor.execute(stepId, fileInfo);
     }
 
     async executeChain(
-        startStepId: string, 
+        startStepId: string,
         inputFile: FileInfo
     ): Promise<ProcessingResult> {
         return await this.chainExecutor.execute(startStepId, inputFile);

@@ -11,10 +11,10 @@ import { extractFilename } from '../path-operations/extract-filename';
 import { FilenameResolver } from '../FilenameResolver';
 import { FileOperations } from '../file-operations';
 import { WhisperClient } from '../../api';
-import { 
-    FileInfo, 
-    ProcessingResult, 
-    ProcessingStatus, 
+import {
+    FileInfo,
+    ProcessingResult,
+    ProcessingStatus,
     ResolvedPipelineStep,
     ProcessingContext,
     FileMetadata,
@@ -47,7 +47,7 @@ export class WhisperStepProcessor {
 
             // Read audio file
             const audioBuffer = await this.readAudioFile(fileInfo.path);
-            
+
             // Create Whisper client and transcribe using resolved model config
             const whisperClient = new WhisperClient({
                 apiKey: resolvedStep.modelConfig.apiKey,
@@ -77,7 +77,7 @@ export class WhisperStepProcessor {
 
             // Determine next step and routing for Whisper step
             let nextStep: string | undefined;
-            let usedDefaultFallback = false;
+            const usedDefaultFallback = false;
 
             // For Whisper steps, determine routing based on routing-aware output configuration
             const availableNextSteps = this.getAvailableNextSteps(resolvedStep);
@@ -101,13 +101,13 @@ export class WhisperStepProcessor {
 
             // Format and save output with clean metadata
             const outputContent = this.formatTranscriptionOutput(
-                transcriptionResult.text, 
-                fileInfo, 
-                stepId, 
-                archivePath, 
+                transcriptionResult.text,
+                fileInfo,
+                stepId,
+                archivePath,
                 context
             );
-            
+
             // Build output path using path operations
             const effectiveFilename = FilenameResolver.resolveOutputFilename(
                 undefined, // Whisper doesn't get LLM filename suggestions
@@ -120,7 +120,7 @@ export class WhisperStepProcessor {
                 effectiveFilename,
                 extension
             );
-            
+
             await this.fileOps.writeFile(outputPath, outputContent, {
                 createDirectories: true,
                 overwrite: true
@@ -177,9 +177,9 @@ export class WhisperStepProcessor {
 
         // Handle string output (single directory)
         if (typeof output === 'string') {
-            logger.debug('Whisper using string output directory', { 
-                output, 
-                nextStep 
+            logger.debug('Whisper using string output directory', {
+                output,
+                nextStep
             });
             return normalizeDirectoryPath(output);
         }
@@ -187,19 +187,19 @@ export class WhisperStepProcessor {
         // Handle routing-aware output (multiple directories)
         if (isRoutingAwareOutput(output)) {
             const routingOutput = output as RoutingAwareOutput;
-            
+
             // Priority 1: Use nextStep if provided and valid
             if (nextStep && routingOutput[nextStep]) {
-                logger.debug('Whisper using routing-aware output directory for nextStep', { 
-                    nextStep, 
-                    outputPath: routingOutput[nextStep] 
+                logger.debug('Whisper using routing-aware output directory for nextStep', {
+                    nextStep,
+                    outputPath: routingOutput[nextStep]
                 });
                 return normalizeDirectoryPath(routingOutput[nextStep]);
             }
 
             // Priority 2: Use default fallback if nextStep is invalid/missing
             if (routingOutput.default) {
-                logger.debug('Whisper using default fallback output directory', { 
+                logger.debug('Whisper using default fallback output directory', {
                     nextStep: nextStep || 'undefined',
                     defaultPath: routingOutput.default,
                     availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
@@ -239,14 +239,14 @@ export class WhisperStepProcessor {
     }
 
     private formatTranscriptionOutput(
-        text: string, 
-        fileInfo: FileInfo, 
-        stepId: string, 
+        text: string,
+        fileInfo: FileInfo,
+        stepId: string,
         archivePath: string,
         context: ProcessingContext
     ): string {
         const timestamp = new Date().toISOString();
-        
+
         // Create clean metadata with essential information only
         const metadata: FileMetadata = {
             source: archivePath,
@@ -274,7 +274,7 @@ export class WhisperStepProcessor {
             // Archive pattern should be step-based directory: inbox/archive/{stepId}/
             const archiveDirectory = normalizeDirectoryPath(archivePattern);
             const archivePath = buildArchivePath(archiveDirectory, fileInfo.name);
-            
+
             // Ensure archive directory exists
             const archiveDir = extractDirectoryPath(archivePath);
             if (archiveDir) {

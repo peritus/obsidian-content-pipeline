@@ -48,11 +48,11 @@ type_check_file = { cmd = ["npx", "tsc", "--noEmit"], files = ["src/**/*.ts", "s
 
 # ===== LINT =====
 
-lint = ["npm", "run", "lint"]
+lint = ["npm", "run", "lint:overview"]
 lint_fix = ["npm", "run", "lint:fix"]
 
 # Lint specific files
-lint_file = { cmd = ["npx", "eslint"], files = ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "*.ts", "*.tsx"] }
+lint_file = { cmd = ["npm", "run", "lint", "--"], files = ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "*.ts", "*.tsx"] }
 
 # Lint and fix specific files
-lint_fix_file = { cmd = ["npx", "eslint", "--fix"], files = ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "*.ts", "*.tsx"] }
+lint_fix_file = { cmd = ["npm", "run", "lint:fix", "--"], files = ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "*.ts", "*.tsx"] }

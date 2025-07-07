@@ -12,7 +12,7 @@ export class IndividualPromptRenderer {
     renderConfigPrompts(containerEl: HTMLElement, configPrompts: PromptStatus[], onCopyToVault: (prompt: PromptStatus) => void): void {
         // Sort prompts by filename (path)
         const sortedPrompts = [...configPrompts].sort((a, b) => a.path.localeCompare(b.path));
-        
+
         for (const prompt of sortedPrompts) {
             this.renderConfigPrompt(containerEl, prompt, onCopyToVault);
         }
@@ -24,7 +24,7 @@ export class IndividualPromptRenderer {
     renderVaultPrompts(containerEl: HTMLElement, vaultPrompts: PromptStatus[], onOpenInVault: (prompt: PromptStatus) => void): void {
         // Sort prompts by filename (path)
         const sortedPrompts = [...vaultPrompts].sort((a, b) => a.path.localeCompare(b.path));
-        
+
         for (const prompt of sortedPrompts) {
             this.renderVaultPrompt(containerEl, prompt, onOpenInVault);
         }
@@ -45,7 +45,7 @@ export class IndividualPromptRenderer {
         filenameEl.textContent = displayPath;
 
         // Right side: button
-        const copyBtn = topRow.createEl('button', { 
+        const copyBtn = topRow.createEl('button', {
             text: 'Copy to vault',
             cls: 'content-pipeline-prompt-create-button'
         });
@@ -71,7 +71,7 @@ export class IndividualPromptRenderer {
         filenameEl.textContent = displayPath;
 
         // Right side: button
-        const openBtn = topRow.createEl('button', { 
+        const openBtn = topRow.createEl('button', {
             text: 'Open in vault',
             cls: 'content-pipeline-prompt-view-button'
         });

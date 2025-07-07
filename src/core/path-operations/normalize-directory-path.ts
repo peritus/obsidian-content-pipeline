@@ -10,10 +10,10 @@ export function normalizeDirectoryPath(directoryPath: string): string {
     let normalized = directoryPath.replace(/\\/g, '/');
     normalized = normalized.replace(/^\/+/, '');
     normalized = normalized.replace(/\/+/g, '/');
-    
+
     if (!normalized.endsWith('/')) {
         normalized += '/';
     }
-    
+
     return normalized;
 }

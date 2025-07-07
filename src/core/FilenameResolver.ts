@@ -1,6 +1,6 @@
 /**
  * Unified Filename Resolution System
- * 
+ *
  * Centralized logic for determining effective filenames for output files.
  * Replaces scattered filename logic across OutputHandler and ChatStepExecutor.
  */
@@ -40,11 +40,11 @@ const STEP_TYPE_EXTENSIONS: Record<string, string> = {
 export class FilenameResolver {
     /**
      * Resolve the effective filename to use for output files
-     * 
+     *
      * Priority order:
      * 1. If LLM provided a meaningful filename (not generic), use it
      * 2. Otherwise, fall back to the original input filename
-     * 
+     *
      * @param llmSuggestion - Filename suggested by LLM (optional)
      * @param originalFilename - Original input filename from context
      * @param stepType - Type of step being executed (for extension mapping)
@@ -75,13 +75,13 @@ export class FilenameResolver {
             resolved: basename,
             source: 'original-input'
         });
-        
+
         return basename;
     }
 
     /**
      * Check if a filename is a valid custom filename (not generic)
-     * 
+     *
      * @param filename - Filename to check
      * @returns True if filename is meaningful and should be used
      */
@@ -92,17 +92,17 @@ export class FilenameResolver {
 
         // Get the basename without extension for comparison
         const basename = this.getBasename(filename).toLowerCase();
-        
+
         // Check if it's a generic filename
-        const isGeneric = GENERIC_FILENAMES.has(basename) || 
+        const isGeneric = GENERIC_FILENAMES.has(basename) ||
                          GENERIC_FILENAMES.has(filename.toLowerCase());
-        
+
         return !isGeneric;
     }
 
     /**
      * Detect if a filename is generic (used for logging/debugging)
-     * 
+     *
      * @param filename - Filename to check
      * @returns True if filename is generic
      */
@@ -112,7 +112,7 @@ export class FilenameResolver {
 
     /**
      * Get filename without extension
-     * 
+     *
      * @param path - File path or filename
      * @returns Filename without extension
      */
@@ -121,12 +121,12 @@ export class FilenameResolver {
             logger.warn('getBasename received invalid path', { path });
             return '';
         }
-        
+
         // Extract filename if it's a full path
-        const filename = path.includes('/') ? 
-            path.split('/').pop() || '' : 
+        const filename = path.includes('/') ?
+            path.split('/').pop() || '' :
             path;
-        
+
         // Remove extension
         const lastDot = filename.lastIndexOf('.');
         return lastDot === -1 ? filename : filename.substring(0, lastDot);
@@ -134,7 +134,7 @@ export class FilenameResolver {
 
     /**
      * Get appropriate file extension for a step type
-     * 
+     *
      * @param stepType - Type of step (e.g., 'whisper', 'gpt', 'claude')
      * @returns File extension including the dot (defaults to '.md')
      */
@@ -148,7 +148,7 @@ export class FilenameResolver {
 
     /**
      * Create a complete filename with appropriate extension
-     * 
+     *
      * @param basename - Filename without extension
      * @param stepType - Type of step for extension determination
      * @returns Complete filename with extension
@@ -160,18 +160,18 @@ export class FilenameResolver {
 
     /**
      * Get a description of the filename source for logging
-     * 
+     *
      * @param llmSuggestion - Filename suggested by LLM
      * @param originalFilename - Original input filename
      * @returns Description of which source was used
      */
     static getFilenameSource(
-        llmSuggestion: string | undefined, 
+        llmSuggestion: string | undefined,
         originalFilename: string
     ): string {
         if (llmSuggestion && this.isValidCustomFilename(llmSuggestion)) {
-            return "llm-provided";
+            return 'llm-provided';
         }
-        return "original-input";
+        return 'original-input';
     }
 }

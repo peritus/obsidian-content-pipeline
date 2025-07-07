@@ -21,27 +21,27 @@ export class PromptFileOperations {
      */
     async checkPromptsStatus(examplePrompts: Record<string, string>): Promise<PromptStatus[]> {
         const promptsStatus: PromptStatus[] = [];
-        
+
         for (const [promptPath, promptContent] of Object.entries(examplePrompts)) {
             try {
                 // Validate path format
                 if (!promptPath || typeof promptPath !== 'string' || promptPath.trim() === '') {
-                    promptsStatus.push({ 
-                        path: promptPath || 'invalid-path', 
-                        content: promptContent, 
-                        exists: false, 
-                        error: 'Invalid file path' 
+                    promptsStatus.push({
+                        path: promptPath || 'invalid-path',
+                        content: promptContent,
+                        exists: false,
+                        error: 'Invalid file path'
                     });
                     continue;
                 }
 
                 // Validate content
                 if (typeof promptContent !== 'string') {
-                    promptsStatus.push({ 
-                        path: promptPath, 
-                        content: '', 
-                        exists: false, 
-                        error: 'Invalid prompt content' 
+                    promptsStatus.push({
+                        path: promptPath,
+                        content: '',
+                        exists: false,
+                        error: 'Invalid prompt content'
                     });
                     continue;
                 }
@@ -51,11 +51,11 @@ export class PromptFileOperations {
                 promptsStatus.push({ path: promptPath, content: promptContent, exists });
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                promptsStatus.push({ 
-                    path: promptPath, 
-                    content: promptContent, 
-                    exists: false, 
-                    error: `Check failed: ${errorMessage}` 
+                promptsStatus.push({
+                    path: promptPath,
+                    content: promptContent,
+                    exists: false,
+                    error: `Check failed: ${errorMessage}`
                 });
                 console.error(`Error checking existence of ${promptPath}:`, error);
             }
@@ -79,7 +79,7 @@ export class PromptFileOperations {
 
         // Normalize path separators
         const normalizedPath = path.replace(/\\/g, '/');
-        
+
         // Check if file already exists
         if (await this.app.vault.adapter.exists(normalizedPath)) {
             throw new Error('File already exists');
@@ -88,7 +88,7 @@ export class PromptFileOperations {
         // Ensure parent directory exists
         const pathParts = normalizedPath.split('/');
         const parentPath = pathParts.slice(0, -1).join('/');
-        
+
         if (parentPath && !(await this.app.vault.adapter.exists(parentPath))) {
             try {
                 await this.app.vault.createFolder(parentPath);
@@ -116,11 +116,11 @@ export class PromptFileOperations {
      */
     getContentPreview(content: string): string {
         if (!content) return '';
-        
+
         // Split by lines and take first 3 lines
         const lines = content.split('\n');
         const previewLines = lines.slice(0, 3);
-        
+
         // Join back and limit to reasonable length
         let preview = previewLines.join('\n');
         if (preview.length > 200) {
@@ -128,7 +128,7 @@ export class PromptFileOperations {
         } else if (lines.length > 3) {
             preview += '\n...';
         }
-        
+
         return preview;
     }
 }

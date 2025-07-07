@@ -8,7 +8,7 @@ import { normalizeDirectoryPath } from '../../path-operations/normalize-director
 import { buildOutputPath } from '../../path-operations/build-output-path';
 import { FilenameResolver } from '../../FilenameResolver';
 import { ProcessedSection } from '../../../api/chat-types';
-import { 
+import {
     PipelineStep,
     ProcessingContext,
     FileMetadata,
@@ -31,17 +31,17 @@ export class OutputHandler {
 
     /**
      * Resolve output directory based on routing decision and step configuration
-     * 
+     *
      * All outputs are now directories, so this returns a directory path ending with '/'
      */
     resolveOutputDirectory(step: PipelineStep, nextStep?: string): string {
         // Handle string output (single directory path)
         if (typeof step.output === 'string') {
-            logger.debug('Using string output directory', { 
-                output: step.output, 
-                nextStep 
+            logger.debug('Using string output directory', {
+                output: step.output,
+                nextStep
             });
-            
+
             // Ensure it's formatted as a directory path
             return normalizeDirectoryPath(step.output);
         }
@@ -49,19 +49,19 @@ export class OutputHandler {
         // Handle routing-aware output (multiple directory paths)
         if (isRoutingAwareOutput(step.output)) {
             const routingOutput = step.output as RoutingAwareOutput;
-            
+
             // Priority 1: Use nextStep if provided and valid
             if (nextStep && routingOutput[nextStep]) {
-                logger.debug('Using routing-aware output directory for nextStep', { 
-                    nextStep, 
-                    outputPath: routingOutput[nextStep] 
+                logger.debug('Using routing-aware output directory for nextStep', {
+                    nextStep,
+                    outputPath: routingOutput[nextStep]
                 });
                 return normalizeDirectoryPath(routingOutput[nextStep]);
             }
 
             // Priority 2: Use default fallback if nextStep is invalid/missing
             if (routingOutput.default) {
-                logger.debug('Using default fallback output directory', { 
+                logger.debug('Using default fallback output directory', {
                     nextStep: nextStep || 'undefined',
                     defaultPath: routingOutput.default,
                     availableRoutes: Object.keys(routingOutput).filter(k => k !== 'default')
@@ -86,17 +86,17 @@ export class OutputHandler {
         try {
             // Resolve output directory based on routing decision
             const outputDirectory = this.resolveOutputDirectory(step, section.nextStep);
-            
+
             // Determine effective filename using FilenameResolver
             const effectiveFilename = FilenameResolver.resolveOutputFilename(
                 section.filename,
                 context.filename,
                 context.stepId
             );
-            
+
             // Get appropriate file extension for the step type
             const extension = FilenameResolver.getExtensionForStepType(context.stepId);
-            
+
             // Build complete output path using path operations
             const outputPath = buildOutputPath(
                 outputDirectory,
@@ -127,7 +127,7 @@ export class OutputHandler {
             const finalContent = frontmatterLines.join('\n') + section.content;
 
             // Debug logging: Saving output file with simplified system
-            logger.debug("Saving output file with simplified system", {
+            logger.debug('Saving output file with simplified system', {
                 outputPath: outputPath,
                 outputDirectory: outputDirectory,
                 nextStep: section.nextStep,
@@ -152,7 +152,7 @@ export class OutputHandler {
             return outputPath;
 
         } catch (error) {
-            logger.error(`Failed to save output file`, error);
+            logger.error('Failed to save output file', error);
             throw error;
         }
     }
@@ -164,7 +164,7 @@ export class OutputHandler {
     ): Promise<{ [filename: string]: string }> {
         const savedFiles: { [filename: string]: string } = {};
 
-        logger.debug("Saving multiple sections with simplified system", {
+        logger.debug('Saving multiple sections with simplified system', {
             sectionCount: sections.length,
             stepId: context.stepId,
             stepOutput: step.output,
@@ -175,7 +175,7 @@ export class OutputHandler {
             try {
                 // Create section-specific context with routing decision metadata
                 const sectionContext = this.createSectionContext(context, section, step);
-                
+
                 // Use unified save method - no need for special directory handling
                 const outputPath = await this.save(section, step, sectionContext);
                 savedFiles[section.filename] = outputPath;
@@ -185,7 +185,7 @@ export class OutputHandler {
             }
         }
 
-        logger.debug("Multiple sections save complete with simplified system", {
+        logger.debug('Multiple sections save complete with simplified system', {
             successCount: Object.keys(savedFiles).length,
             totalCount: sections.length,
             savedFiles: savedFiles
@@ -198,8 +198,8 @@ export class OutputHandler {
      * Create section-specific context with routing decision metadata
      */
     private createSectionContext(
-        baseContext: ProcessingContext, 
-        section: ProcessedSection, 
+        baseContext: ProcessingContext,
+        section: ProcessedSection,
         step: PipelineStep
     ): ProcessingContext {
         // Determine if default fallback was used
@@ -209,7 +209,7 @@ export class OutputHandler {
         if (isRoutingAwareOutput(step.output)) {
             const routingOutput = step.output as RoutingAwareOutput;
             availableOptions = Object.keys(routingOutput).filter(k => k !== 'default');
-            
+
             // Check if nextStep is valid or if we're using default
             usedDefaultFallback = !section.nextStep || !routingOutput[section.nextStep];
         }

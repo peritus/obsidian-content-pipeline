@@ -22,7 +22,7 @@ export function isSupportedChatModel(model: string): boolean {
 
 /**
  * Convert YAML request to OpenAI chat messages
- * 
+ *
  * This function sends the entire YAML-formatted request as a single user message,
  * allowing the LLM to process the structured frontmatter format as intended.
  */
@@ -49,32 +49,32 @@ export function calculateChatBackoffDelay(attempt: number, maxDelay = 10000): nu
  */
 export function shouldRetryChatError(error: Error): boolean {
     const message = error.message.toLowerCase();
-    
+
     // Don't retry authentication or permission errors
     if (message.includes('401') || message.includes('403')) {
         return false;
     }
-    
+
     // Don't retry request too large errors
     if (message.includes('413')) {
         return false;
     }
-    
+
     // Don't retry bad request errors (usually model or format issues)
     if (message.includes('400')) {
         return false;
     }
-    
+
     // Don't retry content policy violations
     if (message.includes('content_policy')) {
         return false;
     }
-    
+
     // Retry on rate limits, network errors, timeouts, and server errors
     if (message.includes('429') || message.includes('rate limit')) {
         return true;
     }
-    
+
     // Retry on network errors, timeouts, and server errors
     return true;
 }

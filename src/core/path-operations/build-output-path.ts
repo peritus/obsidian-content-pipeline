@@ -5,8 +5,8 @@
 import { normalizeDirectoryPath } from './normalize-directory-path';
 
 export function buildOutputPath(
-    directoryPath: string, 
-    filename: string, 
+    directoryPath: string,
+    filename: string,
     extension: string = '.md'
 ): string {
     const normalizedDir = normalizeDirectoryPath(directoryPath);

@@ -21,8 +21,8 @@ export const FileUtils = {
      */
     isVaultSafePath: (path: string): boolean => {
         const normalized = normalizePath(path);
-        return normalized === path && 
-               !path.includes('..') && 
+        return normalized === path &&
+               !path.includes('..') &&
                !path.startsWith('/') &&
                path.length > 0;
     },
@@ -46,16 +46,16 @@ export const FileUtils = {
 
     /**
      * Strip YAML frontmatter from markdown content and return only the body content
-     * 
+     *
      * This prevents doubled frontmatter when processing files that already have frontmatter.
      * For files without frontmatter, returns the original content unchanged.
-     * 
+     *
      * @param content - Full file content that may contain YAML frontmatter
      * @returns The content without frontmatter, or original content if no frontmatter found
      */
     stripFrontmatter: (content: string): string => {
         const trimmed = content.trim();
-        
+
         // Check if content starts with YAML frontmatter
         if (!trimmed.startsWith('---')) {
             return content; // No frontmatter, return as-is

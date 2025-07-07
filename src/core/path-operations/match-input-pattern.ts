@@ -16,12 +16,12 @@ export function matchesInputPattern(filePath: string, inputPattern: string): boo
     try {
         const resolvedInputPath = resolveInputDirectory(inputPattern);
         const normalizedFilePath = filePath.replace(/\\/g, '/');
-        
+
         // Remove trailing slash from input path for comparison
-        const cleanInputPath = resolvedInputPath.endsWith('/') 
+        const cleanInputPath = resolvedInputPath.endsWith('/')
             ? resolvedInputPath.slice(0, -1)
             : resolvedInputPath;
-        
+
         // Check if file path starts with the input directory path
         return normalizedFilePath.startsWith(cleanInputPath + '/');
     } catch (error) {

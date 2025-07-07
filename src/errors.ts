@@ -1,10 +1,10 @@
 /**
  * Simple Error System for Content Pipeline Plugin
- * 
+ *
  * IMPORTANT: This is the ONLY error class for the Content Pipeline plugin.
- * 
+ *
  * Future developers: DO NOT add more error classes. Keep error handling simple.
- * 
+ *
  * Valibot validation errors bubble up naturally - don't catch and rethrow them.
  * Only use ContentPipelineError for plugin-specific operations (file I/O, API calls, etc.)
  */

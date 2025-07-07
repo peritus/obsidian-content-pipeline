@@ -7,11 +7,11 @@ import { ExecutionState } from './execution-state';
 import { FileDiscovery } from '../file-operations';
 import { StepChain } from './StepChain';
 import { getValidatedPipelineConfiguration } from '../../validation';
-import { 
-    ContentPipelineSettings, 
-    PipelineConfiguration, 
-    FileInfo, 
-    ProcessingResult, 
+import {
+    ContentPipelineSettings,
+    PipelineConfiguration,
+    FileInfo,
+    ProcessingResult,
     ProcessingStatus
 } from '../../types';
 import { createLogger } from '../../logger';
@@ -50,30 +50,30 @@ export class PipelineExecutor {
 
             const config = this.getPipelineConfiguration();
             const fileToProcess = await this.fileDiscovery.findNextAvailableFile(
-                config, 
+                config,
                 this.executionState.getActiveFilesSet()
             );
-            
+
             if (!fileToProcess) {
                 return this.createResult(ProcessingStatus.SKIPPED, 'No files available');
             }
 
             logger.info(`Processing: ${fileToProcess.file.path} (${fileToProcess.stepId})`);
-            
+
             this.executionState.addActiveFile(fileToProcess.file.path);
-            
+
             // Execute step (StepChain now handles configuration resolution internally)
             const result = await this.stepChain.executeStep(
-                fileToProcess.stepId, 
+                fileToProcess.stepId,
                 fileToProcess.file
             );
-            
+
             logger.info(`Completed: ${result.outputFiles.length} files generated`);
             return result;
 
         } catch (error) {
             logger.error('Pipeline execution failed:', error);
-            
+
             if (continueOnError) {
                 return this.createResult(ProcessingStatus.FAILED, String(error));
             }

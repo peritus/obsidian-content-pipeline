@@ -1,6 +1,6 @@
 /**
  * Utility functions for OpenAI configuration management
- * 
+ *
  * Provides helper functions to extract, update, and validate OpenAI-specific
  * configurations within the models configuration system.
  */
@@ -46,7 +46,7 @@ export interface OpenAIUpdateResult {
 
 /**
  * Extract OpenAI configuration information from models config
- * 
+ *
  * @param modelsConfigJson - JSON string of models configuration
  * @returns OpenAI configuration extraction result
  */
@@ -64,7 +64,7 @@ export function extractOpenAIConfigs(modelsConfigJson: string): OpenAIConfigExtr
 
     try {
         const modelsConfig: ModelsConfig = JSON.parse(modelsConfigJson);
-        
+
         if (!modelsConfig || typeof modelsConfig !== 'object') {
             return result;
         }
@@ -76,7 +76,7 @@ export function extractOpenAIConfigs(modelsConfigJson: string): OpenAIConfigExtr
         for (const [configId, config] of Object.entries(modelsConfig)) {
             if (isOpenAIConfig(config)) {
                 openAIConfigIds.push(configId);
-                
+
                 // Use the first API key found as the current value
                 if (!firstApiKey && config.apiKey) {
                     firstApiKey = config.apiKey;
@@ -98,7 +98,7 @@ export function extractOpenAIConfigs(modelsConfigJson: string): OpenAIConfigExtr
 
 /**
  * Update API keys for all OpenAI configurations
- * 
+ *
  * @param modelsConfigJson - Current models configuration JSON string
  * @param newApiKey - New API key to set for all OpenAI configs
  * @returns Update operation result
@@ -126,7 +126,7 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
     let modelsConfig: ModelsConfig;
     try {
         modelsConfig = JSON.parse(modelsConfigJson);
-        
+
         if (!modelsConfig || typeof modelsConfig !== 'object') {
             result.error = 'Invalid models configuration format';
             return result;
@@ -171,7 +171,7 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
 
 /**
  * Validate if an API key is in OpenAI format
- * 
+ *
  * @param apiKey - API key to validate
  * @returns true if valid OpenAI format, false otherwise
  */
@@ -187,20 +187,20 @@ export function isValidOpenAIApiKey(apiKey: string): boolean {
 
 /**
  * Get a summary of OpenAI configurations for display
- * 
+ *
  * @param modelsConfigJson - JSON string of models configuration
  * @returns Human-readable summary string
  */
 export function getOpenAIConfigSummary(modelsConfigJson: string): string {
     const extraction = extractOpenAIConfigs(modelsConfigJson);
-    
+
     if (!extraction.hasOpenAIConfigs) {
         return 'No OpenAI configurations found';
     }
 
     const hasApiKey = extraction.currentApiKey && extraction.currentApiKey.trim() !== '';
     const keyStatus = hasApiKey ? 'configured' : 'empty';
-    
+
     if (extraction.count === 1) {
         return `1 OpenAI config (API key ${keyStatus})`;
     } else {
@@ -210,7 +210,7 @@ export function getOpenAIConfigSummary(modelsConfigJson: string): string {
 
 /**
  * Check if a model configuration is an OpenAI configuration
- * 
+ *
  * @param config - Model configuration to check
  * @returns true if this is an OpenAI configuration
  */
@@ -225,7 +225,7 @@ function isOpenAIConfig(config: ModelConfig): boolean {
 
 /**
  * Create a safe error message for user display
- * 
+ *
  * @param error - Error from API key validation or other operations
  * @returns User-friendly error message
  */
@@ -233,10 +233,10 @@ export function createUserFriendlyError(error: unknown): string {
     if (error instanceof Error) {
         return error.message;
     }
-    
+
     if (typeof error === 'string') {
         return error;
     }
-    
+
     return 'An unexpected error occurred';
 }

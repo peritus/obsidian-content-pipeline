@@ -1,6 +1,6 @@
 /**
  * Settings change notification system
- * 
+ *
  * Provides a simple event-driven mechanism for components to be notified
  * when settings change, inspired by the OpenAI API key mechanism.
  */
@@ -26,7 +26,7 @@ export class SettingsNotifier {
      */
     subscribe(listener: SettingsChangeListener): () => void {
         this.listeners.push(listener);
-        
+
         // Return unsubscribe function
         return () => {
             const index = this.listeners.indexOf(listener);

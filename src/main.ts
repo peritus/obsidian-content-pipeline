@@ -2,7 +2,7 @@ import { Plugin, Notice, TFile } from 'obsidian';
 import { DEFAULT_SETTINGS, SettingsTab } from './settings';
 import { ContentPipelineSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
-import { 
+import {
     parseAndStoreConfigurations,
     getConfigurationStatus,
     getSafePipelineConfiguration,
@@ -24,13 +24,13 @@ export default class ContentPipelinePlugin extends Plugin {
      */
     async onload() {
         this.logger.info('Content Pipeline Plugin loaded!');
-        
+
         // Load settings
         await this.loadSettings();
-        
+
         // Initialize command handler
         this.commandHandler = new CommandHandler(this.app, this.settings);
-        
+
         // Log initialization info
         this.logger.info('Plugin initialization started');
         this.logger.debug('Settings loaded:', {
@@ -41,7 +41,7 @@ export default class ContentPipelinePlugin extends Plugin {
             debugMode: this.settings.debugMode
         });
         this.logger.debug('Build-time log level:', getBuildLogLevel());
-        
+
         // Add ribbon icon
         this.addRibbonIcon('microphone', 'Content Pipeline', () => {
             this.logger.info('Content Pipeline ribbon clicked');
@@ -105,7 +105,7 @@ export default class ContentPipelinePlugin extends Plugin {
 
             // Get the step that would process this file for dynamic title
             const stepId = await this.getStepForFile(file);
-            const menuTitle = stepId 
+            const menuTitle = stepId
                 ? `Apply [${stepId}] to this file.`
                 : 'Process File with Content Pipeline 🎵';
 
@@ -147,14 +147,14 @@ export default class ContentPipelinePlugin extends Plugin {
         try {
             const loadedData = await this.loadData();
             this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
-            
+
             // Update last saved timestamp and version
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
-            
+
             // Save settings (but don't initialize with defaults)
             await this.saveSettings();
-            
+
             this.logger.info('Settings loaded successfully');
         } catch (error) {
             this.logger.error('Failed to load settings, using empty defaults:', error);
@@ -169,7 +169,7 @@ export default class ContentPipelinePlugin extends Plugin {
      */
     private getConfigurationStatus(): string {
         const status = getConfigurationStatus(this.settings);
-        
+
         if (!status.isReady) {
             return status.validationError || 'Invalid configuration';
         }
@@ -194,13 +194,13 @@ export default class ContentPipelinePlugin extends Plugin {
         try {
             // Update timestamp before saving
             this.settings.lastSaved = new Date().toISOString();
-            
+
             // Parse configurations using centralized service to ensure consistency
             parseAndStoreConfigurations(this.settings);
-            
+
             // Update command handler with new settings
             this.commandHandler = new CommandHandler(this.app, this.settings);
-            
+
             await this.saveData(this.settings);
             this.logger.info('Settings saved successfully');
         } catch (error) {

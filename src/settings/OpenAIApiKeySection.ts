@@ -4,9 +4,9 @@
 
 import { Notice, Setting } from 'obsidian';
 import ContentPipelinePlugin from '../main';
-import { 
-    extractOpenAIConfigs, 
-    updateOpenAIApiKeys, 
+import {
+    extractOpenAIConfigs,
+    updateOpenAIApiKeys,
     createUserFriendlyError
 } from './openai-config-utils';
 
@@ -31,15 +31,15 @@ export class OpenAIApiKeySection {
                 text.inputEl.spellcheck = false;
                 text.setPlaceholder('sk-proj-...');
                 text.inputEl.style.width = '300px';
-                
+
                 // Load current API key
                 this.loadCurrentApiKey();
-                
+
                 // Auto-save on change with debouncing
                 text.onChange((value) => {
                     this.debouncedSave();
                 });
-                
+
                 return text;
             });
 
@@ -56,7 +56,7 @@ export class OpenAIApiKeySection {
 
     private loadCurrentApiKey(): void {
         if (!this.apiKeyInput) return;
-        
+
         const extraction = extractOpenAIConfigs(this.plugin.settings.modelsConfig);
         this.apiKeyInput.value = extraction.currentApiKey || '';
     }
@@ -68,7 +68,7 @@ export class OpenAIApiKeySection {
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
-        
+
         this.debounceTimer = setTimeout(() => {
             this.saveApiKey();
         }, 500); // 500ms debounce
@@ -76,9 +76,9 @@ export class OpenAIApiKeySection {
 
     private async saveApiKey(): Promise<void> {
         if (!this.apiKeyInput) return;
-        
+
         const apiKey = this.apiKeyInput.value.trim();
-        
+
         // Skip saving if empty (user might be clearing the field)
         if (!apiKey) {
             return;
@@ -86,7 +86,7 @@ export class OpenAIApiKeySection {
 
         try {
             const result = updateOpenAIApiKeys(this.plugin.settings.modelsConfig, apiKey);
-            
+
             if (!result.success) {
                 new Notice(`❌ ${result.error || 'Failed to update API keys'}`, 5000);
                 return;
@@ -94,9 +94,9 @@ export class OpenAIApiKeySection {
 
             // Update the models config through the callback (triggers auto-save)
             this.onChangeCallback(result.updatedModelsConfig);
-            
+
             // No success notice for auto-save to avoid being intrusive
-            
+
         } catch (error) {
             new Notice(`❌ Failed to update API keys: ${createUserFriendlyError(error)}`, 5000);
         }

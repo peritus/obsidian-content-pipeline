@@ -1,6 +1,6 @@
 /**
  * Prompt Builder for Explicit Configuration
- * 
+ *
  * Builds prompts using explicit prompts and context arrays instead of magic filename detection.
  * Provides clear separation between LLM instructions and reference material.
  */
@@ -31,35 +31,35 @@ export class PromptBuilder {
     ): Promise<string> {
         try {
             const sections: string[] = [];
-            
+
             // 1. System instructions from explicit prompts
             if (resolvedStep.prompts?.length) {
                 const systemInstructions = await this.buildSystemInstructions(resolvedStep.prompts);
                 sections.push(systemInstructions);
             }
-            
+
             // 2. Reference context from explicit context files
             if (resolvedStep.context?.length) {
                 const referenceContext = await this.buildReferenceContext(resolvedStep.context);
                 sections.push(referenceContext);
             }
-            
+
             // 3. Input content (the actual file to process)
             const inputContent = await this.buildInputContent(fileInfo);
             sections.push(inputContent);
-            
+
             // 4. Routing instructions if needed
             if (availableNextSteps?.length) {
                 const routingInstructions = this.buildRoutingInstructions(availableNextSteps);
                 sections.push(routingInstructions);
             }
-            
+
             // 5. Explicit processing directive
             sections.push(this.buildProcessingDirective());
-            
+
             const prompt = sections.join('\n\n');
             logger.debug(`Prompt built: ${resolvedStep.prompts?.length || 0} prompts, ${resolvedStep.context?.length || 0} context files, ${prompt.length} chars`);
-            
+
             return prompt;
 
         } catch (error) {
@@ -69,18 +69,18 @@ export class PromptBuilder {
 
     private async buildSystemInstructions(promptFiles: string[]): Promise<string> {
         const instructions: string[] = [];
-        
+
         for (const promptFile of promptFiles) {
             const content = await this.readFileContent(promptFile);
             instructions.push(content);
         }
-        
+
         return `<system_instructions>\n${instructions.join('\n\n')}\n</system_instructions>`;
     }
 
     private async buildReferenceContext(contextFiles: string[]): Promise<string> {
         const contexts: string[] = [];
-        
+
         for (const contextFile of contextFiles) {
             try {
                 // Check if file exists before attempting to read
@@ -88,7 +88,7 @@ export class PromptBuilder {
                     logger.info(`Context file not found, skipping: ${contextFile}`);
                     continue;
                 }
-                
+
                 const content = await this.readFileContent(contextFile);
                 const filename = contextFile.split('/').pop() || contextFile;
                 contexts.push(`<file filename="${filename}">\n${content}\n</file>`);
@@ -97,12 +97,12 @@ export class PromptBuilder {
                 continue;
             }
         }
-        
+
         if (contexts.length === 0) {
             logger.info('No context files available - proceeding without reference context');
             return ''; // Return empty string instead of context section
         }
-        
+
         return `<reference_context>\n${contexts.join('\n\n')}\n</reference_context>`;
     }
 
@@ -113,7 +113,7 @@ export class PromptBuilder {
     }
 
     private buildProcessingDirective(): string {
-        return `IMPORTANT: Generate output ONLY for the content in the <input_content> section. Do not create separate outputs for system instructions or reference context.`;
+        return 'IMPORTANT: Generate output ONLY for the content in the <input_content> section. Do not create separate outputs for system instructions or reference context.';
     }
 
     private async readFileContent(filePath: string): Promise<string> {
@@ -122,7 +122,7 @@ export class PromptBuilder {
             return await this.fileOps.readFile(filePath);
         } catch (error) {
             logger.debug(`File not found in vault: ${filePath}, checking config-defined prompts`);
-            
+
             // If vault read fails, try to find it in config-defined prompts with exact path match
             if (this.settings?.configDefinedPrompts) {
                 if (this.settings.configDefinedPrompts[filePath]) {
@@ -130,7 +130,7 @@ export class PromptBuilder {
                     return this.settings.configDefinedPrompts[filePath];
                 }
             }
-            
+
             // If no match found, throw error to abort processing
             throw new ContentPipelineError(`Prompt file not found: ${filePath}`);
         }

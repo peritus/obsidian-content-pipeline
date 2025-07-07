@@ -1,9 +1,9 @@
 /**
  * Validation Module Index
- * 
+ *
  * Complete Valibot-native validation system.
  * All validation logic consolidated into a single, efficient module.
- * 
+ *
  * ✅ Replaces: ConfigurationValidator, DirectoryOnlyValidator, ErrorFactory
  * ✅ Target achieved: ~15KB (down from 87KB original)
  */
@@ -15,7 +15,7 @@ export {
     isValidConfig,
     getConfigErrors,
     resolveStep,
-    
+
     // Configuration management functions
     parseAndStoreConfigurations,
     parseAndValidateFromJson,
@@ -27,7 +27,7 @@ export {
     isConfigurationReady,
     getConfigurationStatus,
     getSettingsValidationErrors,
-    
+
     // Schemas for direct usage (use v.parse(schema, data) instead of wrapper functions)
     configSchema,
     pipelineConfigAdvanced,

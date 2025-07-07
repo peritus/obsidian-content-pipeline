@@ -78,7 +78,7 @@ export class InboxStructureManager {
             // Find entry point steps (steps not referenced by other steps via routing-aware output)
             const allStepIds = Object.keys(pipelineConfig);
             const referencedSteps = new Set<string>();
-            
+
             for (const step of Object.values(pipelineConfig)) {
                 // Check routing-aware output for referenced next steps
                 if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
@@ -99,7 +99,7 @@ export class InboxStructureManager {
                 try {
                     // Resolve the input directory (without variables)
                     const inputDir = step.input.replace(/\{[^}]+\}/g, '').replace(/\/+$/, '');
-                    
+
                     await this.directoryManager.ensureDirectory(inputDir);
                     result.foldersCreated++;
                     result.createdPaths.push(inputDir);

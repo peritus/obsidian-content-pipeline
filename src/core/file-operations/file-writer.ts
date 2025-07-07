@@ -28,10 +28,10 @@ export class FileWriter {
         content: string,
         options: FileOperationOptions = {}
     ): Promise<FileOperationResult> {
-        const { 
-            createDirectories = true, 
-            overwrite = false, 
-            validatePaths = true 
+        const {
+            createDirectories = true,
+            overwrite = false,
+            validatePaths = true
         } = options;
 
         const timestamp = new Date();

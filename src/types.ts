@@ -1,6 +1,6 @@
 /**
  * Comprehensive type definitions for the Content Pipeline plugin
- * 
+ *
  * This file contains all TypeScript interfaces and types used throughout the plugin,
  * providing type safety and clear contracts for all data structures.
  */
@@ -328,7 +328,7 @@ export enum NotificationType {
  */
 export enum LogLevel {
     ERROR = 'error',
-    WARN = 'warn', 
+    WARN = 'warn',
     INFO = 'info',
     DEBUG = 'debug'
 }
@@ -412,13 +412,13 @@ export function isValidRoutingAwareOutput(value: any): value is RoutingAwareOutp
     if (typeof value !== 'object' || value === null) {
         return false;
     }
-    
+
     // Check that all values are strings
     for (const [key, val] of Object.entries(value)) {
         if (typeof val !== 'string') {
             return false;
         }
     }
-    
+
     return true;
 }

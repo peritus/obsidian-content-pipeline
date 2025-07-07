@@ -32,7 +32,7 @@ export class InboxCore {
             // Define the base folder structure
             const baseFolders = [
                 'inbox/audio',
-                'inbox/transcripts', 
+                'inbox/transcripts',
                 'inbox/results',
                 'inbox/summary',
                 'inbox/templates',
@@ -59,7 +59,7 @@ export class InboxCore {
             const categorizedFolders = [
                 'inbox/audio',
                 'inbox/transcripts',
-                'inbox/results', 
+                'inbox/results',
                 'inbox/summary',
                 'inbox/archive/transcribe',
                 'inbox/archive/process',
