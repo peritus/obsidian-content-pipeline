@@ -1,6 +1,6 @@
 /**
  * Execution State Management
- * 
+ *
  * Manages the state of pipeline execution including active files and processing status.
  */
 

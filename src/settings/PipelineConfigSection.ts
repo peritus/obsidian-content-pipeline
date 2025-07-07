@@ -20,7 +20,7 @@ export class PipelineConfigSection {
     private expandButton: HTMLButtonElement | null = null;
 
     constructor(
-        plugin: ContentPipelinePlugin, 
+        plugin: ContentPipelinePlugin,
         onChangeCallback: (value: string) => void,
         onExportCallback: () => void,
         onImportCallback: () => void
@@ -48,7 +48,7 @@ export class PipelineConfigSection {
             });
 
         // Collapsible content container for textarea
-        this.contentContainer = containerEl.createEl('div', { 
+        this.contentContainer = containerEl.createEl('div', {
             cls: 'content-pipeline-collapsible-content'
         });
         this.contentContainer.style.display = 'none';
@@ -65,17 +65,17 @@ export class PipelineConfigSection {
             .setDesc('JSON configuration for your content processing pipeline');
 
         TextareaStyler.styleSettingElement(pipelineSetting.settingEl);
-        
+
         pipelineSetting.addTextArea(text => {
             this.pipelineTextarea = text;
             TextareaStyler.styleTextarea(text);
             text.setPlaceholder('{\n  "transcribe": {\n    "modelConfig": "openai-whisper",\n    "input": "inbox/audio",\n    "output": "inbox/transcripts/"\n  }\n}');
             text.setValue(this.plugin.settings.pipelineConfig);
-            
+
             text.onChange((value) => {
                 this.onChangeCallback(value);
             });
-            
+
             return text;
         });
     }
@@ -105,7 +105,7 @@ export class PipelineConfigSection {
             .addDropdown(dropdown => {
                 // Add placeholder option
                 dropdown.addOption('', 'Select a configuration...');
-                
+
                 const availableConfigs = Object.keys(BUNDLED_PIPELINE_CONFIGS);
                 availableConfigs.forEach(configId => {
                     const config = BUNDLED_PIPELINE_CONFIGS[configId];
@@ -127,7 +127,7 @@ export class PipelineConfigSection {
                             // Show notice that user needs to select a config
                             return;
                         }
-                        
+
                         const selectedConfig = BUNDLED_PIPELINE_CONFIGS[this.selectedConfigId];
                         if (selectedConfig) {
                             const pipelineSteps = extractPipelineSteps(selectedConfig.pipeline);
@@ -136,10 +136,10 @@ export class PipelineConfigSection {
                                 this.pipelineTextarea.setValue(configJson);
                                 this.onChangeCallback(configJson);
                             }
-                            
+
                             // Copy config-defined prompts to settings
                             this.plugin.settings.configDefinedPrompts = selectedConfig.examplePrompts;
-                            
+
                             // Save settings to persist the prompts
                             try {
                                 await this.plugin.saveSettings();

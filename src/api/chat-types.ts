@@ -47,7 +47,7 @@ export interface OpenAIChatRequest {
     presence_penalty?: number;
     stop?: string | string[];
     response_format?: {
-        type: "json_schema";
+        type: 'json_schema';
         json_schema: {
             name: string;
             strict: boolean;

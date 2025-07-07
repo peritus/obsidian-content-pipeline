@@ -56,17 +56,17 @@ export class PromptsManager {
         try {
             // Store container reference for refreshing
             this.currentContainer = containerEl;
-            
+
             const configPrompts = this.getConfigPrompts();
             if (!configPrompts || Object.keys(configPrompts).length === 0) {
                 return; // No prompts, nothing to render
             }
 
             this.configPrompts = configPrompts;
-            
+
             // Create proper Obsidian heading
             new Setting(containerEl).setName('Prompts').setHeading();
-            
+
             // Add description using Setting
             const sourceInfo = this.getPromptSourceInfo();
             if (sourceInfo) {
@@ -74,16 +74,16 @@ export class PromptsManager {
                     .setName('')
                     .setDesc(sourceInfo);
             }
-            
+
             // Create a dedicated container for prompts that can be refreshed
             this.promptsContainer = containerEl.createDiv('prompts-list-container');
-            
+
             // Render all prompts asynchronously
             this.renderAllPromptsAsync(this.promptsContainer);
 
         } catch (error) {
             console.error('Error accessing prompts:', error);
-            
+
             // Show error using proper Setting structure
             new Setting(containerEl).setName('Prompts').setHeading();
             new Setting(containerEl)
@@ -113,7 +113,7 @@ export class PromptsManager {
         if (this.configDefinedPrompts) {
             return `Pipeline configuration defines ${Object.keys(this.configDefinedPrompts).length} prompts:`;
         }
-        
+
         // No prompts available - user needs to load a configuration
         return null;
     }
@@ -141,7 +141,7 @@ export class PromptsManager {
                     .setName('⚠️ Errors detected')
                     .setDesc(sortedErrors.map(p => `• ${p.path}: ${p.error}`).join('\n'));
             }
-            
+
             // Always render config-based prompts (available to copy to vault)
             for (const prompt of sortedConfigBased) {
                 this.renderConfigPrompt(containerEl, prompt);
@@ -164,7 +164,7 @@ export class PromptsManager {
      */
     private getFilenameFromPath(path: string): string {
         if (!path) return 'Unknown file';
-        
+
         // Split by both forward and backward slashes and get the last part
         const parts = path.split(/[/\\]/);
         return parts[parts.length - 1] || 'Unknown file';
@@ -176,7 +176,7 @@ export class PromptsManager {
      */
     private renderConfigPrompt(containerEl: HTMLElement, prompt: any): void {
         const filename = this.getFilenameFromPath(prompt.path);
-        
+
         new Setting(containerEl)
             .setName(`⚙️ ${filename}`)
             .setDesc('Prompt from configuration. Copy to vault to edit.')
@@ -189,12 +189,12 @@ export class PromptsManager {
     }
 
     /**
-     * Render a vault-based prompt using Setting structure  
+     * Render a vault-based prompt using Setting structure
      * Shows prompts that exist in the vault
      */
     private renderVaultPrompt(containerEl: HTMLElement, prompt: any): void {
         const filename = this.getFilenameFromPath(prompt.path);
-        
+
         new Setting(containerEl)
             .setName(`📝 ${filename}`)
             .setDesc('Prompt stored in vault. Delete file to use configuration version.')
@@ -229,20 +229,20 @@ export class PromptsManager {
      */
     private async copyToVault(prompt: any): Promise<void> {
         const filename = this.getFilenameFromPath(prompt.path);
-        
+
         try {
             // Show progress feedback
             new Notice(`🔄 Copying ${filename} to vault...`);
-            
+
             // Copy the file to vault
             await this.fileOps.createPromptFile(prompt.path, prompt.content);
-            
+
             // Show success message with guidance
             new Notice(`✅ Copied prompt to vault: ${filename}. You can now edit it!`, 5000);
-            
+
             // Automatically refresh the prompts display to show updated state
             await this.refreshPrompts();
-            
+
         } catch (error) {
             const errorMsg = `Failed to copy ${filename}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);

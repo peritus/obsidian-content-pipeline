@@ -5,12 +5,12 @@
 import { App, TFolder } from 'obsidian';
 import { resolveInputDirectory } from '../path-operations/resolve-input-directory';
 import { FileInfo, PipelineConfiguration } from '../../types';
-import { 
-    FileOperationOptions, 
-    FileOperationResult, 
-    FileDiscoveryOptions, 
-    ArchiveResult, 
-    FolderStructureResult 
+import {
+    FileOperationOptions,
+    FileOperationResult,
+    FileDiscoveryOptions,
+    ArchiveResult,
+    FolderStructureResult
 } from './types';
 import { DirectoryManager } from './directory-manager';
 import { InboxStructureManager } from './inbox-structure';
@@ -74,7 +74,7 @@ export class FileOperations {
     async ensureDirectoryForPattern(pathPattern: string): Promise<TFolder> {
         // Use path operations to resolve the directory path
         const directoryPath = resolveInputDirectory(pathPattern);
-        
+
         if (!directoryPath) {
             throw new ContentPipelineError(`Cannot determine directory from path pattern: ${pathPattern}`);
         }
@@ -115,7 +115,7 @@ export class FileOperations {
         return this.fileReader.fileExists(filePath);
     }
 
-    // Archive operations  
+    // Archive operations
     async archiveFile(sourceFilePath: string, archiveDirectory: string): Promise<ArchiveResult> {
         return this.fileArchiver.archiveFile(sourceFilePath, archiveDirectory);
     }

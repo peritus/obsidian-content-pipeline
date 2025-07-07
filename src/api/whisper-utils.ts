@@ -49,22 +49,22 @@ export function calculateBackoffDelay(attempt: number, maxDelay = 5000): number 
  */
 export function shouldRetryError(error: Error): boolean {
     const message = error.message.toLowerCase();
-    
+
     // Don't retry authentication or permission errors
     if (message.includes('401') || message.includes('403')) {
         return false;
     }
-    
+
     // Don't retry file too large errors
     if (message.includes('413')) {
         return false;
     }
-    
+
     // Don't retry bad request errors
     if (message.includes('400')) {
         return false;
     }
-    
+
     // Retry on network errors, timeouts, and server errors
     return true;
 }

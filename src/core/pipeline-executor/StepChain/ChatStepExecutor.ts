@@ -8,11 +8,11 @@ import { ChatClient } from '../../../api/chat-client';
 import { FileOperations, FileUtils } from '../../file-operations';
 import { FilenameResolver } from '../../FilenameResolver';
 import { OutputHandler } from './OutputHandler';
-import { 
+import {
     ResolvedPipelineStep,
     PipelineStep,
-    FileInfo, 
-    ProcessingResult, 
+    FileInfo,
+    ProcessingResult,
     ProcessingStatus,
     ProcessingContext,
     isRoutingAwareOutput,
@@ -90,7 +90,7 @@ export class ChatStepExecutor {
             let archivePath: string;
             try {
                 const archiveResult = await this.fileOps.archiveFile(
-                    fileInfo.path, 
+                    fileInfo.path,
                     resolvedStep.archive
                 );
                 archivePath = archiveResult.archivePath;
@@ -103,7 +103,7 @@ export class ChatStepExecutor {
 
             // Validate routing decisions and resolve output paths
             const routingValidation = this.validateRoutingDecisions(processedResponse.sections, resolvedStep);
-            logger.debug("Routing validation completed", routingValidation);
+            logger.debug('Routing validation completed', routingValidation);
 
             // Create step object for OutputHandler compatibility with routing-aware output support
             const outputStepCompat: PipelineStep = {
@@ -115,7 +115,7 @@ export class ChatStepExecutor {
                 context: resolvedStep.context,
                 description: resolvedStep.description
             };
-            
+
             const outputFiles: string[] = [];
             let nextStep: string | undefined;
             const routingDecisions: Array<{
@@ -129,7 +129,7 @@ export class ChatStepExecutor {
             for (const section of processedResponse.sections) {
                 const sectionRoutingDecision = this.createRoutingDecision(section, resolvedStep);
                 routingDecisions.push(sectionRoutingDecision);
-                
+
                 // Set the first valid nextStep as the overall nextStep for the processing result
                 if (!nextStep && sectionRoutingDecision.nextStep && this.isValidNextStep(sectionRoutingDecision.nextStep, resolvedStep)) {
                     nextStep = sectionRoutingDecision.nextStep;
@@ -149,9 +149,9 @@ export class ChatStepExecutor {
                 // Multi-file response: use saveMultiple for all cases
                 const savedFiles = await this.outputHandler.saveMultiple(processedResponse.sections, outputStepCompat, context);
                 outputFiles.push(...Object.values(savedFiles));
-                
+
                 // Get nextStep from first section that has a valid one
-                const validNextStep = processedResponse.sections.find(section => 
+                const validNextStep = processedResponse.sections.find(section =>
                     section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)
                 )?.nextStep;
                 if (validNextStep) {
@@ -160,7 +160,7 @@ export class ChatStepExecutor {
             } else if (processedResponse.sections.length > 0) {
                 // Single-file response: use unified save method
                 const section = processedResponse.sections[0];
-                
+
                 // Update context with specific routing decision for this section
                 const sectionContext = {
                     ...context,
@@ -175,7 +175,7 @@ export class ChatStepExecutor {
                 // Use unified save method for all single-file responses
                 const outputPath = await this.outputHandler.save(section, outputStepCompat, sectionContext);
                 outputFiles.push(outputPath);
-                
+
                 // Validate and set nextStep
                 if (section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep)) {
                     nextStep = section.nextStep;
@@ -271,7 +271,7 @@ export class ChatStepExecutor {
         resolvedOutputPath: string;
     } {
         const isValid = section.nextStep && this.isValidNextStep(section.nextStep, resolvedStep);
-        
+
         // Create temporary step object for output path resolution
         const stepForResolution: PipelineStep = {
             modelConfig: resolvedStep.stepId,
@@ -308,9 +308,9 @@ export class ChatStepExecutor {
         v.parse(executionContextSchema, { stepId, fileInfo, resolvedStep });
 
         // Log validation success for debugging
-        logger.debug('Input validation passed', { 
-            stepId, 
-            fileName: fileInfo.name, 
+        logger.debug('Input validation passed', {
+            stepId,
+            fileName: fileInfo.name,
             filePath: fileInfo.path,
             modelConfig: resolvedStep.modelConfig.model,
             promptFiles: resolvedStep.prompts?.length || 0,

@@ -69,8 +69,8 @@ export class FileInfoProvider {
      * Check if a file should be included in results
      */
     shouldIncludeFile(
-        file: TFile, 
-        extensions: string[], 
+        file: TFile,
+        extensions: string[],
         includeHidden: boolean
     ): boolean {
         // Check hidden files

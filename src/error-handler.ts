@@ -1,9 +1,9 @@
 /**
  * Error handling framework for Content Pipeline plugin
- * 
+ *
  * This framework provides centralized error handling with user notifications,
  * technical logging, and proper error categorization.
- * 
+ *
  * This file maintains backwards compatibility by re-exporting from the modular structure.
  */
 

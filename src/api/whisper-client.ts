@@ -16,7 +16,7 @@ export class WhisperClient {
 
     constructor(config: WhisperConfig) {
         this.config = { ...DEFAULT_WHISPER_CONFIG, ...config };
-        
+
         if (!this.config.apiKey) {
             throw new ContentPipelineError('API key required');
         }
@@ -32,14 +32,14 @@ export class WhisperClient {
 
         try {
             logger.info(`Transcribing: ${filename}`, { requestId });
-            
+
             // Validate audio data directly with Valibot
             v.parse(audioFileSchema, { audioData, filename });
 
             const formData = this.createFormData(audioData, filename, options);
             const response = await this.makeRequestWithRetry(formData, requestId);
             const text = await response.text();
-            
+
             if (!text?.trim()) {
                 throw new ContentPipelineError('Empty transcription from API');
             }
@@ -54,7 +54,7 @@ export class WhisperClient {
 
         } catch (error) {
             logger.error(`Transcription failed: ${filename}`, { requestId, error });
-            
+
             if (isContentPipelineError(error)) {
                 throw error;
             }
@@ -67,12 +67,12 @@ export class WhisperClient {
         const formData = new FormData();
         formData.append('file', new Blob([audioData], { type: getMimeType(filename) }), filename);
         formData.append('model', 'whisper-1');
-        
+
         if (options.language) formData.append('language', options.language);
         if (options.prompt) formData.append('prompt', options.prompt);
         if (options.responseFormat) formData.append('response_format', options.responseFormat);
         if (options.temperature !== undefined) formData.append('temperature', options.temperature.toString());
-        
+
         return formData;
     }
 
@@ -100,7 +100,7 @@ export class WhisperClient {
 
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
-                
+
                 if (!shouldRetryError(lastError) || attempt === this.config.maxRetries) {
                     throw lastError;
                 }

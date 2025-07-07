@@ -21,7 +21,7 @@ export class DirectoryManager {
     async ensureDirectory(dirPath: string): Promise<TFolder> {
         try {
             const normalizedPath = normalizePath(dirPath);
-            
+
             // Check if directory already exists
             const existing = this.vault.getAbstractFileByPath(normalizedPath);
             if (existing instanceof TFolder) {

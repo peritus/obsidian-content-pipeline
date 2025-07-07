@@ -20,7 +20,7 @@ export class FileReader {
      * Read a file from the vault
      */
     async readFile(
-        filePath: string, 
+        filePath: string,
         options: FileOperationOptions = {}
     ): Promise<string> {
         const { validatePaths = true } = options;
@@ -37,7 +37,7 @@ export class FileReader {
 
             // Get the file object
             const file = this.vault.getAbstractFileByPath(filePath);
-            
+
             if (!file) {
                 throw new ContentPipelineError(`File not found: ${filePath}`);
             }
@@ -48,7 +48,7 @@ export class FileReader {
 
             // Read the file content
             const content = await this.vault.read(file);
-            
+
             logger.debug(`File read successfully: ${filePath} (${content.length} chars)`);
             return content;
 

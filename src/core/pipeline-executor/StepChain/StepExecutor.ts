@@ -6,10 +6,10 @@ import { App } from 'obsidian';
 import { WhisperStepProcessor } from '../whisper-step';
 import { ChatStepExecutor } from './ChatStepExecutor';
 import { resolveStepFromSettings } from '../../../validation';
-import { 
+import {
     ContentPipelineSettings,
-    FileInfo, 
-    ProcessingResult, 
+    FileInfo,
+    ProcessingResult,
     ProcessingStatus,
     ResolvedPipelineStep
 } from '../../../types';
@@ -32,7 +32,7 @@ export class StepExecutor {
     }
 
     async execute(
-        stepId: string, 
+        stepId: string,
         fileInfo: FileInfo
     ): Promise<ProcessingResult> {
         const startTime = new Date();
@@ -50,7 +50,7 @@ export class StepExecutor {
 
             // Route to appropriate processor based on model implementation
             const implementation = resolvedStep.modelConfig.implementation;
-            
+
             if (implementation === 'whisper' && WhisperStepProcessor.isAudioFile(fileInfo)) {
                 return await this.whisperProcessor.executeWhisperStep(stepId, fileInfo, resolvedStep);
             } else if (implementation === 'chatgpt') {
@@ -62,7 +62,7 @@ export class StepExecutor {
 
         } catch (error) {
             logger.error(`Step execution failed: ${stepId}`, error);
-            
+
             // Return failed result instead of throwing
             return {
                 inputFile: fileInfo,

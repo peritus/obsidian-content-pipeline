@@ -13,7 +13,7 @@ export class TextareaStyler {
         if (textareaContainer) {
             textareaContainer.addClass('content-pipeline-textarea-container');
         }
-        
+
         // Style the textarea itself
         text.inputEl.addClass('content-pipeline-textarea');
     }

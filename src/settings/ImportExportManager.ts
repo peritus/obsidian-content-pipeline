@@ -34,15 +34,15 @@ export class ImportExportManager {
 
             const dataStr = JSON.stringify(exportData, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
+
             const link = document.createElement('a');
             link.href = URL.createObjectURL(dataBlob);
             link.download = `content-pipeline-pipeline-${new Date().toISOString().split('T')[0]}.json`;
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             new Notice('Pipeline configuration exported successfully!', 3000);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -57,7 +57,7 @@ export class ImportExportManager {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
-        
+
         input.onchange = (event) => {
             const file = (event.target as HTMLInputElement).files?.[0];
             if (!file) return;
@@ -67,7 +67,7 @@ export class ImportExportManager {
                 try {
                     const content = e.target?.result as string;
                     const importData = JSON.parse(content);
-                    
+
                     // Validate the import file structure
                     if (!importData.pipeline) {
                         throw new Error('Invalid import file - missing "pipeline" section. Expected format: { "pipeline": {...} }');
@@ -89,16 +89,16 @@ export class ImportExportManager {
                     } else {
                         new Notice('Pipeline configuration imported successfully!', 3000);
                     }
-                    
+
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
                     new Notice(`Failed to import configuration: ${errorMessage}`, 6000);
                 }
             };
-            
+
             reader.readAsText(file);
         };
-        
+
         input.click();
     }
 }

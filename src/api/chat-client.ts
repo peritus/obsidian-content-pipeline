@@ -1,22 +1,22 @@
 /**
  * OpenAI Chat API Client for Structured Output
- * 
+ *
  * Pure structured output implementation - YAML processing removed.
  */
 
 import { createLogger } from '../logger';
 import { ContentPipelineError, isContentPipelineError } from '../errors';
-import { 
-    ChatConfig, 
-    ChatOptions, 
-    OpenAIChatRequest, 
+import {
+    ChatConfig,
+    ChatOptions,
+    OpenAIChatRequest,
     OpenAIChatResponse,
     ProcessedResponse,
-    DEFAULT_CHAT_CONFIG 
+    DEFAULT_CHAT_CONFIG
 } from './chat-types';
-import { 
-    generateChatRequestId, 
-    calculateChatBackoffDelay, 
+import {
+    generateChatRequestId,
+    calculateChatBackoffDelay,
     shouldRetryChatError
 } from './chat-utils';
 
@@ -27,7 +27,7 @@ export class ChatClient {
 
     constructor(config: ChatConfig) {
         this.config = { ...DEFAULT_CHAT_CONFIG, ...config };
-        
+
         if (!this.config.apiKey) {
             throw new ContentPipelineError('API key required');
         }
@@ -44,10 +44,10 @@ export class ChatClient {
 
         try {
             logger.info(`Processing structured request with ${model}`, { requestId, promptSize: prompt.length });
-            
+
             // Build JSON schema for response
             const schema = this.buildResponseSchema(availableNextSteps);
-            
+
             // Create request with structured output
             const request: OpenAIChatRequest = {
                 model,
@@ -59,9 +59,9 @@ export class ChatClient {
                 presence_penalty: options.presencePenalty,
                 stop: options.stop,
                 response_format: {
-                    type: "json_schema",
+                    type: 'json_schema',
                     json_schema: {
-                        name: "content_pipeline_response",
+                        name: 'content_pipeline_response',
                         strict: true,
                         schema
                     }
@@ -69,41 +69,41 @@ export class ChatClient {
             };
 
             // Debug logging: Raw LLM Request
-            logger.debug("Raw LLM Structured Request", { 
+            logger.debug('Raw LLM Structured Request', {
                 model: model,
                 promptSize: prompt.length,
                 schema: schema,
                 availableNextSteps: availableNextSteps
             });
-            
+
             // Make API request
             const response = await this.makeRequestWithRetry(request, requestId);
             const responseData: OpenAIChatResponse = await response.json();
-            
+
             if (!responseData.choices?.[0]?.message?.content) {
                 throw new ContentPipelineError('Empty response from API');
             }
 
             const jsonContent = responseData.choices[0].message.content;
             const jsonResponse = JSON.parse(jsonContent);
-            
+
             // Debug logging: Raw LLM Response
-            logger.debug("Raw LLM Structured Response", {
+            logger.debug('Raw LLM Structured Response', {
                 responseBody: jsonContent,
                 responseSize: jsonContent.length,
                 parsedSections: jsonResponse.sections?.length || 0,
                 model: responseData.model,
                 usage: responseData.usage
             });
-            
+
             const processedResponse: ProcessedResponse = {
                 sections: jsonResponse.sections,
                 isMultiFile: jsonResponse.sections.length > 1,
                 rawResponse: jsonContent
             };
-            
-            logger.info(`Structured request complete`, { 
-                requestId, 
+
+            logger.info('Structured request complete', {
+                requestId,
                 duration: Date.now() - startTime,
                 sectionsReturned: processedResponse.sections.length,
                 isMultiFile: processedResponse.isMultiFile
@@ -112,8 +112,8 @@ export class ChatClient {
             return processedResponse;
 
         } catch (error) {
-            logger.error(`Structured request failed`, { requestId, error, duration: Date.now() - startTime });
-            
+            logger.error('Structured request failed', { requestId, error, duration: Date.now() - startTime });
+
             if (isContentPipelineError(error)) {
                 throw error;
             }
@@ -125,39 +125,39 @@ export class ChatClient {
     private buildResponseSchema(availableNextSteps: string[]): any {
         // Build item properties conditionally
         const itemProperties: any = {
-            filename: { type: "string" },
-            content: { type: "string" }
+            filename: { type: 'string' },
+            content: { type: 'string' }
         };
 
-        const required = ["filename", "content"];
+        const required = ['filename', 'content'];
 
         // Add nextStep property only if routing is available
         if (availableNextSteps.length > 0) {
             itemProperties.nextStep = {
-                type: "string",
+                type: 'string',
                 enum: availableNextSteps
             };
             // CRITICAL FIX: Add nextStep to required array for strict schema compliance
-            required.push("nextStep");
+            required.push('nextStep');
         }
 
         const schema = {
-            type: "object",
+            type: 'object',
             properties: {
                 sections: {
-                    type: "array",
+                    type: 'array',
                     items: {
-                        type: "object",
+                        type: 'object',
                         properties: itemProperties,
                         required: required,
                         additionalProperties: false
                     }
                 }
             },
-            required: ["sections"],
+            required: ['sections'],
             additionalProperties: false
         };
-        
+
         return schema;
     }
 
@@ -180,7 +180,7 @@ export class ChatClient {
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => 'Unknown error');
                     let errorMessage = `HTTP ${response.status}: ${errorText}`;
-                    
+
                     // Parse OpenAI error format if available
                     try {
                         const errorData = JSON.parse(errorText);
@@ -190,7 +190,7 @@ export class ChatClient {
                     } catch {
                         // Keep original error message if parsing fails
                     }
-                    
+
                     throw new Error(errorMessage);
                 }
 
@@ -198,17 +198,17 @@ export class ChatClient {
 
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
-                
+
                 if (!shouldRetryChatError(lastError) || attempt === this.config.maxRetries) {
                     throw lastError;
                 }
 
                 const delay = calculateChatBackoffDelay(attempt);
-                logger.warn(`Chat request attempt ${attempt} failed, retrying in ${delay}ms`, { 
-                    requestId, 
-                    error: lastError.message 
+                logger.warn(`Chat request attempt ${attempt} failed, retrying in ${delay}ms`, {
+                    requestId,
+                    error: lastError.message
                 });
-                
+
                 await new Promise(resolve => setTimeout(resolve, delay));
             }
         }
@@ -222,7 +222,7 @@ export class ChatClient {
     async testConnection(): Promise<boolean> {
         try {
             const testPrompt = 'Generate a simple test response.';
-            await this.processStructuredRequest(testPrompt, [], { 
+            await this.processStructuredRequest(testPrompt, [], {
                 model: 'gpt-4o',
                 maxTokens: 50,
                 temperature: 0

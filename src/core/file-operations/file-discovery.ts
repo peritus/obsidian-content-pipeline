@@ -1,6 +1,6 @@
 /**
  * File discovery and search operations
- * 
+ *
  * Unified file discovery system supporting both generic file search and pipeline-specific operations.
  */
 
@@ -120,7 +120,7 @@ export class FileDiscovery {
         excludeFiles: Set<string>
     ): Promise<FileDiscoveryResult | null> {
         const allSteps = Object.keys(config);
-        
+
         if (allSteps.length === 0) {
             throw new ContentPipelineError('No steps found in pipeline configuration');
         }
@@ -134,7 +134,7 @@ export class FileDiscovery {
 
         for (const stepId of stepsToCheck) {
             const step = config[stepId];
-            
+
             try {
                 const files = await this.discoverFiles(step.input, {}, {
                     extensions: ['.mp3', '.wav', '.m4a', '.mp4', '.md', '.txt'],
@@ -143,7 +143,7 @@ export class FileDiscovery {
                     limit: 1
                 });
 
-                const availableFiles = files.filter(file => 
+                const availableFiles = files.filter(file =>
                     !excludeFiles.has(file.path)
                 );
 
@@ -177,10 +177,10 @@ export class FileDiscovery {
      */
     async findStepForFile(file: TFile, config: PipelineConfiguration): Promise<string | null> {
         const allSteps = Object.keys(config);
-        
+
         for (const stepId of allSteps) {
             const step = config[stepId];
-            
+
             try {
                 // Use fast path matching
                 if (this.isFileInInputDirectory(file.path, step.input)) {
@@ -208,7 +208,7 @@ export class FileDiscovery {
 
         allSteps.forEach(stepId => {
             const step = config[stepId];
-            
+
             // Check routing-aware output for referenced next steps
             if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
                 Object.keys(step.routingAwareOutput).forEach(nextStepId => {
@@ -234,10 +234,10 @@ export class FileDiscovery {
         try {
             // Use path operations for pattern matching
             const isMatch = matchesInputPattern(filePath, inputPattern);
-            
+
             logger.debug(`Path check: ${filePath} in ${inputPattern} = ${isMatch}`);
             return isMatch;
-            
+
         } catch (error) {
             logger.debug(`Error checking path ${filePath} against pattern ${inputPattern}:`, error);
             return false;
@@ -270,7 +270,7 @@ export class FileDiscovery {
                 }
             } else if (abstractFile instanceof TFolder) {
                 // Directory - search recursively
-                const foundFiles = recursive 
+                const foundFiles = recursive
                     ? this.vault.getMarkdownFiles() // Get all markdown files
                         .concat(this.vault.getFiles().filter(f => !f.path.endsWith('.md'))) // Plus other files
                         .filter(f => f.path.startsWith(normalizedPath))
