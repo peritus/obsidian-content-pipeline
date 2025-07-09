@@ -2,6 +2,9 @@
  * Type definitions for OpenAI Chat API client
  */
 
+// JSON Schema type for OpenAI structured output
+export type JsonSchema = Record<string, unknown>;
+
 export interface ChatConfig {
     apiKey: string;
     baseUrl?: string;
@@ -51,7 +54,7 @@ export interface OpenAIChatRequest {
         json_schema: {
             name: string;
             strict: boolean;
-            schema: any;
+            schema: JsonSchema;
         };
     };
 }

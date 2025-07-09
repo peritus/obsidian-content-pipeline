@@ -25,6 +25,12 @@ import { executionContextSchema } from '../../../validation/schemas';
 
 const logger = createLogger('ChatStepExecutor');
 
+interface LLMResponseSection {
+    filename?: string;
+    content: string;
+    nextStep?: string;
+}
+
 export class ChatStepExecutor {
     private app: App;
     private promptBuilder: PromptBuilder;
@@ -231,7 +237,7 @@ export class ChatStepExecutor {
     /**
      * Validate routing decisions from LLM response against step configuration
      */
-    private validateRoutingDecisions(sections: any[], resolvedStep: ResolvedPipelineStep): {
+    private validateRoutingDecisions(sections: LLMResponseSection[], resolvedStep: ResolvedPipelineStep): {
         hasValidRoutes: boolean;
         invalidRoutes: string[];
         fallbacksUsed: number;
@@ -264,7 +270,7 @@ export class ChatStepExecutor {
     /**
      * Create routing decision metadata for a section
      */
-    private createRoutingDecision(section: any, resolvedStep: ResolvedPipelineStep): {
+    private createRoutingDecision(section: LLMResponseSection, resolvedStep: ResolvedPipelineStep): {
         section: string;
         nextStep?: string;
         usedDefaultFallback: boolean;

@@ -2,7 +2,7 @@
  * Chain Execution Logic
  */
 
-import { App } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { FileOperations } from '../../file-operations';
 import { StepExecutor } from './StepExecutor';
 import {
@@ -60,7 +60,10 @@ export class ChainExecutor {
                     if (!outputFile) {
                         throw new Error(`Output file not found: ${outputFilePath}`);
                     }
-                    currentFile = this.fileOps.getFileInfo(outputFile as any);
+                    if (!(outputFile instanceof TFile)) {
+                        throw new Error(`Output path is not a file: ${outputFilePath}`);
+                    }
+                    currentFile = this.fileOps.getFileInfo(outputFile);
                     currentStepId = result.nextStep;
                     logger.debug(`Chaining to next step: ${currentStepId} with file: ${outputFilePath}`);
                 } catch (error) {

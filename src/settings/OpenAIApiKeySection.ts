@@ -36,7 +36,7 @@ export class OpenAIApiKeySection {
                 this.loadCurrentApiKey();
 
                 // Auto-save on change with debouncing
-                text.onChange((value) => {
+                text.onChange((_value) => {
                     this.debouncedSave();
                 });
 

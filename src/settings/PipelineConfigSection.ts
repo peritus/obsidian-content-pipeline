@@ -2,7 +2,7 @@
  * Pipeline configuration section - OPTION 1: Button-based expand/collapse
  */
 
-import { Setting, TextAreaComponent, DropdownComponent } from 'obsidian';
+import { Setting, TextAreaComponent } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
 import { BUNDLED_PIPELINE_CONFIGS } from '@/configs';

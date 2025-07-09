@@ -2,9 +2,9 @@
  * Main file operations orchestrator
  */
 
-import { App, TFolder } from 'obsidian';
+import { App, TFolder, TFile } from 'obsidian';
 import { resolveInputDirectory } from '../path-operations/resolve-input-directory';
-import { FileInfo, PipelineConfiguration } from '../../types';
+import { FileInfo, PipelineConfiguration, RoutingAwareOutput } from '../../types';
 import {
     FileOperationOptions,
     FileOperationResult,
@@ -51,7 +51,7 @@ export class FileOperations {
         return this.inboxStructureManager.createCompleteStructure(pipelineConfig);
     }
 
-    async createStepFolders(stepId: string, step: any): Promise<FolderStructureResult> {
+    async createStepFolders(stepId: string, step: { output: string | RoutingAwareOutput }): Promise<FolderStructureResult> {
         return this.inboxStructureManager.createStepFolders(stepId, step);
     }
 
@@ -121,11 +121,11 @@ export class FileOperations {
     }
 
     // Discovery operations
-    async discoverFiles(inputPattern: string, context?: Record<string, any>, options?: FileDiscoveryOptions): Promise<FileInfo[]> {
+    async discoverFiles(inputPattern: string, context?: Record<string, unknown>, options?: FileDiscoveryOptions): Promise<FileInfo[]> {
         return this.fileDiscovery.discoverFiles(inputPattern, context, options);
     }
 
-    getFileInfo(file: any): FileInfo {
+    getFileInfo(file: TFile): FileInfo {
         return this.fileDiscovery.getFileInfo(file);
     }
 }

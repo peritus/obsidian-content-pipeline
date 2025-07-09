@@ -71,7 +71,7 @@ export class OutputHandler {
 
             // Priority 3: If no default, throw error
             const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
-            throw new ContentPipelineError(`No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`);
+            throw new ContentPipelineError(`No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured. Available routes: [${availableRoutes.join(', ')}]`);
         }
 
         // Should not reach here with proper typing, but handle gracefully

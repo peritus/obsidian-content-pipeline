@@ -2,7 +2,7 @@
  * Whisper-specific step processing with Simplified Directory-Only Output System
  */
 
-import { App } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { normalizeDirectoryPath } from '../path-operations/normalize-directory-path';
 import { buildOutputPath } from '../path-operations/build-output-path';
 import { buildArchivePath } from '../path-operations/build-archive-path';
@@ -209,7 +209,7 @@ export class WhisperStepProcessor {
 
             // Priority 3: If no default, throw error
             const availableRoutes = Object.keys(routingOutput).filter(k => k !== 'default');
-            throw new ContentPipelineError(`Whisper step: No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured`);
+            throw new ContentPipelineError(`Whisper step: No valid output directory found for routing decision: nextStep='${nextStep}', no default fallback configured. Available routes: [${availableRoutes.join(', ')}]`);
         }
 
         // Fallback to resolved step output as directory
@@ -230,8 +230,11 @@ export class WhisperStepProcessor {
             if (!file) {
                 throw new Error(`File not found: ${filePath}`);
             }
+            if (!(file instanceof TFile)) {
+                throw new Error(`Path is not a file: ${filePath}`);
+            }
 
-            return await this.app.vault.readBinary(file as any);
+            return await this.app.vault.readBinary(file);
 
         } catch (error) {
             throw new ContentPipelineError(`Failed to read audio file: ${filePath}`, error instanceof Error ? error : undefined);

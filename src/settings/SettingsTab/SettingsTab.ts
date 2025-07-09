@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Notice, Setting } from 'obsidian';
+import { App, PluginSettingTab, Notice } from 'obsidian';
 import ContentPipelinePlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { ModelsConfigSection } from '../ModelsConfigSection';
@@ -262,7 +262,7 @@ export class SettingsTab extends PluginSettingTab {
     private validateConfigurations(): ConfigValidationResult {
         try {
             // Use centralized validation function
-            const { modelsConfig, pipelineConfig } = parseAndValidateFromJson(
+            const { modelsConfig: _modelsConfig, pipelineConfig: _pipelineConfig } = parseAndValidateFromJson(
                 this.plugin.settings.modelsConfig,
                 this.plugin.settings.pipelineConfig
             );
@@ -294,7 +294,7 @@ export class SettingsTab extends PluginSettingTab {
     /**
      * Save valid configuration with auto-save
      */
-    private async saveValidConfiguration(validationResult: ConfigValidationResult): Promise<void> {
+    private async saveValidConfiguration(_validationResult: ConfigValidationResult): Promise<void> {
         try {
             this.updateParsedConfigurations();
             this.plugin.settings.lastSaved = new Date().toISOString();

@@ -3,7 +3,6 @@
  */
 
 import { TFile } from 'obsidian';
-import { FilenameResolver } from '../FilenameResolver';
 import { FileInfo } from '../../types';
 
 export class FileInfoProvider {

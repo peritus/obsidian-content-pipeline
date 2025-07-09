@@ -53,7 +53,7 @@ export class FilenameResolver {
     static resolveOutputFilename(
         llmSuggestion: string | undefined,
         originalFilename: string,
-        stepType?: string
+        _stepType?: string
     ): string {
         // Check if LLM provided a meaningful filename
         if (llmSuggestion && this.isValidCustomFilename(llmSuggestion)) {
@@ -167,7 +167,7 @@ export class FilenameResolver {
      */
     static getFilenameSource(
         llmSuggestion: string | undefined,
-        originalFilename: string
+        _originalFilename: string
     ): string {
         if (llmSuggestion && this.isValidCustomFilename(llmSuggestion)) {
             return 'llm-provided';

@@ -10,7 +10,7 @@
  */
 
 import * as v from 'valibot';
-import { ModelImplementation, ModelsConfig, PipelineConfiguration, isRoutingAwareOutput } from '../types';
+import { ModelsConfig, PipelineConfiguration, isRoutingAwareOutput } from '../types';
 import { CHAT_LIMITS } from '../api/chat-types';
 import { WHISPER_LIMITS } from '../api/whisper-types';
 
@@ -24,8 +24,8 @@ const CONFIG = {
     patterns: {
         stepId: /^[a-zA-Z][a-zA-Z0-9-]*$/,
         configId: /^[a-z0-9]+([a-z0-9\-_]*[a-z0-9]+)*$/,
-        noAbsolute: /^[^\/]/,
-        noParent: /^(?!.*\.\.[\/\\])/,
+        noAbsolute: /^[^/]/,
+        noParent: /^(?!.*\.\.[/\\])/,
         validPath: /^[^<>:"|?\0]*$/,
         validGlob: /^[^<>:"|?\0]*$/
     }
@@ -86,7 +86,7 @@ export const modelConfigSchema = v.object({
 
 export const modelsConfigSchema = v.pipe(
     v.record(v.string(), modelConfigSchema),
-    v.check((input: Record<string, any>) => {
+    v.check((input: Record<string, unknown>) => {
         const ids = Object.keys(input);
         return ids.length > 0 && ids.length <= CONFIG.limits.maxModels &&
                ids.every(id => CONFIG.patterns.configId.test(id));
@@ -105,7 +105,7 @@ export const pipelineStepSchema = v.object({
 
 export const pipelineConfigSchema = v.pipe(
     v.record(stepIdSchema, pipelineStepSchema),
-    v.check((input: Record<string, any>) => {
+    v.check((input: Record<string, unknown>) => {
         const steps = Object.keys(input);
         return steps.length > 0 && steps.length <= CONFIG.limits.maxSteps;
     }, 'Pipeline configuration validation failed')
@@ -122,7 +122,7 @@ export const chatRequestSchema = v.object({
         v.string('Model must be a string'),
         v.trim(),
         v.nonEmpty('Model cannot be empty'),
-        v.custom((input: unknown) => typeof input === 'string' && CHAT_LIMITS.supportedModels.includes(input as any), 'Unsupported model')
+        v.custom((input: unknown) => typeof input === 'string' && CHAT_LIMITS.supportedModels.includes(input as (typeof CHAT_LIMITS.supportedModels)[number]), 'Unsupported model')
     )
 });
 
@@ -149,7 +149,7 @@ export const audioFileSchema = v.object({
         v.custom((input: unknown) => {
             if (typeof input !== 'string') return false;
             const ext = input.toLowerCase().split('.').pop();
-            return WHISPER_LIMITS.supportedFormats.includes(ext as any);
+            return ext !== undefined && WHISPER_LIMITS.supportedFormats.includes(ext as (typeof WHISPER_LIMITS.supportedFormats)[number]);
         }, `Unsupported audio format. Supported: ${WHISPER_LIMITS.supportedFormats.join(', ')}`)
     )
 });
@@ -203,7 +203,10 @@ const circularDependencyValidator = v.custom<{ models: ModelsConfig; pipeline: P
         if (step.routingAwareOutput && isRoutingAwareOutput(step.routingAwareOutput)) {
             Object.keys(step.routingAwareOutput).forEach(nextId => {
                 if (nextId !== 'default' && stepIds.includes(nextId)) {
-                    deps.get(id)!.add(nextId);
+                    const stepDeps = deps.get(id);
+                    if (stepDeps) {
+                        stepDeps.add(nextId);
+                    }
                 }
             });
         }

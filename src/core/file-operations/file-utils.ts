@@ -4,8 +4,6 @@
 
 import { App, normalizePath } from 'obsidian';
 import { FileOperations } from './file-operations';
-import { FilenameResolver } from '../FilenameResolver';
-import { FileInfo } from '../../types';
 
 /**
  * Utility functions for file operations

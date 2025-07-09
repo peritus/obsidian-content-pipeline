@@ -76,7 +76,7 @@ export class WhisperClient {
         return formData;
     }
 
-    private async makeRequestWithRetry(formData: FormData, requestId: string): Promise<Response> {
+    private async makeRequestWithRetry(formData: FormData, _requestId: string): Promise<Response> {
         let lastError: Error | null = null;
 
         for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
@@ -109,6 +109,7 @@ export class WhisperClient {
             }
         }
 
-        throw lastError!;
+        // This should never be reached, but if it is, throw a generic error
+        throw lastError || new ContentPipelineError('All retry attempts failed with unknown error');
     }
 }

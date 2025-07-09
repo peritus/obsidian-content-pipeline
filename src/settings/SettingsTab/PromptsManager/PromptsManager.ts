@@ -1,10 +1,14 @@
 import { App, Notice, Setting } from 'obsidian';
 import { PromptFileOperations } from '../prompt-file-operations';
-import { BUNDLED_PIPELINE_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
 import { PromptCreator } from './PromptCreator';
 import { IndividualPromptRenderer } from './IndividualPromptRenderer';
-import { PromptStatus } from '../prompt-file-operations';
+
+interface PromptInfo {
+    path: string;
+    content: string;
+    error?: string;
+}
 
 /**
  * Manages the prompts setup section with config-based and vault-based prompt states
@@ -174,7 +178,7 @@ export class PromptsManager {
      * Render a config-based prompt using Setting structure
      * Shows prompts that are defined in configuration but not yet copied to vault
      */
-    private renderConfigPrompt(containerEl: HTMLElement, prompt: any): void {
+    private renderConfigPrompt(containerEl: HTMLElement, prompt: PromptInfo): void {
         const filename = this.getFilenameFromPath(prompt.path);
 
         new Setting(containerEl)
@@ -192,7 +196,7 @@ export class PromptsManager {
      * Render a vault-based prompt using Setting structure
      * Shows prompts that exist in the vault
      */
-    private renderVaultPrompt(containerEl: HTMLElement, prompt: any): void {
+    private renderVaultPrompt(containerEl: HTMLElement, prompt: PromptInfo): void {
         const filename = this.getFilenameFromPath(prompt.path);
 
         new Setting(containerEl)
@@ -209,7 +213,7 @@ export class PromptsManager {
     /**
      * Open a prompt that exists in the vault
      */
-    private async openInVault(prompt: any): Promise<void> {
+    private async openInVault(prompt: PromptInfo): Promise<void> {
         try {
             // Open the file in Obsidian
             const file = this.app.vault.getAbstractFileByPath(prompt.path);
@@ -227,7 +231,7 @@ export class PromptsManager {
      * Copy a prompt from configuration to vault for editing
      * Enhanced with progress feedback and automatic view refresh
      */
-    private async copyToVault(prompt: any): Promise<void> {
+    private async copyToVault(prompt: PromptInfo): Promise<void> {
         const filename = this.getFilenameFromPath(prompt.path);
 
         try {

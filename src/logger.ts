@@ -77,7 +77,7 @@ export class Logger {
     /**
      * Format log message for output
      */
-    private formatMessage(level: LogLevel, message: string, context?: any): string {
+    private formatMessage(level: LogLevel, message: string, context?: unknown): string {
         const parts: string[] = [];
 
         // Timestamp
@@ -113,7 +113,7 @@ export class Logger {
     /**
      * Create a log entry
      */
-    private createLogEntry(level: LogLevel, message: string, context?: any): LogEntry {
+    private createLogEntry(level: LogLevel, message: string, context?: unknown): LogEntry {
         return {
             level,
             component: this.component,
@@ -126,7 +126,7 @@ export class Logger {
     /**
      * Log an error message
      */
-    public error(message: string, context?: any): void {
+    public error(message: string, context?: unknown): void {
         if (this.shouldLog(LogLevel.ERROR)) {
             const formattedMessage = this.formatMessage(LogLevel.ERROR, message, context);
             console.error(formattedMessage);
@@ -136,7 +136,7 @@ export class Logger {
     /**
      * Log a warning message
      */
-    public warn(message: string, context?: any): void {
+    public warn(message: string, context?: unknown): void {
         if (this.shouldLog(LogLevel.WARN)) {
             const formattedMessage = this.formatMessage(LogLevel.WARN, message, context);
             console.warn(formattedMessage);
@@ -146,7 +146,7 @@ export class Logger {
     /**
      * Log an info message
      */
-    public info(message: string, context?: any): void {
+    public info(message: string, context?: unknown): void {
         if (this.shouldLog(LogLevel.INFO)) {
             const formattedMessage = this.formatMessage(LogLevel.INFO, message, context);
             console.log(formattedMessage);
@@ -156,7 +156,7 @@ export class Logger {
     /**
      * Log a debug message
      */
-    public debug(message: string, context?: any): void {
+    public debug(message: string, context?: unknown): void {
         if (this.shouldLog(LogLevel.DEBUG)) {
             const formattedMessage = this.formatMessage(LogLevel.DEBUG, message, context);
             console.log(formattedMessage);
@@ -166,7 +166,7 @@ export class Logger {
     /**
      * Log with explicit level
      */
-    public log(level: LogLevel, message: string, context?: any): void {
+    public log(level: LogLevel, message: string, context?: unknown): void {
         switch (level) {
             case LogLevel.ERROR:
                 this.error(message, context);
@@ -207,7 +207,7 @@ export class Logger {
     /**
      * Create a log entry without outputting it (for testing/inspection)
      */
-    public createEntry(level: LogLevel, message: string, context?: any): LogEntry | null {
+    public createEntry(level: LogLevel, message: string, context?: unknown): LogEntry | null {
         if (this.shouldLog(level)) {
             return this.createLogEntry(level, message, context);
         }

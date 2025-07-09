@@ -23,7 +23,7 @@ export class ImportExportManager {
     exportPipelineConfig(modelsConfig: string, pipelineConfig: string): void {
         try {
             // Use centralized validation function
-            const { modelsConfig: models, pipelineConfig: pipeline } = parseAndValidateFromJson(modelsConfig, pipelineConfig);
+            const { modelsConfig: _models, pipelineConfig: pipeline } = parseAndValidateFromJson(modelsConfig, pipelineConfig);
 
             const exportData = {
                 version: '1.2',
