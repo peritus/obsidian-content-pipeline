@@ -2,7 +2,7 @@
  * Type definitions for file operations
  */
 
-import { TFile, TFolder } from 'obsidian';
+import { TFile } from 'obsidian';
 import { FileInfo } from '../../types';
 
 /**

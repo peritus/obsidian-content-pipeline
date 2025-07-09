@@ -3,8 +3,6 @@
  */
 
 import { WHISPER_LIMITS } from './whisper-types';
-import * as v from 'valibot';
-import { audioFileSchema } from '../validation/schemas';
 
 /**
  * Generate unique request ID for tracking
@@ -34,7 +32,7 @@ export function getMimeType(filename: string): string {
  */
 export function isSupportedAudioFile(filename: string): boolean {
     const extension = filename.toLowerCase().split('.').pop();
-    return WHISPER_LIMITS.supportedFormats.includes(extension as any);
+    return WHISPER_LIMITS.supportedFormats.includes(extension as typeof WHISPER_LIMITS.supportedFormats[number]);
 }
 
 /**

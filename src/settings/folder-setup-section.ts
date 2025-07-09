@@ -85,8 +85,6 @@ export class FolderSetupSection {
             }
 
         } catch (error) {
-            console.error('Error in FolderSetupSection render:', error);
-
             // Create container with class for easy removal
             const sectionContainer = this.containerEl.createEl('div', { cls: 'folder-setup-section' });
 
@@ -175,7 +173,6 @@ export class FolderSetupSection {
         } catch (error) {
             const errorMsg = `Failed to create folder ${folderStatus.inputPath}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);
-            console.error(errorMsg, error);
         }
     }
 }

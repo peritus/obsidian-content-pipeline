@@ -31,7 +31,7 @@ function validatePipelineStep(step: any, stepId: string, createValidPipeline: bo
         
         if (createValidPipeline) {
             // Create a complete valid pipeline with the test step and referenced steps
-            let pipelineConfig: any = { [stepId]: step };
+            const pipelineConfig: any = { [stepId]: step };
             
             // Add any referenced routing steps to make the pipeline valid
             if (step.routingAwareOutput && typeof step.routingAwareOutput === 'object') {

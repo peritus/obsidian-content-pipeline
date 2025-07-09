@@ -1,4 +1,4 @@
-import { Plugin, Notice, TFile } from 'obsidian';
+import { Plugin, Notice, TFile, Menu, MenuItem } from 'obsidian';
 import { DEFAULT_SETTINGS, SettingsTab } from './settings';
 import { ContentPipelineSettings, PipelineConfiguration, ModelsConfig } from './types';
 import { createLogger, getBuildLogLevel } from './logger';
@@ -10,6 +10,7 @@ import {
     getSettingsValidationErrors
 } from './validation';
 import { CommandHandler } from './commands';
+import { FileDiscovery } from './core/file-operations';
 
 /**
  * Main plugin class for Content Pipeline
@@ -98,7 +99,7 @@ export default class ContentPipelinePlugin extends Plugin {
     /**
      * Add file menu item asynchronously after checking if file can be processed
      */
-    private async addFileMenuItemAsync(menu: any, file: TFile): Promise<void> {
+    private async addFileMenuItemAsync(menu: Menu, file: TFile): Promise<void> {
         try {
             const canProcess = await this.commandHandler.canFileBeProcessed(file);
             if (!canProcess) return;
@@ -110,7 +111,7 @@ export default class ContentPipelinePlugin extends Plugin {
                 : 'Process File with Content Pipeline 🎵';
 
             // Add menu item for processable files
-            menu.addItem((item: any) => {
+            menu.addItem((item: MenuItem) => {
                 item
                     .setTitle(menuTitle)
                     .setIcon('microphone')
@@ -118,8 +119,8 @@ export default class ContentPipelinePlugin extends Plugin {
                         await this.commandHandler.processSpecificFile(file);
                     });
             });
-        } catch (error) {
-            this.logger.warn('Error checking if file can be processed for menu:', error);
+        } catch (_error) {
+            this.logger.warn('Error checking if file can be processed for menu:', _error);
         }
     }
 
@@ -131,11 +132,10 @@ export default class ContentPipelinePlugin extends Plugin {
             const pipelineConfig = this.getPipelineConfiguration();
             if (!pipelineConfig) return null;
 
-            const { FileDiscovery } = require('./core/file-operations');
             const fileDiscovery = new FileDiscovery(this.app);
             return await fileDiscovery.findStepForFile(file, pipelineConfig);
-        } catch (error) {
-            this.logger.warn('Error finding step for file:', error);
+        } catch (_error) {
+            this.logger.warn('Error finding step for file:', _error);
             return null;
         }
     }
@@ -156,8 +156,8 @@ export default class ContentPipelinePlugin extends Plugin {
             await this.saveSettings();
 
             this.logger.info('Settings loaded successfully');
-        } catch (error) {
-            this.logger.error('Failed to load settings, using empty defaults:', error);
+        } catch (_error) {
+            this.logger.error('Failed to load settings, using empty defaults:', _error);
             this.settings = Object.assign({}, DEFAULT_SETTINGS);
             this.settings.lastSaved = new Date().toISOString();
             this.settings.version = this.manifest.version;
@@ -181,7 +181,7 @@ export default class ContentPipelinePlugin extends Plugin {
                 return `Valid (${stepCount} steps)`;
             }
             return 'Invalid configuration';
-        } catch (error) {
+        } catch {
             const errors = getSettingsValidationErrors(this.settings);
             return `Invalid (${errors.length} errors)`;
         }
@@ -222,7 +222,7 @@ export default class ContentPipelinePlugin extends Plugin {
     public getModelsConfiguration(): ModelsConfig | undefined {
         try {
             return getValidatedModelsConfiguration(this.settings);
-        } catch (error) {
+        } catch {
             // Return undefined if configuration is not valid
             return undefined;
         }

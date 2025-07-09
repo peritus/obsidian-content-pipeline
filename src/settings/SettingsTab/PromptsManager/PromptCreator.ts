@@ -19,7 +19,6 @@ export class PromptCreator {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             new Notice(`❌ Failed to copy ${prompt.path}: ${errorMessage}`);
-            console.error(`Failed to copy prompt ${prompt.path}:`, error);
         }
     }
 }

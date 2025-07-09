@@ -121,7 +121,7 @@ export class PromptBuilder {
             // First, try to read from vault
             return await this.fileOps.readFile(filePath);
         } catch (error) {
-            logger.debug(`File not found in vault: ${filePath}, checking config-defined prompts`);
+            logger.debug(`File not found in vault: ${filePath}, checking config-defined prompts`, error);
 
             // If vault read fails, try to find it in config-defined prompts with exact path match
             if (this.settings?.configDefinedPrompts) {

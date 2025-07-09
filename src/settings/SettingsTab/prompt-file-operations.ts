@@ -57,7 +57,6 @@ export class PromptFileOperations {
                     exists: false,
                     error: `Check failed: ${errorMessage}`
                 });
-                console.error(`Error checking existence of ${promptPath}:`, error);
             }
         }
 

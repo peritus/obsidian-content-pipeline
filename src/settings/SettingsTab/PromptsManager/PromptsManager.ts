@@ -1,10 +1,14 @@
 import { App, Notice, Setting } from 'obsidian';
 import { PromptFileOperations } from '../prompt-file-operations';
-import { BUNDLED_PIPELINE_CONFIGS } from '@/configs';
 import { PromptStatusChecker } from './PromptStatusChecker';
 import { PromptCreator } from './PromptCreator';
 import { IndividualPromptRenderer } from './IndividualPromptRenderer';
-import { PromptStatus } from '../prompt-file-operations';
+
+interface PromptInfo {
+    path: string;
+    content: string;
+    error?: string;
+}
 
 /**
  * Manages the prompts setup section with config-based and vault-based prompt states
@@ -82,8 +86,6 @@ export class PromptsManager {
             this.renderAllPromptsAsync(this.promptsContainer);
 
         } catch (error) {
-            console.error('Error accessing prompts:', error);
-
             // Show error using proper Setting structure
             new Setting(containerEl).setName('Prompts').setHeading();
             new Setting(containerEl)
@@ -174,7 +176,7 @@ export class PromptsManager {
      * Render a config-based prompt using Setting structure
      * Shows prompts that are defined in configuration but not yet copied to vault
      */
-    private renderConfigPrompt(containerEl: HTMLElement, prompt: any): void {
+    private renderConfigPrompt(containerEl: HTMLElement, prompt: PromptInfo): void {
         const filename = this.getFilenameFromPath(prompt.path);
 
         new Setting(containerEl)
@@ -192,7 +194,7 @@ export class PromptsManager {
      * Render a vault-based prompt using Setting structure
      * Shows prompts that exist in the vault
      */
-    private renderVaultPrompt(containerEl: HTMLElement, prompt: any): void {
+    private renderVaultPrompt(containerEl: HTMLElement, prompt: PromptInfo): void {
         const filename = this.getFilenameFromPath(prompt.path);
 
         new Setting(containerEl)
@@ -209,17 +211,17 @@ export class PromptsManager {
     /**
      * Open a prompt that exists in the vault
      */
-    private async openInVault(prompt: any): Promise<void> {
+    private async openInVault(prompt: PromptInfo): Promise<void> {
         try {
             // Open the file in Obsidian
             const file = this.app.vault.getAbstractFileByPath(prompt.path);
             if (file) {
                 await this.app.workspace.openLinkText(prompt.path, '', false);
             } else {
-                console.error(`File not found: ${prompt.path}`);
+                new Notice(`❌ File not found: ${prompt.path}`, 5000);
             }
         } catch (error) {
-            console.error(`Failed to open prompt file ${prompt.path}:`, error);
+            new Notice(`❌ Failed to open prompt file: ${error instanceof Error ? error.message : String(error)}`, 5000);
         }
     }
 
@@ -227,7 +229,7 @@ export class PromptsManager {
      * Copy a prompt from configuration to vault for editing
      * Enhanced with progress feedback and automatic view refresh
      */
-    private async copyToVault(prompt: any): Promise<void> {
+    private async copyToVault(prompt: PromptInfo): Promise<void> {
         const filename = this.getFilenameFromPath(prompt.path);
 
         try {
@@ -246,7 +248,6 @@ export class PromptsManager {
         } catch (error) {
             const errorMsg = `Failed to copy ${filename}: ${error instanceof Error ? error.message : String(error)}`;
             new Notice(`❌ ${errorMsg}`, 5000);
-            console.error(errorMsg, error);
         }
     }
 }

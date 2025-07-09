@@ -111,11 +111,13 @@ export interface PipelineConfigurationWithDescription {
 /**
  * Utility function to extract pipeline steps from a configuration that may contain description
  */
-export function extractPipelineSteps(config: any): PipelineConfiguration {
+export function extractPipelineSteps(config: unknown): PipelineConfiguration {
     const steps: PipelineConfiguration = {};
-    for (const [key, value] of Object.entries(config)) {
-        if (key !== 'description' && typeof value === 'object' && value !== null) {
-            steps[key] = value as PipelineStep;
+    if (config && typeof config === 'object') {
+        for (const [key, value] of Object.entries(config)) {
+            if (key !== 'description' && typeof value === 'object' && value !== null) {
+                steps[key] = value as PipelineStep;
+            }
         }
     }
     return steps;
@@ -344,7 +346,7 @@ export interface LogEntry {
     /** Log message */
     message: string;
     /** Additional context data */
-    context?: any;
+    context?: Record<string, unknown>;
     /** Timestamp */
     timestamp: Date;
 }
@@ -394,8 +396,8 @@ export interface ContentPipelineSettings {
  * Type guard for validating model implementations
  * Currently supporting OpenAI implementations only
  */
-export function isValidModelImplementation(value: any): value is ModelImplementation {
-    return ['whisper', 'chatgpt'].includes(value);
+export function isValidModelImplementation(value: unknown): value is ModelImplementation {
+    return ['whisper', 'chatgpt'].includes(value as string);
 }
 
 /**
@@ -408,13 +410,13 @@ export function isRoutingAwareOutput(output: string | RoutingAwareOutput): outpu
 /**
  * Type guard for validating routing-aware output structure
  */
-export function isValidRoutingAwareOutput(value: any): value is RoutingAwareOutput {
+export function isValidRoutingAwareOutput(value: unknown): value is RoutingAwareOutput {
     if (typeof value !== 'object' || value === null) {
         return false;
     }
 
     // Check that all values are strings
-    for (const [key, val] of Object.entries(value)) {
+    for (const [, val] of Object.entries(value)) {
         if (typeof val !== 'string') {
             return false;
         }

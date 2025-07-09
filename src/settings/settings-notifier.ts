@@ -43,8 +43,8 @@ export class SettingsNotifier {
         this.listeners.forEach(listener => {
             try {
                 listener(event);
-            } catch (error) {
-                console.error('Error in settings change listener:', error);
+            } catch {
+                // Ignore errors from listener functions - they should handle their own errors
             }
         });
     }

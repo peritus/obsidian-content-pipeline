@@ -2,7 +2,7 @@
  * Pipeline configuration section - OPTION 1: Button-based expand/collapse
  */
 
-import { Setting, TextAreaComponent, DropdownComponent } from 'obsidian';
+import { Setting, TextAreaComponent, Notice } from 'obsidian';
 import ContentPipelinePlugin from '../main';
 import { TextareaStyler } from './textarea-styler';
 import { BUNDLED_PIPELINE_CONFIGS } from '@/configs';
@@ -144,7 +144,7 @@ export class PipelineConfigSection {
                             try {
                                 await this.plugin.saveSettings();
                             } catch (error) {
-                                console.error('Failed to save config-defined prompts:', error);
+                                new Notice(`❌ Failed to save configuration prompts: ${error}`, 5000);
                             }
                         }
                     });

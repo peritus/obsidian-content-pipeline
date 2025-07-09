@@ -90,7 +90,7 @@ export function extractOpenAIConfigs(modelsConfigJson: string): OpenAIConfigExtr
         result.count = openAIConfigIds.length;
 
         return result;
-    } catch (error) {
+    } catch {
         // Return empty result for parsing errors
         return result;
     }
@@ -131,7 +131,7 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
             result.error = 'Invalid models configuration format';
             return result;
         }
-    } catch (error) {
+    } catch {
         result.error = 'Failed to parse models configuration JSON';
         return result;
     }
@@ -163,7 +163,7 @@ export function updateOpenAIApiKeys(modelsConfigJson: string, newApiKey: string)
         result.updatedCount = updatedConfigIds.length;
         result.updatedConfigIds = updatedConfigIds;
         return result;
-    } catch (error) {
+    } catch {
         result.error = 'Failed to serialize updated models configuration';
         return result;
     }
@@ -180,7 +180,7 @@ export function isValidOpenAIApiKey(apiKey: string): boolean {
         v.parse(openAIApiKeySchema, apiKey);
         v.parse(apiKeySchema, apiKey.trim());
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
@@ -218,7 +218,7 @@ function isOpenAIConfig(config: ModelConfig): boolean {
     try {
         v.parse(openAIConfigSchema, config);
         return OPENAI_BASE_URL_PATTERN.test(config.baseUrl.trim());
-    } catch (error) {
+    } catch {
         return false;
     }
 }

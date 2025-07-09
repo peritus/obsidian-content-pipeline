@@ -3,8 +3,6 @@
  */
 
 import { CHAT_LIMITS } from './chat-types';
-import * as v from 'valibot';
-import { chatRequestSchema, tokenValidationSchema } from '../validation/schemas';
 
 /**
  * Generate unique request ID for tracking
@@ -17,7 +15,7 @@ export function generateChatRequestId(): string {
  * Check if model is supported by the chat API
  */
 export function isSupportedChatModel(model: string): boolean {
-    return CHAT_LIMITS.supportedModels.includes(model as any);
+    return CHAT_LIMITS.supportedModels.includes(model as typeof CHAT_LIMITS.supportedModels[number]);
 }
 
 /**
@@ -82,7 +80,7 @@ export function shouldRetryChatError(error: Error): boolean {
 /**
  * Estimate token count for request (rough approximation)
  */
-function estimateTokenCount(text: string): number {
+export function estimateTokenCount(text: string): number {
     // Rough approximation: 1 token ≈ 4 characters for English text
     return Math.ceil(text.length / 4);
 }

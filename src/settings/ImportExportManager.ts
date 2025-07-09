@@ -6,7 +6,9 @@ import { Notice } from 'obsidian';
 import { parseAndValidateFromJson } from '../validation';
 
 export interface ImportExportCallbacks {
+     
     onPipelineImport: (config: string) => void;
+     
     onConfigPromptsImport: (prompts: Record<string, string>) => void;
 }
 
@@ -23,7 +25,7 @@ export class ImportExportManager {
     exportPipelineConfig(modelsConfig: string, pipelineConfig: string): void {
         try {
             // Use centralized validation function
-            const { modelsConfig: models, pipelineConfig: pipeline } = parseAndValidateFromJson(modelsConfig, pipelineConfig);
+            const { pipelineConfig: pipeline } = parseAndValidateFromJson(modelsConfig, pipelineConfig);
 
             const exportData = {
                 version: '1.2',

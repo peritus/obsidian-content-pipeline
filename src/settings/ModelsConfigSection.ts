@@ -10,11 +10,13 @@ import { BUNDLED_MODELS_CONFIG } from '@/configs';
 export class ModelsConfigSection {
     private plugin: ContentPipelinePlugin;
     private modelsTextarea: TextAreaComponent | null = null;
+     
     private onChangeCallback: (value: string) => void;
     private isExpanded: boolean = false;
     private contentContainer: HTMLElement | null = null;
     private expandButton: HTMLButtonElement | null = null;
 
+     
     constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
         this.plugin = plugin;
         this.onChangeCallback = onChangeCallback;

@@ -12,11 +12,11 @@ import {
 
 export class OpenAIApiKeySection {
     private plugin: ContentPipelinePlugin;
-    private onChangeCallback: (value: string) => void;
+    private onChangeCallback: (_value: string) => void;
     private apiKeyInput: HTMLInputElement | null = null;
     private debounceTimer: NodeJS.Timeout | null = null;
 
-    constructor(plugin: ContentPipelinePlugin, onChangeCallback: (value: string) => void) {
+    constructor(plugin: ContentPipelinePlugin, onChangeCallback: (_value: string) => void) {
         this.plugin = plugin;
         this.onChangeCallback = onChangeCallback;
     }
@@ -36,7 +36,7 @@ export class OpenAIApiKeySection {
                 this.loadCurrentApiKey();
 
                 // Auto-save on change with debouncing
-                text.onChange((value) => {
+                text.onChange(() => {
                     this.debouncedSave();
                 });
 

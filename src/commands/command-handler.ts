@@ -5,7 +5,7 @@
  */
 
 import { App, Notice, TFile } from 'obsidian';
-import { ContentPipelineSettings, ProcessingStatus } from '../types';
+import { ContentPipelineSettings, ProcessingStatus, ProcessingResult, FileInfo } from '../types';
 import { PipelineExecutor } from '../core/pipeline-executor';
 import { FileDiscovery } from '../core/file-operations';
 import {
@@ -218,9 +218,9 @@ export class CommandHandler {
     /**
      * Handle processing results consistently across commands
      */
-    private handleProcessingResult(result: any, contextDescription: string): void {
+    private handleProcessingResult(result: ProcessingResult, contextDescription: string): void {
         switch (result.status) {
-            case ProcessingStatus.COMPLETED:
+            case ProcessingStatus.COMPLETED: {
                 const outputCount = result.outputFiles.length;
                 new Notice(
                     `✅ Successfully processed: ${result.inputFile.name} → ${outputCount} output file(s)`,
@@ -231,6 +231,7 @@ export class CommandHandler {
                     stepId: result.stepId
                 });
                 break;
+            }
 
             case ProcessingStatus.SKIPPED:
                 if (contextDescription.includes('next available')) {
@@ -278,7 +279,7 @@ export class CommandHandler {
     /**
      * Create a FileInfo object from a TFile
      */
-    private async createFileInfo(file: TFile): Promise<any> {
+    private async createFileInfo(file: TFile): Promise<FileInfo> {
         const stat = await this.app.vault.adapter.stat(file.path);
 
         return {

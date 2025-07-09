@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Notice, Setting } from 'obsidian';
+import { App, PluginSettingTab, Notice } from 'obsidian';
 import ContentPipelinePlugin from '../../main';
 import { FileOperations } from '../../core/file-operations';
 import { ModelsConfigSection } from '../ModelsConfigSection';
@@ -128,8 +128,7 @@ export class SettingsTab extends PluginSettingTab {
         // Save settings immediately to persist the config-defined prompts
         try {
             await this.plugin.saveSettings();
-        } catch (error) {
-            console.error('Failed to save config-defined prompts:', error);
+        } catch {
             new Notice('Warning: Failed to save config-defined prompts', 5000);
         }
     }
@@ -262,7 +261,7 @@ export class SettingsTab extends PluginSettingTab {
     private validateConfigurations(): ConfigValidationResult {
         try {
             // Use centralized validation function
-            const { modelsConfig, pipelineConfig } = parseAndValidateFromJson(
+            const { modelsConfig: _modelsConfig, pipelineConfig: _pipelineConfig } = parseAndValidateFromJson(
                 this.plugin.settings.modelsConfig,
                 this.plugin.settings.pipelineConfig
             );
@@ -294,12 +293,12 @@ export class SettingsTab extends PluginSettingTab {
     /**
      * Save valid configuration with auto-save
      */
-    private async saveValidConfiguration(validationResult: ConfigValidationResult): Promise<void> {
+    private async saveValidConfiguration(_validationResult: ConfigValidationResult): Promise<void> {
         try {
             this.updateParsedConfigurations();
             this.plugin.settings.lastSaved = new Date().toISOString();
             await this.plugin.saveSettings();
-        } catch (error) {
+        } catch {
             // Handle save error silently for auto-save
         }
     }
@@ -311,7 +310,7 @@ export class SettingsTab extends PluginSettingTab {
         try {
             this.plugin.settings.parsedModelsConfig = JSON.parse(this.plugin.settings.modelsConfig);
             this.plugin.settings.parsedPipelineConfig = JSON.parse(this.plugin.settings.pipelineConfig);
-        } catch (error) {
+        } catch {
             this.clearParsedConfigurations();
         }
     }

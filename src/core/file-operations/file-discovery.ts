@@ -33,7 +33,6 @@ export class FileDiscovery {
      */
     async discoverFiles(
         inputPattern: string,
-        context: Record<string, any> = {},
         options: FileDiscoveryOptions = {}
     ): Promise<FileInfo[]> {
         const {
@@ -75,14 +74,13 @@ export class FileDiscovery {
      */
     async discoverFilesMultiple(
         inputPatterns: string[],
-        context: Record<string, any> = {},
         options: FileDiscoveryOptions = {}
     ): Promise<FileInfo[]> {
         const allFiles: FileInfo[] = [];
 
         for (const pattern of inputPatterns) {
             try {
-                const files = await this.discoverFiles(pattern, context, options);
+                const files = await this.discoverFiles(pattern, options);
                 allFiles.push(...files);
             } catch (error) {
                 logger.warn(`Failed to discover files for pattern: ${pattern}`, error);
@@ -136,7 +134,7 @@ export class FileDiscovery {
             const step = config[stepId];
 
             try {
-                const files = await this.discoverFiles(step.input, {}, {
+                const files = await this.discoverFiles(step.input, {
                     extensions: ['.mp3', '.wav', '.m4a', '.mp4', '.md', '.txt'],
                     sortBy: 'name',
                     sortOrder: 'asc',

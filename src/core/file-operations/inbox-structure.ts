@@ -7,7 +7,7 @@ import { DirectoryManager } from './directory-manager';
 import { InboxCore } from './inbox-core';
 import { EntryPointManager } from './entry-point-manager';
 import { FolderStructureResult } from './types';
-import { PipelineConfiguration, isRoutingAwareOutput } from '../../types';
+import { PipelineConfiguration, RoutingAwareOutput, isRoutingAwareOutput } from '../../types';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('InboxStructure');
@@ -27,7 +27,7 @@ export class InboxStructureManager {
      * Extract output directory paths from step output configuration
      * Handles both string and routing-aware output configurations
      */
-    private extractOutputDirectories(stepOutput: string | any): string[] {
+    private extractOutputDirectories(stepOutput: string | RoutingAwareOutput): string[] {
         const outputDirs: string[] = [];
 
         if (typeof stepOutput === 'string') {
@@ -217,7 +217,7 @@ export class InboxStructureManager {
     /**
      * Create folders on-demand for a specific step's processing
      */
-    async createStepFolders(stepId: string, step: any): Promise<FolderStructureResult> {
+    async createStepFolders(stepId: string, step: { output: string | RoutingAwareOutput }): Promise<FolderStructureResult> {
         const result: FolderStructureResult = {
             success: true,
             foldersCreated: 0,

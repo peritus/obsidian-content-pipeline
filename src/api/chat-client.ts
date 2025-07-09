@@ -122,9 +122,9 @@ export class ChatClient {
         }
     }
 
-    private buildResponseSchema(availableNextSteps: string[]): any {
+    private buildResponseSchema(availableNextSteps: string[]): Record<string, unknown> {
         // Build item properties conditionally
-        const itemProperties: any = {
+        const itemProperties: Record<string, unknown> = {
             filename: { type: 'string' },
             content: { type: 'string' }
         };
@@ -213,7 +213,7 @@ export class ChatClient {
             }
         }
 
-        throw lastError!;
+        throw lastError || new Error('Request failed after all retry attempts');
     }
 
     /**

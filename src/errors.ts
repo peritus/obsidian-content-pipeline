@@ -9,6 +9,8 @@
  * Only use ContentPipelineError for plugin-specific operations (file I/O, API calls, etc.)
  */
 
+import * as v from 'valibot';
+
 export class ContentPipelineError extends Error {
     /** Optional error that caused this error (for error chaining) */
     public readonly cause?: Error;
@@ -35,8 +37,8 @@ export function isContentPipelineError(error: unknown): error is ContentPipeline
 /**
  * Type guard to check if an error is a Valibot validation error
  */
-export function isValibotError(error: unknown): error is import('valibot').ValiError<any> {
-    return error instanceof Error && 'issues' in error && Array.isArray((error as any).issues);
+export function isValibotError(error: unknown): error is v.ValiError<v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>> {
+    return error instanceof v.ValiError;
 }
 
 /**
@@ -52,7 +54,7 @@ export function getErrorMessage(error: unknown): string {
 /**
  * Get detailed message from Valibot error
  */
-export function getDetailedValiMessage(error: import('valibot').ValiError<any>): string {
+export function getDetailedValiMessage(error: v.ValiError<v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>): string {
     // Extract the most specific error message from Valibot issues
     return error.issues[0]?.message || error.message;
 }
