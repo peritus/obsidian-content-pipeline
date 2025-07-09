@@ -48,10 +48,13 @@ describe('FileOperations - archiveFile', () => {
         mockVault.getAbstractFileByPath.mockReturnValue(null);
         const context = createMockContext({ stepId: 'transcribe' });
 
-        await expect(fileOps.archiveFile(
+        const result = await fileOps.archiveFile(
             'nonexistent.md',
             'inbox/archive/transcribe/'
-        )).rejects.toThrow('Source file not found');
+        );
+
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Source file not found');
     });
 
     it('should handle invalid archive directory path', async () => {

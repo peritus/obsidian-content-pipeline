@@ -10,7 +10,6 @@ import { extractDirectoryPath } from '../path-operations/extract-directory-path'
 import { FilenameResolver } from '../FilenameResolver';
 import { ArchiveResult } from './types';
 import { DirectoryManager } from './directory-manager';
-import { ContentPipelineError, isContentPipelineError } from '../../errors';
 import { createLogger } from '../../logger';
 
 const logger = createLogger('FileArchiver');
@@ -32,13 +31,28 @@ export class FileArchiver {
         archiveDirectory: string
     ): Promise<ArchiveResult> {
         try {
+            // Validate archive directory
+            if (!archiveDirectory || archiveDirectory.trim() === '') {
+                return {
+                    success: false,
+                    originalPath: sourceFilePath,
+                    archivePath: '',
+                    error: 'Directory path cannot be empty'
+                };
+            }
+
             // Normalize archive directory path (now expects simple directory path)
             const normalizedArchiveDir = normalizeDirectoryPath(archiveDirectory);
 
             // Get source file
             const sourceFile = this.vault.getAbstractFileByPath(sourceFilePath);
             if (!sourceFile || !(sourceFile instanceof TFile)) {
-                throw new ContentPipelineError(`Source file not found: ${sourceFilePath}`);
+                return {
+                    success: false,
+                    originalPath: sourceFilePath,
+                    archivePath: '',
+                    error: `Source file not found: ${sourceFilePath}`
+                };
             }
 
             // Ensure archive directory exists
@@ -67,10 +81,6 @@ export class FileArchiver {
             };
 
         } catch (error) {
-            if (isContentPipelineError(error)) {
-                throw error; // Re-throw our custom errors
-            }
-
             const errorMessage = error instanceof Error ? error.message : String(error);
             logger.error(`Failed to archive file: ${sourceFilePath}`, { error: errorMessage });
 
