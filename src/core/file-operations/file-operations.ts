@@ -122,7 +122,7 @@ export class FileOperations {
 
     // Discovery operations
     async discoverFiles(inputPattern: string, context?: Record<string, unknown>, options?: FileDiscoveryOptions): Promise<FileInfo[]> {
-        return this.fileDiscovery.discoverFiles(inputPattern, context, options);
+        return this.fileDiscovery.discoverFiles(inputPattern, options);
     }
 
     getFileInfo(file: TFile): FileInfo {

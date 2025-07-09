@@ -90,8 +90,7 @@ export class OutputHandler {
             // Determine effective filename using FilenameResolver
             const effectiveFilename = FilenameResolver.resolveOutputFilename(
                 section.filename,
-                context.filename,
-                context.stepId
+                context.filename
             );
 
             // Get appropriate file extension for the step type
@@ -133,7 +132,7 @@ export class OutputHandler {
                 nextStep: section.nextStep,
                 contentLength: finalContent.length,
                 frontmatterUsed: metadata,
-                filenameSource: FilenameResolver.getFilenameSource(section.filename, context.filename),
+                filenameSource: FilenameResolver.getFilenameSource(section.filename),
                 sectionFilename: section.filename,
                 effectiveFilename: effectiveFilename,
                 extension: extension

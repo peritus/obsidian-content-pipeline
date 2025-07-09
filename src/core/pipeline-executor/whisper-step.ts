@@ -111,8 +111,7 @@ export class WhisperStepProcessor {
             // Build output path using path operations
             const effectiveFilename = FilenameResolver.resolveOutputFilename(
                 undefined, // Whisper doesn't get LLM filename suggestions
-                context.filename,
-                stepId
+                context.filename
             );
             const extension = FilenameResolver.getExtensionForStepType(stepId);
             const outputPath = buildOutputPath(
