@@ -23,6 +23,11 @@ interface ExecutionOptions {
     maxFiles?: number;
 }
 
+interface BatchProcessingOptions {
+    maxIterations?: number;
+    continueOnError?: boolean;
+}
+
 export class PipelineExecutor {
     private settings: ContentPipelineSettings;
     private executionState: ExecutionState;
@@ -37,49 +42,105 @@ export class PipelineExecutor {
         logger.debug('PipelineExecutor initialized with dual configuration support');
     }
 
+    /**
+     * Process the next available file - elegant wrapper around batch iterator
+     * 
+     * This is now just the degenerate case of batch processing with maxIterations: 1
+     */
     async processNextFile(options: ExecutionOptions = {}): Promise<ProcessingResult> {
         const { continueOnError = false } = options;
 
-        if (this.executionState.isProcessing()) {
-            throw new Error('Pipeline execution already in progress');
+        logger.info('Starting single file processing');
+
+        // Single file processing is just batch processing with limit 1
+        for await (const result of this.processAllFilesIterator({ 
+            maxIterations: 1, 
+            continueOnError 
+        })) {
+            logger.info(`Single file processing completed: ${result.inputFile.name} → ${result.status}`);
+            return result;
         }
 
+        // No files available for processing
+        const skippedResult = this.createResult(ProcessingStatus.SKIPPED, 'No files available');
+        logger.info('Single file processing completed: No files available');
+        return skippedResult;
+    }
+
+    /**
+     * Elegant iterator for batch processing with encapsulated state management
+     * 
+     * This method returns an async generator that yields processing results
+     * while maintaining its own state, eliminating the need for external
+     * loop management and safety mechanisms.
+     */
+    async* processAllFilesIterator(options: BatchProcessingOptions = {}): AsyncGenerator<ProcessingResult, void, unknown> {
+        const {
+            maxIterations = 100,
+            continueOnError = true
+        } = options;
+
+        logger.info('Starting batch processing iterator');
+        
+        const processedFiles = new Set<string>();
+        let currentIteration = 0;
+
         try {
-            this.executionState.startProcessing();
-            logger.info('Starting pipeline execution');
+            while (currentIteration < maxIterations) {
+                currentIteration++;
+                
+                // Find next available file using persistent exclude set
+                const config = this.getPipelineConfiguration();
+                const fileToProcess = await this.fileDiscovery.findNextAvailableFile(
+                    config,
+                    processedFiles
+                );
 
-            const config = this.getPipelineConfiguration();
-            const fileToProcess = await this.fileDiscovery.findNextAvailableFile(
-                config,
-                this.executionState.getActiveFilesSet()
-            );
+                if (!fileToProcess) {
+                    logger.info('No more files available for batch processing');
+                    break;
+                }
 
-            if (!fileToProcess) {
-                return this.createResult(ProcessingStatus.SKIPPED, 'No files available');
+                // Track the file we're about to process
+                processedFiles.add(fileToProcess.file.path);
+
+                try {
+                    // Execute the step directly
+                    const result = await this.stepChain.executeStep(
+                        fileToProcess.stepId,
+                        fileToProcess.file
+                    );
+
+                    logger.info(`Batch processing iteration ${currentIteration}: ${fileToProcess.file.name} → ${result.status}`);
+                    yield result;
+
+                } catch (error) {
+                    const errorResult: ProcessingResult = {
+                        inputFile: this.createFileInfo(fileToProcess.file),
+                        status: ProcessingStatus.FAILED,
+                        outputFiles: [],
+                        startTime: new Date(),
+                        endTime: new Date(),
+                        stepId: fileToProcess.stepId,
+                        error: error instanceof Error ? error.message : String(error)
+                    };
+
+                    logger.warn(`Batch processing iteration ${currentIteration} failed: ${error}`);
+                    
+                    if (continueOnError) {
+                        yield errorResult;
+                    } else {
+                        throw error;
+                    }
+                }
             }
 
-            logger.info(`Processing: ${fileToProcess.file.path} (${fileToProcess.stepId})`);
-
-            this.executionState.addActiveFile(fileToProcess.file.path);
-
-            // Execute step (StepChain now handles configuration resolution internally)
-            const result = await this.stepChain.executeStep(
-                fileToProcess.stepId,
-                fileToProcess.file
-            );
-
-            logger.info(`Completed: ${result.outputFiles.length} files generated`);
-            return result;
-
-        } catch (error) {
-            logger.error('Pipeline execution failed:', error);
-
-            if (continueOnError) {
-                return this.createResult(ProcessingStatus.FAILED, String(error));
+            if (currentIteration >= maxIterations) {
+                logger.warn(`Batch processing stopped: reached maximum iterations (${maxIterations})`);
             }
-            throw error;
+
         } finally {
-            this.executionState.endProcessing();
+            logger.info(`Batch processing iterator completed: ${currentIteration} iterations, ${processedFiles.size} unique files`);
         }
     }
 
@@ -106,6 +167,18 @@ export class PipelineExecutor {
             endTime: new Date(),
             stepId: status === ProcessingStatus.SKIPPED ? 'none' : 'unknown',
             error
+        };
+    }
+
+    private createFileInfo(file: { name: string; path: string; size?: number }): FileInfo {
+        return {
+            name: file.name,
+            path: file.path,
+            size: file.size || 0,
+            extension: file.name.includes('.') ? '.' + file.name.split('.').pop() : '',
+            isProcessable: true,
+            lastModified: new Date(),
+            mimeType: undefined
         };
     }
 }

@@ -99,11 +99,20 @@ export class ChatStepExecutor {
                     fileInfo.path,
                     resolvedStep.archive
                 );
+                
+                if (!archiveResult.success) {
+                    throw new Error(`Archive operation failed: ${archiveResult.error || 'Unknown error'}`);
+                }
+                
                 archivePath = archiveResult.archivePath;
                 logger.debug(`File archived: ${fileInfo.path} → ${archivePath}`);
             } catch (error) {
-                logger.warn(`Failed to archive file: ${fileInfo.path}`, error);
-                archivePath = fileInfo.path; // Return original path if archiving fails
+                const errorMsg = `Failed to archive file: ${fileInfo.path}. ${error instanceof Error ? error.message : String(error)}`;
+                logger.error(errorMsg);
+                
+                // Archiving failure should cause the entire processing step to fail
+                // This prevents the file from remaining in the input directory and causing infinite loops
+                throw new Error(`Processing failed due to archiving error: ${errorMsg}`);
             }
             context.archivePath = archivePath;
 

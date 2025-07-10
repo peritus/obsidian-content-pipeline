@@ -298,8 +298,12 @@ export class WhisperStepProcessor {
             }
 
         } catch (error) {
-            logger.warn(`Failed to archive file: ${sourcePath}`, error);
-            return sourcePath; // Return original path if archiving fails
+            const errorMsg = `Failed to archive file: ${sourcePath}. ${error instanceof Error ? error.message : String(error)}`;
+            logger.error(errorMsg);
+            
+            // Archiving failure should cause the entire processing step to fail
+            // This prevents the file from remaining in the input directory and causing infinite loops
+            throw new Error(`Whisper processing failed due to archiving error: ${errorMsg}`);
         }
     }
 

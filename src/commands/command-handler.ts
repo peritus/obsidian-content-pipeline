@@ -105,6 +105,8 @@ export class CommandHandler {
 
     /**
      * Process the next available file in the pipeline
+     * 
+     * Now uses the elegant iterator-based approach for consistency.
      */
     async processNextFile(): Promise<void> {
         try {
@@ -121,7 +123,7 @@ export class CommandHandler {
             // Show processing started notification
             new Notice('🔄 Processing next file...', 3000);
 
-            // Create executor and process file
+            // Create executor and process next file (now just batch processing with limit 1)
             const executor = new PipelineExecutor(this.app, this.settings);
             const result = await executor.processNextFile();
 
@@ -145,6 +147,9 @@ export class CommandHandler {
 
     /**
      * Process all available files automatically until none remain
+     * 
+     * Uses an elegant iterator pattern that encapsulates state management
+     * and provides natural safety mechanisms against infinite loops.
      */
     async processAllFiles(): Promise<void> {
         try {
@@ -162,39 +167,34 @@ export class CommandHandler {
             new Notice('🔄 Processing all files...', 3000);
 
             let processedCount = 0;
-            let executor: PipelineExecutor | null = null;
+            let failedCount = 0;
 
-            // Process files until no more are available
-            while (true) {
-                try {
-                    // Create fresh executor for each iteration to ensure clean state
-                    executor = new PipelineExecutor(this.app, this.settings);
-                    const result = await executor.processNextFile();
-
-                    // Check if no more files are available
-                    if (result.status === ProcessingStatus.SKIPPED) {
-                        break;
-                    }
-
-                    // Handle other results (completed, failed)
-                    if (result.status === ProcessingStatus.COMPLETED) {
-                        processedCount++;
-                        logger.info(`File ${processedCount} processed: ${result.inputFile.name}`);
-                    } else if (result.status === ProcessingStatus.FAILED) {
-                        logger.warn(`File processing failed: ${result.error}`);
-                        // Continue processing other files even if one fails
-                    }
-
-                } catch (error) {
-                    logger.error('Error during file processing iteration:', error);
-                    // Continue processing other files even if one iteration fails
+            // Use the elegant iterator pattern - state management is fully encapsulated
+            const executor = new PipelineExecutor(this.app, this.settings);
+            
+            for await (const result of executor.processAllFilesIterator({ 
+                maxIterations: 100, 
+                continueOnError: true 
+            })) {
+                // Handle each result as it's yielded
+                if (result.status === ProcessingStatus.COMPLETED) {
+                    processedCount++;
+                    logger.info(`File ${processedCount} processed: ${result.inputFile.name} → archived to: ${result.archivePath || 'unknown'}`);
+                } else if (result.status === ProcessingStatus.FAILED) {
+                    failedCount++;
+                    logger.warn(`File processing failed: ${result.error} (file: ${result.inputFile?.name || 'unknown'})`);
+                    new Notice(`⚠️ Failed to process: ${result.inputFile?.name || 'unknown file'}`, 5000);
                 }
             }
 
             // Show completion notification
-            if (processedCount > 0) {
-                new Notice(`✅ Successfully processed ${processedCount} file(s)`, 6000);
-                logger.info(`Process All Files completed: ${processedCount} files processed`);
+            if (processedCount > 0 || failedCount > 0) {
+                const successMsg = processedCount > 0 ? `✅ Successfully processed ${processedCount} file(s)` : '';
+                const failureMsg = failedCount > 0 ? `⚠️ ${failedCount} file(s) failed` : '';
+                const combinedMsg = [successMsg, failureMsg].filter(Boolean).join(', ');
+                
+                new Notice(combinedMsg, 6000);
+                logger.info(`Process All Files completed: ${processedCount} successful, ${failedCount} failed`);
             } else {
                 new Notice('ℹ️ No files found to process. Place audio files in inbox/audio/ folder.', 6000);
                 logger.info('Process All Files completed: No files available');
